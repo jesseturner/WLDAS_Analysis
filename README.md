@@ -1,0 +1,1 @@
+Requires .netrc set with GES DISC username and password
