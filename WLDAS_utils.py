@@ -4,6 +4,8 @@ from datetime import datetime
 from tqdm import tqdm
 import xarray as xr
 import numpy as np
+import pickle
+import matplotlib.pyplot as plt
 
 class WldasData:
     def __init__(self, date, engine=None, chunks=None):
@@ -81,28 +83,48 @@ class WldasData:
             print(self.ds)
         if view_vars: 
             for var in self.ds.data_vars:
-                print(var)
+                print(f"{var} => {self.ds[var].attrs.get("standard_name")}, {self.ds[var].attrs.get("long_name")}, units = {self.ds[var].attrs.get("units")}")
 
-    def create_hist_for_variables(self):
+    def create_hist_for_variables(self, hist_name):
         hist_store = {}  # Will hold {"variable_name": (counts, bin_edges)}
 
         for variable in self.ds.data_vars:
             data = self.ds[variable].values.flatten()
+            data = data[np.isfinite(data)]
 
             # Skip non-numeric data types (e.g., datetime64, object)
             if not np.issubdtype(data.dtype, np.number):
                 print(f"Skipping variable '{variable}' of type {data.dtype}")
                 continue
 
-            bin_edges = np.linspace(np.min(data), np.max(data), num=51)
-            print(variable, " min/max: ",np.min(data), np.max(data))
-            #counts, _ = np.histogram(data, bins=bin_edges)
-            #hist_store[variable] = (counts, bin_edges)
+            bin_edges = np.linspace(np.nanmin(data), np.nanmax(data), num=51)
+            counts, _ = np.histogram(data, bins=bin_edges)
+            hist_store[variable] = (counts, bin_edges)
 
-            #print(hist_store)
+            os.makedirs("WLDAS_histograms", exist_ok=True)
+            with open(f"WLDAS_histograms/{hist_name}.pkl", "wb") as f:
+                pickle.dump(hist_store, f)
 
-            # Save periodically
-            #np.savez(f"WLDAS_histograms/{variable}_hist.npz", counts=counts_total, bins=bin_edges)
+    def plot_histogram_for_variables(self, hist_name):
+        with open(f"WLDAS_histograms/{hist_name}.pkl", "rb") as f:
+            hist_store = pickle.load(f)
+        for variable in self.ds.data_vars:
+            if variable not in hist_store:
+                print(f"Skipping '{variable}' — no histogram stored.")
+                continue
+
+            counts, bin_edges = hist_store[variable]
+            bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+
+            plt.figure(figsize=(8, 4))
+            plt.bar(bin_centers, counts, width=np.diff(bin_edges), align="center", edgecolor="black")
+            plt.title(f"Histogram of {variable}")
+            plt.xlabel("Value")
+            plt.ylabel("Frequency")
+            plt.tight_layout()
+            plt.savefig(f"WLDAS_histograms/{hist_name}_{variable}.png")
+            plt.close()
+
 
 
     
