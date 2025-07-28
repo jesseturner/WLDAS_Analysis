@@ -97,9 +97,11 @@ class WldasData:
                 print(f"Skipping variable '{variable}' of type {data.dtype}")
                 continue
 
+            long_name = self.ds[variable].attrs.get("long_name")
+            units = self.ds[variable].attrs.get("units")
             bin_edges = np.linspace(np.nanmin(data), np.nanmax(data), num=51)
             counts, _ = np.histogram(data, bins=bin_edges)
-            hist_store[variable] = (counts, bin_edges)
+            hist_store[variable] = (long_name, units, counts, bin_edges)
 
             os.makedirs("WLDAS_histograms", exist_ok=True)
             with open(f"WLDAS_histograms/{hist_name}.pkl", "wb") as f:
@@ -113,13 +115,13 @@ class WldasData:
                 print(f"Skipping '{variable}' — no histogram stored.")
                 continue
 
-            counts, bin_edges = hist_store[variable]
+            long_name, units, counts, bin_edges = hist_store[variable]
             bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
 
             plt.figure(figsize=(8, 4))
             plt.bar(bin_centers, counts, width=np.diff(bin_edges), align="center", edgecolor="black")
-            plt.title(f"Histogram of {variable}")
-            plt.xlabel("Value")
+            plt.title(f"Histogram of {variable} ({long_name})")
+            plt.xlabel(f"{units}")
             plt.ylabel("Frequency")
             plt.tight_layout()
             plt.savefig(f"WLDAS_histograms/{hist_name}_{variable}.png")
