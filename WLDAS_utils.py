@@ -6,6 +6,7 @@ import xarray as xr
 import numpy as np
 import pickle
 import matplotlib.pyplot as plt
+import pandas as pd
 
 class WldasData:
     def __init__(self, date, engine=None, chunks=None):
@@ -85,11 +86,22 @@ class WldasData:
             for var in self.ds.data_vars:
                 print(f"{var} => {self.ds[var].attrs.get("standard_name")}, {self.ds[var].attrs.get("long_name")}, units = {self.ds[var].attrs.get("units")}")
 
-    def create_hist_for_variables(self, hist_name):
+    def create_hist_for_variables(self, hist_name=None):
         hist_store = {}  # Will hold {"variable_name": (counts, bin_edges)}
 
-        for variable in self.ds.data_vars:
-            data = self.ds[variable].values.flatten()
+        if hist_name == None: 
+            print("Running histograms for full dataset.")
+            print("Options: all_data, dust_points")
+            hist_name = "all_data"
+
+        dataset = self.ds # Use all data by default
+
+        #--- considering separating out this logic
+        if hist_name == "dust_points":
+            dataset = self._filter_by_dust_points()
+
+        for variable in dataset.data_vars:
+            data = dataset[variable].values.flatten()
             data = data[np.isfinite(data)]
 
             # Skip non-numeric data types (e.g., datetime64, object)
@@ -97,8 +109,8 @@ class WldasData:
                 print(f"Skipping variable '{variable}' of type {data.dtype}")
                 continue
 
-            long_name = self.ds[variable].attrs.get("long_name")
-            units = self.ds[variable].attrs.get("units")
+            long_name = dataset[variable].attrs.get("long_name")
+            units = dataset[variable].attrs.get("units")
             bin_edges = np.linspace(np.nanmin(data), np.nanmax(data), num=51)
             counts, _ = np.histogram(data, bins=bin_edges)
             hist_store[variable] = (long_name, units, counts, bin_edges)
@@ -126,6 +138,52 @@ class WldasData:
             plt.tight_layout()
             plt.savefig(f"WLDAS_histograms/{hist_name}_{variable}.png")
             plt.close()
+
+    def _filter_by_dust_points(self):
+        #--- Set amount of mask precision
+        #------ 2 is 0.5 degree boxes, 10 is 0.1 degree boxes
+        precision = 5
+
+        #--- Read dust data into a dataframe
+        file_path = 'dust_dataset_final_20241226.txt'
+        dust_df = pd.read_csv(file_path, sep=r'\s+', skiprows=2, header=None)
+        dust_df.columns = [
+            'Date (YYYYMMDD)','start time (UTC)','latitude','longitude','Jesse Check'
+        ]
+        print(dust_df.head())
+
+        #--- Create a mask of dust locations
+        dust_df['latitude'] = pd.to_numeric(dust_df['latitude'], errors='coerce')
+        dust_df['longitude'] = pd.to_numeric(dust_df['longitude'], errors='coerce')
+
+        #------ US Southwest (zoomed out)
+        latitude_north = 44
+        latitude_south = 27.5
+        longitude_west = -128
+        longitude_east = -100
+
+        #------ Define grid resolution
+        lat_min, lat_max = latitude_south, latitude_north
+        lon_min, lon_max = longitude_west, longitude_east
+
+        #------ Create 1-degree bins
+        lat_bins = np.arange(lat_min, lat_max + 1/precision, 1/precision)
+        lon_bins = np.arange(lon_min, lon_max + 1/precision, 1/precision)
+
+        mask = pd.DataFrame(index=lat_bins, columns=lon_bins, data=0)
+
+        #------ Populate the mask (1 if a dust event occurred in the grid cell)
+        for _, row in dust_df.iterrows():
+            if (row['latitude'] < latitude_north) & (row['latitude'] > latitude_south) & (row['longitude'] < longitude_east) & (row['longitude'] > longitude_west):
+
+                lat_idx = np.round(row['latitude'] * precision) / precision # Round to nearest bin (size set above)
+                lon_idx = np.round(row['longitude'] * precision) / precision
+
+                mask.loc[lat_idx, lon_idx] = 1  # Mark as a dust-affected cell
+        
+        
+
+        return filtered_dataset
 
 
 
