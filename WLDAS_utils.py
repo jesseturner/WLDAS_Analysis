@@ -6,10 +6,13 @@ import xarray as xr
 import numpy as np
 
 class WldasData:
-    def __init__(self, date):
+    def __init__(self, date, engine=None, chunks=None):
         self.date = date
         self.download_dir = Path("WLDAS_data")
+        self.engine = engine
+        self.chunks = chunks
         self._get_filepath()
+        self._get_data(view_vars=True)
 
     def _get_filepath(self):
         self.filepath = None
@@ -19,10 +22,11 @@ class WldasData:
             self.filepath = str(matches[0])
             print(f"Found file: {self.filepath}")
         else:
-            print(f"Run .download() to get file")
+            print(f"Runing download to get file")
             print("Warning: WLDAS data files are large, each ~900 MB")
+            self._download()
 
-    def download(self):
+    def _download(self):
         #--- Set .netrc with GES DISC username and password
         #--- Add a reminder if there is a no permissions error
 
@@ -71,34 +75,29 @@ class WldasData:
             print(f"Failed to download: {response.status_code} {response.reason}")
             print(response.text)
 
-    def view_dataset(self):
+    def _get_data(self, view_vars=False):
         if self.filepath:
-            ds = xr.open_dataset(self.filepath)
-            print(ds)
-
-    def view_variables(self):
-        if self.filepath: 
-            ds = xr.open_dataset(self.filepath)
-            for var in ds.data_vars:
+            self.ds = xr.open_dataset(self.filepath, engine=self.engine, chunks=self.chunks)
+            print(self.ds)
+        if view_vars: 
+            for var in self.ds.data_vars:
                 print(var)
 
     def create_hist_for_variables(self):
-        if self.filepath: 
-            ds = xr.open_dataset(self.filepath)
-            hist_store = {}  # Will hold {"variable_name": (counts, bin_edges)}
+        hist_store = {}  # Will hold {"variable_name": (counts, bin_edges)}
 
-            for variable in ds.data_vars:
-                data = ds[variable].values.flatten()
+        for variable in self.ds.data_vars:
+            data = self.ds[variable].values.flatten()
 
-                # Skip non-numeric data types (e.g., datetime64, object)
-                if not np.issubdtype(data.dtype, np.number):
-                    print(f"Skipping variable '{variable}' of type {data.dtype}")
-                    continue
+            # Skip non-numeric data types (e.g., datetime64, object)
+            if not np.issubdtype(data.dtype, np.number):
+                print(f"Skipping variable '{variable}' of type {data.dtype}")
+                continue
 
-                bin_edges = np.linspace(np.min(data), np.max(data), num=51)
-                print(variable, " min/max: ",np.min(data), np.max(data))
-                #counts, _ = np.histogram(data, bins=bin_edges)
-                #hist_store[variable] = (counts, bin_edges)
+            bin_edges = np.linspace(np.min(data), np.max(data), num=51)
+            print(variable, " min/max: ",np.min(data), np.max(data))
+            #counts, _ = np.histogram(data, bins=bin_edges)
+            #hist_store[variable] = (counts, bin_edges)
 
             #print(hist_store)
 

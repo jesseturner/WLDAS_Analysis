@@ -3,16 +3,13 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - cartopy=0.24.0
-  - cfgrib=0.9.15.0
-  - matplotlib=3.10.0
-  - netcdf4=1.6.5
-  - numpy=2.2.2
-  - pandas=2.2.3
-  - xarray=2024.7.0
-  - urllib3=2.3.0
-  - requests=2.32.3
-  - pydap=3.5.3
-  - earthaccess=0.12.0
-  - boto3=1.36.3
+  - cartopy
+  - cfgrib
+  - matplotlib
+  - netcdf4
+  - numpy
+  - pandas
+  - xarray
+  - requests
+  - dask
 prefix: /Applications/anaconda3/envs/wldas_env

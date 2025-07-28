@@ -1,12 +1,6 @@
 from WLDAS_utils import WldasData
 from datetime import datetime
 
-wldas = WldasData(datetime(2001, 1, 12))
-
-#wldas.download()
-
-wldas.view_dataset()
-
-wldas.view_variables()
+wldas = WldasData(datetime(2001, 1, 15), chunks={"lat": 300, "lon": 300})
 
 wldas.create_hist_for_variables()
