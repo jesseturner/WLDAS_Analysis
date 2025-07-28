@@ -107,7 +107,7 @@ class WldasData:
             with open(f"WLDAS_histograms/{hist_name}.pkl", "wb") as f:
                 pickle.dump(hist_store, f)
 
-    def plot_histogram_for_variables(self, hist_name):
+    def plot_hist_for_variables(self, hist_name):
         with open(f"WLDAS_histograms/{hist_name}.pkl", "rb") as f:
             hist_store = pickle.load(f)
         for variable in self.ds.data_vars:
