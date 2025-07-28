@@ -119,7 +119,7 @@ class WldasData:
             bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
 
             plt.figure(figsize=(8, 4))
-            plt.bar(bin_centers, counts, width=np.diff(bin_edges), align="center", edgecolor="black")
+            plt.bar(bin_centers, counts, width=np.diff(bin_edges), align="center", edgecolor="blue", color='blue', alpha=0.7,)
             plt.title(f"Histogram of {variable} ({long_name})")
             plt.xlabel(f"{units}")
             plt.ylabel("Frequency")
