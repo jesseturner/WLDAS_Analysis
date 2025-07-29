@@ -9,13 +9,15 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 class WldasData:
-    def __init__(self, date, engine=None, chunks=None):
+    def __init__(self, date, engine=None, chunks=None, bounds=None):
         self.date = date
         self.download_dir = Path("WLDAS_data")
         self.engine = engine
         self.chunks = chunks
+        self.bounds = bounds
         self._get_filepath()
         self._get_data(view_vars=True)
+        self._set_bounds()
 
     def _get_filepath(self):
         self.filepath = None
@@ -86,6 +88,16 @@ class WldasData:
             for var in self.ds.data_vars:
                 print(f"{var} => {self.ds[var].attrs.get("standard_name")}, {self.ds[var].attrs.get("long_name")}, units = {self.ds[var].attrs.get("units")}")
 
+    def _set_bounds(self):
+        if self.bounds:
+            if not isinstance(self.bounds, list) & len(self.bounds) != 4:
+                print("Bounds must be a list of four coordinates: [Latitude South, Latitude North, Longitude West, Longitude East]")
+                print("Not using bounds.")
+                self.bounds = None
+            self.ds = self.ds.sel(
+                lat=slice(self.bounds[0], self.bounds[1]),
+                lon=slice(self.bounds[2], self.bounds[3]))
+
     def create_hist_for_variables(self, hist_name=None):
         hist_store = {}  # Will hold {"variable_name": (counts, bin_edges)}
 
@@ -140,10 +152,6 @@ class WldasData:
             plt.close()
 
     def _filter_by_dust_points(self):
-        #--- Set amount of mask precision
-        #------ 2 is 0.5 degree boxes, 10 is 0.1 degree boxes
-        precision = 5
-
         #--- Read dust data into a dataframe
         file_path = 'dust_dataset_final_20241226.txt'
         dust_df = pd.read_csv(file_path, sep=r'\s+', skiprows=2, header=None)
@@ -156,17 +164,13 @@ class WldasData:
         dust_df['latitude'] = pd.to_numeric(dust_df['latitude'], errors='coerce')
         dust_df['longitude'] = pd.to_numeric(dust_df['longitude'], errors='coerce')
 
-        #------ US Southwest (zoomed out)
-        latitude_north = 44
-        latitude_south = 27.5
-        longitude_west = -128
-        longitude_east = -100
-
         #------ Define grid resolution
-        lat_min, lat_max = latitude_south, latitude_north
-        lon_min, lon_max = longitude_west, longitude_east
+        lat_min, lat_max = self.bounds[0], self.bounds[1]
+        lon_min, lon_max = self.bounds[2], self.bounds[3]
 
-        #------ Create 1-degree bins
+        #------ Create grid bins
+        #------ 2 is 0.5 degree boxes, 10 is 0.1 degree boxes
+        precision = 5
         lat_bins = np.arange(lat_min, lat_max + 1/precision, 1/precision)
         lon_bins = np.arange(lon_min, lon_max + 1/precision, 1/precision)
 
@@ -174,14 +178,22 @@ class WldasData:
 
         #------ Populate the mask (1 if a dust event occurred in the grid cell)
         for _, row in dust_df.iterrows():
-            if (row['latitude'] < latitude_north) & (row['latitude'] > latitude_south) & (row['longitude'] < longitude_east) & (row['longitude'] > longitude_west):
+            if (row['latitude'] < lat_max) & (row['latitude'] > lat_min) & (row['longitude'] < lon_max) & (row['longitude'] > lon_min):
 
                 lat_idx = np.round(row['latitude'] * precision) / precision # Round to nearest bin (size set above)
                 lon_idx = np.round(row['longitude'] * precision) / precision
 
                 mask.loc[lat_idx, lon_idx] = 1  # Mark as a dust-affected cell
         
-        
+        ds = xr.open_dataset("WLDAS_nc_files/WLDAS_NOAHMP001_DA1_20010102.D10.nc")
+
+        #--- Use `interp` to align NetCDF lat/lon with the mask
+        mask_da = mask_da.interp(lat=ds.lat, lon=ds.lon, method="nearest")
+
+        #--- Filter WLDAS data to dust zones
+
+        # Apply mask using xarray.where()
+        ds_filtered = ds.where(~np.isnan(mask_da), drop=True)
 
         return filtered_dataset
 
