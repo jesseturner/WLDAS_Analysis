@@ -14,8 +14,8 @@ class WldasData:
         self.download_dir = Path("WLDAS_data")
         self.engine = engine
         self.chunks = chunks
+        self.ds = None
         self._get_filepath()
-        self._get_data(view_vars=True)
 
     def _get_filepath(self):
         self.filepath = None
@@ -78,13 +78,20 @@ class WldasData:
             print(f"Failed to download: {response.status_code} {response.reason}")
             print(response.text)
 
-    def _get_data(self, view_vars=False):
+    def get_data(self, view_vars=False):
+        success = False
         if self.filepath:
-            self.ds = xr.open_dataset(self.filepath, engine=self.engine, chunks=self.chunks)
-            print(self.ds)
-        if view_vars: 
-            for var in self.ds.data_vars:
-                print(f"{var} => {self.ds[var].attrs.get("standard_name")}, {self.ds[var].attrs.get("long_name")}, units = {self.ds[var].attrs.get("units")}")
+            try:
+                self.ds = xr.open_dataset(self.filepath, engine=self.engine, chunks=self.chunks)
+                print(self.ds)
+                if view_vars: 
+                    for var in self.ds.data_vars:
+                        print(f"{var} => {self.ds[var].attrs.get("standard_name")}, {self.ds[var].attrs.get("long_name")}, units = {self.ds[var].attrs.get("units")}")
+                success = True
+            except (FileNotFoundError, OSError) as e:
+                print(f"Could not open dataset at {self.filepath}: {e}")
+        return success
+                
 
     def filter_by_bounds(self, bounds=None):
         if not isinstance(bounds, list) or len(bounds) != 4:
