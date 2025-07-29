@@ -1,4 +1,4 @@
-import os, requests
+import os, requests, sys
 from pathlib import Path
 from datetime import datetime
 from tqdm import tqdm
@@ -65,8 +65,9 @@ class WldasData:
             total_size = int(response.headers.get('content-length', 0))
             chunk_size = 8192
 
+            use_tqdm = sys.stderr.isatty() # Only use progress bar for in commandline
             with open(self.filepath, 'wb') as f, tqdm(
-                total=total_size, unit='B', unit_scale=True, desc=filename
+                total=total_size, unit='B', unit_scale=True, desc=filename, disable=not use_tqdm
             ) as pbar:
                 for chunk in response.iter_content(chunk_size=chunk_size):
                     if chunk:
