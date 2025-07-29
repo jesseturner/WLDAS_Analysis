@@ -129,13 +129,15 @@ class WldasData:
             counts, _ = np.histogram(data, bins=bin_edges)
             hist_store[variable] = (long_name, units, counts, bin_edges)
 
-            os.makedirs("WLDAS_histograms", exist_ok=True)
-            with open(f"WLDAS_histograms/{hist_name}.pkl", "wb") as f:
+            os.makedirs("WLDAS_hist", exist_ok=True)
+            with open(f"WLDAS_hist/{hist_name}_{self.date.strftime('%Y%m%d')}.pkl", "wb") as f:
                 pickle.dump(hist_store, f)
 
+
     def plot_hist_for_variables(self, hist_name):
-        with open(f"WLDAS_histograms/{hist_name}.pkl", "rb") as f:
+        with open(f"WLDAS_hist/{hist_name}_{self.date.strftime('%Y%m%d')}.pkl", "rb") as f:
             hist_store = pickle.load(f)
+        os.makedirs("WLDAS_hist_plots", exist_ok=True)
         for variable in self.ds.data_vars:
             if variable not in hist_store:
                 print(f"Skipping '{variable}' — no histogram stored.")
@@ -150,7 +152,7 @@ class WldasData:
             plt.xlabel(f"{units}")
             plt.ylabel("Frequency")
             plt.tight_layout()
-            plt.savefig(f"WLDAS_histograms/{hist_name}_{variable}.png")
+            plt.savefig(f"WLDAS_hist_plots/{hist_name}_{variable}.png")
             plt.close()
 
     def _filter_by_dust_points(self):
