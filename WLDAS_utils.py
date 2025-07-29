@@ -9,15 +9,13 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 class WldasData:
-    def __init__(self, date, engine=None, chunks=None, bounds=None):
+    def __init__(self, date, engine=None, chunks=None):
         self.date = date
         self.download_dir = Path("WLDAS_data")
         self.engine = engine
         self.chunks = chunks
-        self.bounds = bounds
         self._get_filepath()
         self._get_data(view_vars=True)
-        self._set_bounds()
 
     def _get_filepath(self):
         self.filepath = None
@@ -88,15 +86,19 @@ class WldasData:
             for var in self.ds.data_vars:
                 print(f"{var} => {self.ds[var].attrs.get("standard_name")}, {self.ds[var].attrs.get("long_name")}, units = {self.ds[var].attrs.get("units")}")
 
-    def _set_bounds(self):
-        if self.bounds:
-            if not isinstance(self.bounds, list) & len(self.bounds) != 4:
-                print("Bounds must be a list of four coordinates: [Latitude South, Latitude North, Longitude West, Longitude East]")
-                print("Not using bounds.")
-                self.bounds = None
-            self.ds = self.ds.sel(
-                lat=slice(self.bounds[0], self.bounds[1]),
-                lon=slice(self.bounds[2], self.bounds[3]))
+    def filter_by_bounds(self, bounds=None):
+        if not isinstance(bounds, list) or len(bounds) != 4:
+            print("Bounds must be a list of four coordinates: [Latitude South, Latitude North, Longitude West, Longitude East]")
+            return
+        self.bounds = bounds
+        self.ds = self.ds.sel(
+            lat=slice(self.bounds[0], self.bounds[1]),
+            lon=slice(self.bounds[2], self.bounds[3]))
+            
+    def get_shape(self):
+        first_var_name = list(self.ds.data_vars)[0]
+        shape = self.ds[first_var_name].shape
+        print(f"Shape of dataset: {shape}")
 
     def create_hist_for_variables(self, hist_name=None):
         hist_store = {}  # Will hold {"variable_name": (counts, bin_edges)}
