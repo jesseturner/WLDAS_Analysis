@@ -4,6 +4,10 @@
 import matplotlib.pyplot as plt
 import glob
 import pickle
+import numpy as np
+import os
+
+os.makedirs("WLDAS_hist_plots", exist_ok=True)
 
 all_data_file_paths = glob.glob("WLDAS_hist/all_data*.pkl")
 all_data = []
@@ -11,29 +15,39 @@ for path in all_data_file_paths:
     with open(path, 'rb') as f:
         data = pickle.load(f)
         all_data.append(data)
-print(all_data)
 
-# with open(f"WLDAS_hist/{hist_name}_{self.date.strftime('%Y%m%d')}.pkl", "rb") as f:
-#             hist_store = pickle.load(f)
-#         os.makedirs("WLDAS_hist_plots", exist_ok=True)
-#         for variable in self.ds.data_vars:
-#             if variable not in hist_store:
-#                 print(f"Skipping '{variable}' — no histogram stored.")
-#                 continue
+dust_points_file_paths = glob.glob("WLDAS_hist/dust_points*.pkl")
+dust_points = []
+for path in dust_points_file_paths:
+    with open(path, 'rb') as f:
+        data = pickle.load(f)
+        dust_points.append(data)
 
-#             long_name, units, counts, bin_edges = hist_store[variable]
-#             bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+for dict_all, dict_dust in zip(all_data, dust_points):
+    for var in dict_all.keys():
+        print(var)
+        long_name, units, counts_all, bin_edges_all = dict_all[var]
+        long_name, units, counts_dust, bin_edges_dust = dict_dust[var]
+        print(long_name, units)
 
-#             fig, ax1 = plt.subplots(figsize=(10, 5))
+        fig, ax1 = plt.subplots(figsize=(10, 5))
 
-#             plt.figure(figsize=(8, 4))
-#             plt.bar(bin_centers, counts, width=np.diff(bin_edges), align="center", edgecolor="blue", color='blue', alpha=0.7,)
-#             plt.title(f"Histogram of {variable} ({long_name})")
-#             plt.xlabel(f"{units}")
-#             plt.ylabel("Frequency")
-#             plt.tight_layout()
-#             plt.savefig(f"WLDAS_hist_plots/{hist_name}_{variable}.png")
-#             plt.close()
+        bin_centers_all = (bin_edges_all[:-1] + bin_edges_all[1:]) / 2
+        bin_centers_dust = (bin_edges_dust[:-1] + bin_edges_dust[1:]) / 2
+
+        ax1.bar(bin_centers_all, counts_all, width=np.diff(bin_edges_all), align="center", edgecolor="blue", color='blue', alpha=0.7, label="WLDAS Data")
+        ax1.set_title(f"Histogram of {var} ({long_name})")
+        ax1.set_xlabel(f"{units}")
+        ax1.set_ylabel("Frequency")
+        ax1.grid(True)
+
+        ax2 = ax1.twinx()
+        ax2.bar(bin_centers_dust, counts_dust, width=np.diff(bin_edges_dust), align="center", edgecolor="orange", color='orange', alpha=0.7, label="WLDAS Data for dust region")
+
+
+
+        plt.savefig(f"WLDAS_hist_plots/{var}_{var}.png", dpi=200, bbox_inches='tight')
+        plt.close()
 
 
 # for var in data_WLDAS_all.keys():
