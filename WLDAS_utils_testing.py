@@ -8,5 +8,6 @@ wldas.get_shape()
 #wldas.create_hist_for_variables(hist_name="all_data")
 #wldas.plot_hist_for_variables(hist_name="all_data")
 
-#wldas.create_hist_for_variables(hist_name="dust_points")
-#wldas.plot_hist_for_variables(hist_name="dust_points")
+#wldas._filter_by_dust_points()
+wldas.create_hist_for_variables(hist_name="dust_points")
+wldas.plot_hist_for_variables(hist_name="dust_points")

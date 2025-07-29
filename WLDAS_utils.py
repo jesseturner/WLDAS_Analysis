@@ -154,50 +154,39 @@ class WldasData:
             plt.close()
 
     def _filter_by_dust_points(self):
+        #--- WLDAS dataset within a range of any point that has ever been a dust source
+
         #--- Read dust data into a dataframe
         file_path = 'dust_dataset_final_20241226.txt'
         dust_df = pd.read_csv(file_path, sep=r'\s+', skiprows=2, header=None)
-        dust_df.columns = [
-            'Date (YYYYMMDD)','start time (UTC)','latitude','longitude','Jesse Check'
-        ]
-        print(dust_df.head())
+        dust_df.columns = ['Date (YYYYMMDD)', 'start time (UTC)', 'latitude', 'longitude', 'Jesse Check']
 
-        #--- Create a mask of dust locations
+        #--- Clean lat/lon data
         dust_df['latitude'] = pd.to_numeric(dust_df['latitude'], errors='coerce')
         dust_df['longitude'] = pd.to_numeric(dust_df['longitude'], errors='coerce')
+        dust_df = dust_df.dropna(subset=['latitude', 'longitude'])
 
-        #------ Define grid resolution
-        lat_min, lat_max = self.bounds[0], self.bounds[1]
-        lon_min, lon_max = self.bounds[2], self.bounds[3]
+        #--- Set range from each dust source
+        buffer_deg = 0.1
 
-        #------ Create grid bins
-        #------ 2 is 0.5 degree boxes, 10 is 0.1 degree boxes
-        precision = 5
-        lat_bins = np.arange(lat_min, lat_max + 1/precision, 1/precision)
-        lon_bins = np.arange(lon_min, lon_max + 1/precision, 1/precision)
+        #--- Initialize empty mask
+        lat = self.ds['lat']
+        lon = self.ds['lon']
+        mask = xr.zeros_like(lat * 0 + lon * 0, dtype=bool)
 
-        mask = pd.DataFrame(index=lat_bins, columns=lon_bins, data=0)
-
-        #------ Populate the mask (1 if a dust event occurred in the grid cell)
-        for _, row in dust_df.iterrows():
-            if (row['latitude'] < lat_max) & (row['latitude'] > lat_min) & (row['longitude'] < lon_max) & (row['longitude'] > lon_min):
-
-                lat_idx = np.round(row['latitude'] * precision) / precision # Round to nearest bin (size set above)
-                lon_idx = np.round(row['longitude'] * precision) / precision
-
-                mask.loc[lat_idx, lon_idx] = 1  # Mark as a dust-affected cell
+        #--- Create mask with boxes around each dust point
+        for point_lat, point_lon in zip(dust_df['latitude'], dust_df['longitude']):
+            lat_mask = (lat >= point_lat - buffer_deg) & (lat <= point_lat + buffer_deg)
+            lon_mask = (lon >= point_lon - buffer_deg) & (lon <= point_lon + buffer_deg)
+            # Use broadcasting to apply lat/lon condition over grid
+            point_mask = lat_mask & lon_mask
+            mask = mask | point_mask
         
-        ds = xr.open_dataset("WLDAS_nc_files/WLDAS_NOAHMP001_DA1_20010102.D10.nc")
+        #--- Apply mask to WLDAS dataset
+        masked_ds = self.ds.where(mask, drop=True)
 
-        #--- Use `interp` to align NetCDF lat/lon with the mask
-        mask_da = mask_da.interp(lat=ds.lat, lon=ds.lon, method="nearest")
+        return masked_ds
 
-        #--- Filter WLDAS data to dust zones
-
-        # Apply mask using xarray.where()
-        ds_filtered = ds.where(~np.isnan(mask_da), drop=True)
-
-        return filtered_dataset
 
 
 
