@@ -25,6 +25,11 @@ wldas.plot_hist_for_variables(hist_name="test")
 assert len(glob.glob("WLDAS_hist_plots/test*")) == 41
 print("SUCCESS: plot_hist_for_variables")
 
+#--- filter_by_dust_points
+wldas.filter_by_dust_points()
+assert wldas.get_shape() == (1, 1559, 2114)
+print("SUCCESS: filter_by_dust_points")
+
 #--- delete created files
 for file_path in glob.glob("WLDAS_hist_plots/test*"):
     os.remove(file_path)

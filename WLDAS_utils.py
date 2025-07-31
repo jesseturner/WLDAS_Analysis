@@ -123,14 +123,8 @@ class WldasData:
             print("Options: all_data, dust_points")
             hist_name = "all_data"
 
-        dataset = self.ds # Use all data by default
-
-        #--- considering separating out this logic
-        if hist_name == "dust_points":
-            dataset = self._filter_by_dust_points()
-
-        for variable in dataset.data_vars:
-            data = dataset[variable].values.flatten()
+        for variable in self.ds.data_vars:
+            data = self.ds[variable].values.flatten()
             data = data[np.isfinite(data)]
 
             # Skip non-numeric data types (e.g., datetime64, object)
@@ -138,8 +132,8 @@ class WldasData:
                 print(f"Skipping variable '{variable}' of type {data.dtype}")
                 continue
 
-            long_name = dataset[variable].attrs.get("long_name")
-            units = dataset[variable].attrs.get("units")
+            long_name = self.ds[variable].attrs.get("long_name")
+            units = self.ds[variable].attrs.get("units")
             bin_edges = np.linspace(np.nanmin(data), np.nanmax(data), num=51)
             counts, _ = np.histogram(data, bins=bin_edges)
             hist_store[variable] = (long_name, units, counts, bin_edges)
@@ -170,7 +164,7 @@ class WldasData:
             plt.savefig(f"WLDAS_hist_plots/{hist_name}_{variable}.png")
             plt.close()
 
-    def _filter_by_dust_points(self):
+    def filter_by_dust_points(self):
         #--- WLDAS dataset within a range of any point that has ever been a dust source
 
         #--- Read dust data into a dataframe
@@ -200,9 +194,7 @@ class WldasData:
             mask = mask | point_mask
         
         #--- Apply mask to WLDAS dataset
-        masked_ds = self.ds.where(mask, drop=True)
-
-        return masked_ds
+        self.ds = self.ds.where(mask, drop=True)
     
     def delete_file(self):
         if os.path.exists(self.filepath):
