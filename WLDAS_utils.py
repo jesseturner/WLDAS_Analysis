@@ -8,14 +8,16 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 class WldasData:
-    def __init__(self, date, engine=None, chunks=None, view_vars=False):
+    def __init__(self, date, engine=None, chunks=None, print_vars=False, print_ds=False):
         self.date = date
         self.download_dir = Path("WLDAS_data")
         self.engine = engine
         self.chunks = chunks
         self.ds = None
+        self.is_downloaded = None
         self._get_filepath()
-        self.is_load = self._load_data_with_xarray(view_vars)
+        if not self.is_downloaded: self._download()
+        self.is_loaded = self._load_data_with_xarray(print_vars, print_ds)
 
     def _get_filepath(self):
         self.filepath = None
@@ -24,10 +26,11 @@ class WldasData:
         if matches:
             self.filepath = str(matches[0])
             print(f"Found file: {self.filepath}")
+            self.is_downloaded = True
         else:
-            print(f"Runing download to get file")
+            print(f"Running download to get file")
             print("Warning: WLDAS data files are large, each ~900 MB")
-            self._download()
+            self.is_downloaded = False
 
     def _download(self):
         #--- Set .netrc with GES DISC username and password
@@ -75,17 +78,19 @@ class WldasData:
                         pbar.update(len(chunk))
 
             print(f"Downloaded to {self.filepath}")
+            self.is_downloaded = True
         else:
             print(f"Failed to download: {response.status_code} {response.reason}")
             print(response.text)
+            self.is_downloaded = False
 
-    def _load_data_with_xarray(self, view_vars=False):
+    def _load_data_with_xarray(self, print_vars=False, print_ds=False):
         success = False
         if self.filepath:
             try:
                 self.ds = xr.open_dataset(self.filepath, engine=self.engine, chunks=self.chunks)
-                print(self.ds)
-                if view_vars: 
+                if print_ds: print(self.ds)
+                if print_vars: 
                     for var in self.ds.data_vars:
                         print(f"{var} => {self.ds[var].attrs.get("standard_name")}, {self.ds[var].attrs.get("long_name")}, units = {self.ds[var].attrs.get("units")}")
                 success = True
@@ -93,8 +98,8 @@ class WldasData:
                 print(f"Could not open dataset at {self.filepath}: {e}")
         return success
     
-    def is_loaded(self):
-        return self.is_load
+    def is_file_loaded(self):
+        return self.is_loaded
 
     def filter_by_bounds(self, bounds=None):
         if not isinstance(bounds, list) or len(bounds) != 4:
@@ -108,7 +113,7 @@ class WldasData:
     def get_shape(self):
         first_var_name = list(self.ds.data_vars)[0]
         shape = self.ds[first_var_name].shape
-        print(f"Shape of dataset: {shape}")
+        return shape
 
     def create_hist_for_variables(self, hist_name=None):
         hist_store = {}  # Will hold {"variable_name": (counts, bin_edges)}
