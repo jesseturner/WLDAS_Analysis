@@ -1,6 +1,5 @@
 import os, requests, sys
 from pathlib import Path
-from datetime import datetime
 from tqdm import tqdm
 import xarray as xr
 import numpy as np
@@ -9,13 +8,14 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 class WldasData:
-    def __init__(self, date, engine=None, chunks=None):
+    def __init__(self, date, engine=None, chunks=None, view_vars=False):
         self.date = date
         self.download_dir = Path("WLDAS_data")
         self.engine = engine
         self.chunks = chunks
         self.ds = None
         self._get_filepath()
+        self.is_load = self._load_data_with_xarray(view_vars)
 
     def _get_filepath(self):
         self.filepath = None
@@ -31,7 +31,7 @@ class WldasData:
 
     def _download(self):
         #--- Set .netrc with GES DISC username and password
-        #--- Add a reminder if there is a no permissions error
+        #--- Add a reminder if there is a "no permissions" error
 
         YYYY = self.date.strftime('%Y')
         MM = self.date.strftime('%m')
@@ -79,7 +79,7 @@ class WldasData:
             print(f"Failed to download: {response.status_code} {response.reason}")
             print(response.text)
 
-    def get_data(self, view_vars=False):
+    def _load_data_with_xarray(self, view_vars=False):
         success = False
         if self.filepath:
             try:
@@ -92,7 +92,9 @@ class WldasData:
             except (FileNotFoundError, OSError) as e:
                 print(f"Could not open dataset at {self.filepath}: {e}")
         return success
-                
+    
+    def is_loaded(self):
+        return self.is_load
 
     def filter_by_bounds(self, bounds=None):
         if not isinstance(bounds, list) or len(bounds) != 4:
@@ -196,6 +198,12 @@ class WldasData:
         masked_ds = self.ds.where(mask, drop=True)
 
         return masked_ds
+    
+    def delete_file(self):
+        if os.path.exists(self.filepath):
+            os.remove(self.filepath)
+        else:
+            print("File not found.")
 
 
 

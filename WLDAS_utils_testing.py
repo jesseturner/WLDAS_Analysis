@@ -1,10 +1,9 @@
 from WLDAS_utils import WldasData
 from datetime import datetime
 
-wldas = WldasData(datetime(2001, 1, 1), chunks={"lat": 300, "lon": 300})
-is_data = wldas.get_data(view_vars=True)
+wldas = WldasData(datetime(2002, 1, 2), chunks={"lat": 300, "lon": 300}, view_vars=True)
 
-if is_data: 
+if wldas.is_loaded(): 
     wldas.filter_by_bounds(bounds=[27.5,44,-128,-100])
     wldas.get_shape()
 
