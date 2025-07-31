@@ -2,7 +2,7 @@ from WLDAS_utils import WldasData
 from datetime import datetime, timedelta
 
 start_date = datetime(2002, 1, 1)
-end_date = datetime(2002, 1, 3)
+end_date = datetime(2012, 12, 31)
 
 current_date = start_date
 
