@@ -19,8 +19,8 @@ print(keys)
 
 
 #--- Set variable of interest
-var = 'Swnet_tavg'
-master_bins = np.linspace(0, 300, 60)
+var = 'Evap_tavg'
+master_bins = np.linspace(-.5e-5, 2e-5, 60)
 long_name = ''
 units = ''
 
