@@ -2,6 +2,7 @@ from pathlib import Path
 import requests, os, sys
 from tqdm import tqdm
 import xarray as xr
+import pandas as pd
 
 def get_wldas_data(date, chunks=None, print_vars=False, print_ds=False):
         download_dir = Path("WLDAS_data")
@@ -104,4 +105,37 @@ def filter_by_bounds(ds, bounds=None):
     ds = ds.sel(
         lat=slice(bounds[0], bounds[1]),
         lon=slice(bounds[2], bounds[3]))
+    return ds
+
+def filter_by_dust_points(ds, dust_path):
+    #--- WLDAS dataset within a range of any point that has ever been a dust source
+
+    #--- Read dust data into a dataframe
+    dust_df = pd.read_csv(dust_path, sep=r'\s+', skiprows=2, header=None)
+    dust_df.columns = ['Date (YYYYMMDD)', 'start time (UTC)', 'latitude', 'longitude', 'Jesse Check']
+
+    #--- Clean lat/lon data
+    dust_df['latitude'] = pd.to_numeric(dust_df['latitude'], errors='coerce')
+    dust_df['longitude'] = pd.to_numeric(dust_df['longitude'], errors='coerce')
+    dust_df = dust_df.dropna(subset=['latitude', 'longitude'])
+
+    #--- Set range from each dust source
+    buffer_deg = 0.1
+
+    #--- Initialize empty mask
+    lat = ds['lat']
+    lon = ds['lon']
+    mask = xr.zeros_like(lat * 0 + lon * 0, dtype=bool)
+
+    #--- Create mask with boxes around each dust point
+    for point_lat, point_lon in zip(dust_df['latitude'], dust_df['longitude']):
+        lat_mask = (lat >= point_lat - buffer_deg) & (lat <= point_lat + buffer_deg)
+        lon_mask = (lon >= point_lon - buffer_deg) & (lon <= point_lon + buffer_deg)
+        # Use broadcasting to apply lat/lon condition over grid
+        point_mask = lat_mask & lon_mask
+        mask = mask | point_mask
+    
+    #--- Apply mask to WLDAS dataset
+    ds = ds.where(mask, drop=True)
+    
     return ds
