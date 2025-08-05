@@ -96,3 +96,12 @@ def _load_data_with_xarray(filepath, chunks, print_vars, print_ds):
             except (FileNotFoundError, OSError) as e:
                 print(f"Could not open dataset at {filepath}: {e}")
         return ds
+
+def filter_by_bounds(ds, bounds=None):
+    if not isinstance(bounds, list) or len(bounds) != 4:
+        print("Bounds must be a list of four coordinates: [Latitude South, Latitude North, Longitude West, Longitude East]")
+        return
+    ds = ds.sel(
+        lat=slice(bounds[0], bounds[1]),
+        lon=slice(bounds[2], bounds[3]))
+    return ds
