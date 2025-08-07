@@ -1,8 +1,10 @@
 from pathlib import Path
-import requests, os, sys
+import requests, os, sys, pickle
 from tqdm import tqdm
 import xarray as xr
 import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 
 def get_wldas_data(date, chunks=None, print_vars=False, print_ds=False):
         download_dir = Path("WLDAS_data")
@@ -139,3 +141,56 @@ def filter_by_dust_points(ds, dust_path):
     ds = ds.where(mask, drop=True)
     
     return ds
+
+def create_hist_for_variables(ds, hist_dir):
+    hist_store = {}  # Will hold {"variable_name": (counts, bin_edges)}
+
+    for variable in ds.data_vars:
+        data = ds[variable].values.flatten()
+        data = data[np.isfinite(data)]
+
+        # Skip non-numeric data types (e.g., datetime64, object)
+        if not np.issubdtype(data.dtype, np.number):
+            print(f"Skipping variable '{variable}' of type {data.dtype}")
+            continue
+
+        date = _datetime_from_xarray_date(ds.time)
+        long_name = ds[variable].attrs.get("long_name")
+        units = ds[variable].attrs.get("units")
+        bin_edges = np.linspace(np.nanmin(data), np.nanmax(data), num=51)
+        counts, _ = np.histogram(data, bins=bin_edges)
+        hist_store[variable] = (long_name, units, counts, bin_edges)
+
+        os.makedirs(hist_dir, exist_ok=True)
+        with open(f"{hist_dir}/{date.strftime('%Y%m%d')}.pkl", "wb") as f:
+            pickle.dump(hist_store, f)
+
+    return ds
+
+def plot_hist_for_variables(ds, hist_dir):
+    date = _datetime_from_xarray_date(ds.time)
+    
+    with open(f"{hist_dir}/{date.strftime('%Y%m%d')}.pkl", "rb") as f:
+        hist_store = pickle.load(f)
+    os.makedirs("{hist_dir}", exist_ok=True)
+    for variable in ds.data_vars:
+        if variable not in hist_store:
+            print(f"Skipping '{variable}' — no histogram stored.")
+            continue
+
+        long_name, units, counts, bin_edges = hist_store[variable]
+        bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+
+        plt.figure(figsize=(8, 4))
+        plt.bar(bin_centers, counts, width=np.diff(bin_edges), align="center", edgecolor="blue", color='blue', alpha=0.7,)
+        plt.title(f"Histogram of {variable} ({long_name})")
+        plt.xlabel(f"{units}")
+        plt.ylabel("Frequency")
+        plt.tight_layout()
+        plt.savefig(f"{hist_dir}/{variable}.png")
+        plt.close()
+
+def _datetime_from_xarray_date(xarray_time):
+    #--- grabbing the first time
+    dt = xarray_time.values[0].astype('datetime64[ms]').astype('O')
+    return dt
