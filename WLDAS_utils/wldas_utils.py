@@ -172,7 +172,7 @@ def plot_hist_for_variables(ds, hist_dir):
     
     with open(f"{hist_dir}/{date.strftime('%Y%m%d')}.pkl", "rb") as f:
         hist_store = pickle.load(f)
-    os.makedirs("{hist_dir}", exist_ok=True)
+    os.makedirs(f"{hist_dir}", exist_ok=True)
     for variable in ds.data_vars:
         if variable not in hist_store:
             print(f"Skipping '{variable}' — no histogram stored.")
