@@ -1,0 +1,9 @@
+1. https://disc.gsfc.nasa.gov/datasets?keywords=WLDAS
+2. Subset directory
+3. Download list of links
+4. Earthdata authentication:
+    .netrc with username and password
+    .urs_cookies created
+    .dodsrc with path to cookies and netrc
+5. Add subset text file to directory "<url.txt>"
+6. wget --load-cookies ~/.urs_cookies --save-cookies ~/.urs_cookies --keep-session-cookies --content-disposition -i "<url.txt>"
