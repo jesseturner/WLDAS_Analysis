@@ -209,7 +209,7 @@ def get_wldas_plus_minus_30(dust_path, wldas_path, plus_minus_30_dir):
 #--- over the timespan from 30 days before to 30 days after
     wldas_path = Path(wldas_path)
     dust_df = dust._read_dust_data_into_df(dust_path)
-    for index, row in dust_df.iterrows():
+    for index, row in dust_df.head(100).iterrows():
         date = str(row['Date (YYYYMMDD)'])
         time = str(int(row['start time (UTC)']))
         lat = str(row['latitude'])
@@ -217,8 +217,6 @@ def get_wldas_plus_minus_30(dust_path, wldas_path, plus_minus_30_dir):
 
         plus_minus_30_list = _loop_through_plus_minus_30(date, wldas_path, lat, lon)
         _save_plus_minus_30_list(plus_minus_30_dir, plus_minus_30_list, lat, lon, date, time)
-
-        # Save the plus minus 30 lists
 
 
 def _loop_through_plus_minus_30(date, wldas_path, lat, lon):
@@ -232,8 +230,14 @@ def _loop_through_plus_minus_30(date, wldas_path, lat, lon):
         #--- filter by lat lon
         if ds: 
             ds_point = ds.sel(lat=lat, lon=lon, method="nearest")
-            plus_minus_30_list.append(float(ds_point['SoilMoi00_10cm_tavg'].values[0]))
-    
+            ds_point_value = float(ds_point['SoilMoi00_10cm_tavg'].values[0])
+            if ds_point_value:
+                plus_minus_30_list.append(ds_point_value)
+            else: 
+                plus_minus_30_list.append(np.nan)
+        else: 
+            plus_minus_30_list.append(np.nan)
+
     return plus_minus_30_list
 
 def _save_plus_minus_30_list(plus_minus_30_dir, plus_minus_30_list, lat, lon, date, time):
@@ -247,7 +251,6 @@ def _save_plus_minus_30_list(plus_minus_30_dir, plus_minus_30_list, lat, lon, da
 def plot_wldas_plus_minus_30(json_filepath, plot_dir):
     with open(json_filepath, "r") as f:
         plus_minus_30_list = json.load(f)
-    print(plus_minus_30_list)
     
     # Get features from filename
     m = re.search(r'(\d{8})_(\d{4})_lat(\d+)_lon(\d+)', json_filepath)
