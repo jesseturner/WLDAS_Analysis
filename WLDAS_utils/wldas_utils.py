@@ -5,6 +5,8 @@ import xarray as xr
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from Line_dust_utils import line_dust_utils as dust
+from datetime import datetime, timedelta
 
 def get_wldas_data(date, chunks=None, print_vars=False, print_ds=False):
         download_dir = Path("WLDAS_data")
@@ -111,6 +113,7 @@ def load_data_with_xarray(filepath, chunks, print_vars, print_ds):
                         print(f"{var} => {ds[var].attrs.get("standard_name")}, {ds[var].attrs.get("long_name")}, units = {ds[var].attrs.get("units")}")
             except (FileNotFoundError, OSError) as e:
                 print(f"Could not open dataset at {filepath}: {e}")
+                ds = None
         return ds
 
 def filter_by_bounds(ds, bounds=None):
@@ -125,14 +128,7 @@ def filter_by_bounds(ds, bounds=None):
 def filter_by_dust_points(ds, dust_path):
     #--- WLDAS dataset within a range of any point that has ever been a dust source
 
-    #--- Read dust data into a dataframe
-    dust_df = pd.read_csv(dust_path, sep=r'\s+', skiprows=2, header=None)
-    dust_df.columns = ['Date (YYYYMMDD)', 'start time (UTC)', 'latitude', 'longitude', 'Jesse Check']
-
-    #--- Clean lat/lon data
-    dust_df['latitude'] = pd.to_numeric(dust_df['latitude'], errors='coerce')
-    dust_df['longitude'] = pd.to_numeric(dust_df['longitude'], errors='coerce')
-    dust_df = dust_df.dropna(subset=['latitude', 'longitude'])
+    dust_df = dust._read_dust_data_into_df(dust_path)
 
     #--- Set range from each dust source
     buffer_deg = 0.1
@@ -207,3 +203,27 @@ def _datetime_from_xarray_date(xarray_time):
     #--- grabbing the first time
     dt = xarray_time.values[0].astype('datetime64[ms]').astype('O')
     return dt
+
+def get_wldas_plus_minus_30(dust_path, wldas_path, plus_minus_30_dir):
+    wldas_path = Path(wldas_path)
+    dust_df = dust._read_dust_data_into_df(dust_path)
+    for index, row in dust_df.iterrows():
+        date = str(row['Date (YYYYMMDD)'])
+        time = str(int(row['start time (UTC)']))
+        lat = str(row['latitude'])
+        lon = str(row['longitude'])
+
+        # Loop through range -30 to 30
+        base_date = datetime.strptime(date, "%Y%m%d")
+        for offset in range(-30, 31):
+            date_i = base_date + timedelta(days=offset)
+            date_i_str = datetime.strftime(date_i, "%Y%m%d")
+            wldas_filepath = wldas_path / f"WLDAS_NOAHMP001_DA1_{date_i_str}.D10.nc.SUB.nc4"
+            ds = load_data_with_xarray(wldas_filepath, chunks=None, print_vars=False, print_ds=False)
+            #--- filter by lat lon
+            if ds: 
+                ds_point = ds.sel(lat=lat, lon=lon, method="nearest")
+                print(ds_point['SoilMoi00_10cm_tavg'].values)
+
+        os.makedirs(plus_minus_30_dir, exist_ok=True)
+        

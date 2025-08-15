@@ -1,4 +1,5 @@
 from WLDAS_utils import wldas_utils as wldas
+from Line_dust_utils import line_dust_utils as dust
 from datetime import datetime
 
 #ds = wldas.get_wldas_data(datetime(2003, 1, 9), chunks={"lat": 300, "lon": 300}, print_vars=True, print_ds=True)
@@ -11,8 +12,10 @@ from datetime import datetime
 
 #ds = wldas.plot_hist_for_variables(ds, "WLDAS_hist_test")
 
-wldas.get_wldas_data_bulk_subset()
+#filepath = "WLDAS_download/WLDAS_NOAHMP001_DA1_20010112.D10.nc.SUB.nc4"
 
-filepath = "WLDAS_download/WLDAS_NOAHMP001_DA1_20010112.D10.nc.SUB.nc4"
+#ds = wldas.load_data_with_xarray(filepath, chunks=None, print_vars=False, print_ds=True)
 
-ds = wldas.load_data_with_xarray(filepath, chunks=None, print_vars=False, print_ds=True)
+dust_path = "Line_dust_data/dust_dataset_final_20241226.txt"
+wldas_path = "WLDAS_data_subset"
+wldas.get_wldas_plus_minus_30(dust_path, wldas_path)
