@@ -1,5 +1,5 @@
 from pathlib import Path
-import requests, os, sys, pickle
+import requests, os, sys, pickle, json, re
 from tqdm import tqdm
 import xarray as xr
 import pandas as pd
@@ -7,7 +7,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from Line_dust_utils import line_dust_utils as dust
 from datetime import datetime, timedelta
-import json
 
 def get_wldas_data(date, chunks=None, print_vars=False, print_ds=False):
         download_dir = Path("WLDAS_data")
@@ -206,6 +205,8 @@ def _datetime_from_xarray_date(xarray_time):
     return dt
 
 def get_wldas_plus_minus_30(dust_path, wldas_path, plus_minus_30_dir):
+#--- For each dust case, get the WLDAS soil moisture for that location
+#--- over the timespan from 30 days before to 30 days after
     wldas_path = Path(wldas_path)
     dust_df = dust._read_dust_data_into_df(dust_path)
     for index, row in dust_df.iterrows():
@@ -235,6 +236,26 @@ def get_wldas_plus_minus_30(dust_path, wldas_path, plus_minus_30_dir):
         with open(f"{plus_minus_30_dir}/{date}_{time}_lat{lat_clean}_lon{lon_clean}.json", "w") as f:
             json.dump(plus_minus_30_list, f)
 
-def plot_wldas_plus_minus_30(json_filepath):
+def plot_wldas_plus_minus_30(json_filepath, plot_dir):
     with open(json_filepath, "r") as f:
-        loaded_list = json.load(f)
+        plus_minus_30_list = json.load(f)
+    
+    # Get features from filename
+    m = re.search(r'(\d{8})_(\d{4})_lat(\d+)_lon(\d+)', json_filepath)
+    if m:
+        date_str, time_str, lat_str, lon_str = m.groups()
+        formatted_date = f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:]} {time_str[:2]}:{time_str[2:]}"
+        lat = int(lat_str) / 100
+        lon = -int(lon_str) / 100
+        formatted_coords = f"({lat:.2f}, {lon:.2f})"
+
+    plt.figure(figsize=(8, 4))
+    plt.plot(plus_minus_30_list)
+    plt.title(f"{formatted_date} {formatted_coords}")
+    plt.xlabel("Days From Dust Event")
+    plt.ylabel("Soil Moisture (m$^3$/m$^3$)")
+    plt.tight_layout()
+    
+    os.makedirs(plot_dir, exist_ok=True)
+    plt.savefig(f"{plot_dir}/{date_str}_{time_str}_{lat_str}_{lon_str}.png")
+    plt.close()
