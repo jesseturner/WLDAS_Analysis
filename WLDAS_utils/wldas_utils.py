@@ -12,7 +12,7 @@ def get_wldas_data(date, chunks=None, print_vars=False, print_ds=False):
         if not filepath:
             filepath = _run_download_wldas(date, download_dir)
         if filepath:
-            ds = _load_data_with_xarray(filepath, chunks, print_vars, print_ds)
+            ds = load_data_with_xarray(filepath, chunks, print_vars, print_ds)
         else: 
             print("No data found locally or at download link.")
             ds = None
@@ -88,7 +88,7 @@ def _write_file_to_local_disk(response, filepath, filename):
                 pbar.update(len(chunk))
     return
 
-def _load_data_with_xarray(filepath, chunks, print_vars, print_ds):
+def load_data_with_xarray(filepath, chunks, print_vars, print_ds):
         if filepath:
             try:
                 ds = xr.open_dataset(filepath, chunks=chunks)
