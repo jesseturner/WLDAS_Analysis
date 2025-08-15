@@ -19,6 +19,19 @@ def get_wldas_data(date, chunks=None, print_vars=False, print_ds=False):
         
         return ds
 
+def get_wldas_data_bulk_subset():
+    print("Instructions: This is done through NASA DISC.")
+    print("1. https://disc.gsfc.nasa.gov/datasets?keywords=WLDAS")
+    print("2. Subset directory")
+    print("3. Download list of links")
+    print("4. Earthdata authentication:")
+    print("     .netrc with username and password")
+    print("     .urs_cookies created")
+    print("     .dodsrc with path to cookies and netrc")
+    print("5. Add subset text file to directory <url.txt>")
+    print("6. wget --load-cookies ~/.urs_cookies --save-cookies ~/.urs_cookies --keep-session-cookies --content-disposition -i '<url.txt>'")
+    return
+
 def _get_local_wldas(date, download_dir):
     date_str = date.strftime("%Y%m%d")
     matches = list(download_dir.glob(f"*{date_str}*"))

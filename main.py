@@ -11,6 +11,8 @@ from datetime import datetime
 
 #ds = wldas.plot_hist_for_variables(ds, "WLDAS_hist_test")
 
+wldas.get_wldas_data_bulk_subset()
+
 filepath = "WLDAS_download/WLDAS_NOAHMP001_DA1_20010112.D10.nc.SUB.nc4"
 
 ds = wldas.load_data_with_xarray(filepath, chunks=None, print_vars=False, print_ds=True)
