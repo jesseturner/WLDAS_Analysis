@@ -17,7 +17,7 @@ from WLDAS_utils import wldas_utils as wldas
 dust_path = "Line_dust_data/dust_dataset_final_20241226.txt"
 wldas_path = "WLDAS_data_subset"
 plus_minus_30_dir = "WLDAS_plus_minus_30"
-#wldas.get_wldas_plus_minus_30(dust_path, wldas_path, plus_minus_30_dir)
+wldas.get_wldas_plus_minus_30(dust_path, wldas_path, plus_minus_30_dir)
 
-json_filepath = "WLDAS_plus_minus_30/20010113_1800_lat3389_lon10294.json"
-wldas.plot_wldas_plus_minus_30(json_filepath, "WLDAS_plus_minus_30_plots")
+#json_filepath = "WLDAS_plus_minus_30/20030405_1830_lat3049_lon10781.json"
+#wldas.plot_wldas_plus_minus_30(json_filepath, "WLDAS_plus_minus_30_plots")

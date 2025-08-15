@@ -215,30 +215,39 @@ def get_wldas_plus_minus_30(dust_path, wldas_path, plus_minus_30_dir):
         lat = str(row['latitude'])
         lon = str(row['longitude'])
 
-        # Loop through range -30 to 30
-        base_date = datetime.strptime(date, "%Y%m%d")
-        plus_minus_30_list = []
-        for offset in range(-30, 31):
-            date_i = base_date + timedelta(days=offset)
-            date_i_str = datetime.strftime(date_i, "%Y%m%d")
-            wldas_filepath = wldas_path / f"WLDAS_NOAHMP001_DA1_{date_i_str}.D10.nc.SUB.nc4"
-            ds = load_data_with_xarray(wldas_filepath, chunks=None, print_vars=False, print_ds=False)
-            #--- filter by lat lon
-            if ds: 
-                ds_point = ds.sel(lat=lat, lon=lon, method="nearest")
-                plus_minus_30_list.append(float(ds_point['SoilMoi00_10cm_tavg'].values[0]))
+        plus_minus_30_list = _loop_through_plus_minus_30(date, wldas_path, lat, lon)
+        _save_plus_minus_30_list(plus_minus_30_dir, plus_minus_30_list, lat, lon, date, time)
 
         # Save the plus minus 30 lists
-        os.makedirs(plus_minus_30_dir, exist_ok=True)
-        lat_clean = lat.replace(".", "")
-        lon_clean = lon.replace("-", "").replace(".", "")
-        print(plus_minus_30_list)
-        with open(f"{plus_minus_30_dir}/{date}_{time}_lat{lat_clean}_lon{lon_clean}.json", "w") as f:
-            json.dump(plus_minus_30_list, f)
+
+
+def _loop_through_plus_minus_30(date, wldas_path, lat, lon):
+    base_date = datetime.strptime(date, "%Y%m%d")
+    plus_minus_30_list = []
+    for offset in range(-30, 31):
+        date_i = base_date + timedelta(days=offset)
+        date_i_str = datetime.strftime(date_i, "%Y%m%d")
+        wldas_filepath = wldas_path / f"WLDAS_NOAHMP001_DA1_{date_i_str}.D10.nc.SUB.nc4"
+        ds = load_data_with_xarray(wldas_filepath, chunks=None, print_vars=False, print_ds=False)
+        #--- filter by lat lon
+        if ds: 
+            ds_point = ds.sel(lat=lat, lon=lon, method="nearest")
+            plus_minus_30_list.append(float(ds_point['SoilMoi00_10cm_tavg'].values[0]))
+    
+    return plus_minus_30_list
+
+def _save_plus_minus_30_list(plus_minus_30_dir, plus_minus_30_list, lat, lon, date, time):
+    os.makedirs(plus_minus_30_dir, exist_ok=True)
+    lat_clean = lat.replace(".", "")
+    lon_clean = lon.replace("-", "").replace(".", "")
+    with open(f"{plus_minus_30_dir}/{date}_{time}_lat{lat_clean}_lon{lon_clean}.json", "w") as f:
+        json.dump(plus_minus_30_list, f)
+    return
 
 def plot_wldas_plus_minus_30(json_filepath, plot_dir):
     with open(json_filepath, "r") as f:
         plus_minus_30_list = json.load(f)
+    print(plus_minus_30_list)
     
     # Get features from filename
     m = re.search(r'(\d{8})_(\d{4})_lat(\d+)_lon(\d+)', json_filepath)
@@ -250,9 +259,10 @@ def plot_wldas_plus_minus_30(json_filepath, plot_dir):
         formatted_coords = f"({lat:.2f}, {lon:.2f})"
 
     plt.figure(figsize=(8, 4))
-    plt.plot(plus_minus_30_list)
+    plt.plot(plus_minus_30_list, color='0', marker='o')
     plt.title(f"{formatted_date} {formatted_coords}")
     plt.xlabel("Days From Dust Event")
+    plt.xticks(np.arange(0, 61, 3), labels=np.arange(-30, 31, 3))
     plt.ylabel("Soil Moisture (m$^3$/m$^3$)")
     plt.tight_layout()
     
