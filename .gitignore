@@ -6,3 +6,4 @@ Line_dust_data/*.txt
 *.out
 *.nc4
 *.pdf
+*.json

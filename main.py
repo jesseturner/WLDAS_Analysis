@@ -1,6 +1,4 @@
 from WLDAS_utils import wldas_utils as wldas
-from Line_dust_utils import line_dust_utils as dust
-from datetime import datetime
 
 #ds = wldas.get_wldas_data(datetime(2003, 1, 9), chunks={"lat": 300, "lon": 300}, print_vars=True, print_ds=True)
 
@@ -18,4 +16,5 @@ from datetime import datetime
 
 dust_path = "Line_dust_data/dust_dataset_final_20241226.txt"
 wldas_path = "WLDAS_data_subset"
-wldas.get_wldas_plus_minus_30(dust_path, wldas_path)
+plus_minus_30_dir = "WLDAS_plus_minus_30"
+wldas.get_wldas_plus_minus_30(dust_path, wldas_path, plus_minus_30_dir)

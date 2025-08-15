@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from Line_dust_utils import line_dust_utils as dust
 from datetime import datetime, timedelta
+import json
 
 def get_wldas_data(date, chunks=None, print_vars=False, print_ds=False):
         download_dir = Path("WLDAS_data")
@@ -215,6 +216,7 @@ def get_wldas_plus_minus_30(dust_path, wldas_path, plus_minus_30_dir):
 
         # Loop through range -30 to 30
         base_date = datetime.strptime(date, "%Y%m%d")
+        plus_minus_30_list = []
         for offset in range(-30, 31):
             date_i = base_date + timedelta(days=offset)
             date_i_str = datetime.strftime(date_i, "%Y%m%d")
@@ -223,7 +225,16 @@ def get_wldas_plus_minus_30(dust_path, wldas_path, plus_minus_30_dir):
             #--- filter by lat lon
             if ds: 
                 ds_point = ds.sel(lat=lat, lon=lon, method="nearest")
-                print(ds_point['SoilMoi00_10cm_tavg'].values)
+                plus_minus_30_list.append(float(ds_point['SoilMoi00_10cm_tavg'].values[0]))
 
+        # Save the plus minus 30 lists
         os.makedirs(plus_minus_30_dir, exist_ok=True)
-        
+        lat_clean = lat.replace(".", "")
+        lon_clean = lon.replace("-", "").replace(".", "")
+        print(plus_minus_30_list)
+        with open(f"{plus_minus_30_dir}/{date}_{time}_lat{lat_clean}_lon{lon_clean}.json", "w") as f:
+            json.dump(plus_minus_30_list, f)
+
+def plot_wldas_plus_minus_30(json_filepath):
+    with open(json_filepath, "r") as f:
+        loaded_list = json.load(f)
