@@ -1,5 +1,5 @@
 from pathlib import Path
-import requests, os, sys, pickle, json, re
+import requests, os, sys, pickle, json, re, glob
 from tqdm import tqdm
 import xarray as xr
 import pandas as pd
@@ -209,7 +209,8 @@ def get_wldas_plus_minus_30(dust_path, wldas_path, plus_minus_30_dir):
 #--- over the timespan from 30 days before to 30 days after
     wldas_path = Path(wldas_path)
     dust_df = dust._read_dust_data_into_df(dust_path)
-    for index, row in dust_df.head(100).iterrows():
+    print("Currently capped at 100 rows")
+    for index, row in dust_df.head(100).iterrows(): #--- Open this up to the whole dataset when ready
         date = str(row['Date (YYYYMMDD)'])
         time = str(int(row['start time (UTC)']))
         lat = str(row['latitude'])
@@ -217,6 +218,7 @@ def get_wldas_plus_minus_30(dust_path, wldas_path, plus_minus_30_dir):
 
         plus_minus_30_list = _loop_through_plus_minus_30(date, wldas_path, lat, lon)
         _save_plus_minus_30_list(plus_minus_30_dir, plus_minus_30_list, lat, lon, date, time)
+    return
 
 
 def _loop_through_plus_minus_30(date, wldas_path, lat, lon):
@@ -229,8 +231,7 @@ def _loop_through_plus_minus_30(date, wldas_path, lat, lon):
         ds = load_data_with_xarray(wldas_filepath, chunks=None, print_vars=False, print_ds=False)
         #--- filter by lat lon
         if ds: 
-            ds_point = ds.sel(lat=lat, lon=lon, method="nearest")
-            ds_point_value = float(ds_point['SoilMoi00_10cm_tavg'].values[0])
+            ds_point_value = _filter_wldas_by_lat_lon(ds, lat, lon)
             if ds_point_value:
                 plus_minus_30_list.append(ds_point_value)
             else: 
@@ -239,6 +240,11 @@ def _loop_through_plus_minus_30(date, wldas_path, lat, lon):
             plus_minus_30_list.append(np.nan)
 
     return plus_minus_30_list
+
+def _filter_wldas_by_lat_lon(ds, lat, lon):
+    ds_point = ds.sel(lat=lat, lon=lon, method="nearest")
+    ds_point_soil_moisture = float(ds_point['SoilMoi00_10cm_tavg'].values[0])
+    return ds_point_soil_moisture
 
 def _save_plus_minus_30_list(plus_minus_30_dir, plus_minus_30_list, lat, lon, date, time):
     os.makedirs(plus_minus_30_dir, exist_ok=True)
@@ -251,24 +257,60 @@ def _save_plus_minus_30_list(plus_minus_30_dir, plus_minus_30_list, lat, lon, da
 def plot_wldas_plus_minus_30(json_filepath, plot_dir):
     with open(json_filepath, "r") as f:
         plus_minus_30_list = json.load(f)
-    
-    # Get features from filename
+
+    date_str, time_str, lat_str, lon_str = _get_features_from_json_filename(json_filepath)
+    formatted_coords = _get_formatted_coords(lat_str, lon_str)
+    formatted_date = f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:]} {time_str[:2]}:{time_str[2:]}"
+
+    plot_title = f"{formatted_date} {formatted_coords}"
+    plot_path = f"{plot_dir}/{date_str}_{time_str}_{lat_str}_{lon_str}.png"
+
+    _line_plot(plus_minus_30_list, plot_title, plot_dir, plot_path)
+    return
+
+def _get_features_from_json_filename(json_filepath):
     m = re.search(r'(\d{8})_(\d{4})_lat(\d+)_lon(\d+)', json_filepath)
     if m:
         date_str, time_str, lat_str, lon_str = m.groups()
-        formatted_date = f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:]} {time_str[:2]}:{time_str[2:]}"
-        lat = int(lat_str) / 100
-        lon = -int(lon_str) / 100
-        formatted_coords = f"({lat:.2f}, {lon:.2f})"
+    return date_str, time_str, lat_str, lon_str
 
+def _get_formatted_coords(lat_str, lon_str):
+    lat = int(lat_str) / 100
+    lon = -int(lon_str) / 100
+    formatted_coords = f"({lat:.2f}, {lon:.2f})"
+    return formatted_coords
+
+def _line_plot(data, plot_title, plot_dir, plot_path):
     plt.figure(figsize=(8, 4))
-    plt.plot(plus_minus_30_list, color='0', marker='o')
-    plt.title(f"{formatted_date} {formatted_coords}")
+    plt.plot(data, color='0', marker='o')
+    plt.title(plot_title)
     plt.xlabel("Days From Dust Event")
     plt.xticks(np.arange(0, 61, 3), labels=np.arange(-30, 31, 3))
     plt.ylabel("Soil Moisture (m$^3$/m$^3$)")
     plt.tight_layout()
     
     os.makedirs(plot_dir, exist_ok=True)
-    plt.savefig(f"{plot_dir}/{date_str}_{time_str}_{lat_str}_{lon_str}.png")
+    plt.savefig(plot_path)
     plt.close()
+    return
+
+def plot_wldas_plus_minus_30_average(json_dir, plot_dir):
+    average_list = _average_json_files(json_dir)
+
+    plot_title = "Average soil moisture associated with each blowing dust event"
+    plot_path = f"{plot_dir}/average_soil_moisture.png"
+
+    _line_plot(average_list, plot_title, plot_dir, plot_path)
+    return
+
+def _average_json_files(json_dir):
+    file_list = glob.glob(f"{json_dir}/*.json")
+    all_data = []
+    for file_path in file_list:
+        with open(file_path, 'r') as f:
+            data = json.load(f)
+            all_data.append(data)
+
+    all_data_array = np.array(all_data)
+    average_list = np.nanmean(all_data_array, axis=0)
+    return average_list

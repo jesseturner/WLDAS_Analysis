@@ -2,6 +2,6 @@ Requires `.netrc` set with GES DISC username and password. Might also require `.
 
 WLDAS functions are in `WLDAS_utils/wldas_utils.py`.
 
-WLDAS subset download is in WLDAS_Download. This functionality will be added to the utils soon. 
+WLDAS subset download instructions are in `get_wldas_data_bulk_subset()`.
 
 `z_WLDAS_custom_plot.py` was used to combine histograms, but is messy and won't be maintained. 
