@@ -209,8 +209,8 @@ def get_wldas_plus_minus_30(dust_path, wldas_path, plus_minus_30_dir):
 #--- over the timespan from 30 days before to 30 days after
     wldas_path = Path(wldas_path)
     dust_df = dust._read_dust_data_into_df(dust_path)
-    print("Currently capped at 100 rows")
-    for index, row in dust_df.head(100).iterrows(): #--- Open this up to the whole dataset when ready
+    for index, row in dust_df.iterrows():
+        print(f"Plus minus 30 for {index} of {len(dust_df)}")
         date = str(row['Date (YYYYMMDD)'])
         time = str(int(row['start time (UTC)']))
         lat = str(row['latitude'])
@@ -228,8 +228,11 @@ def _loop_through_plus_minus_30(date, wldas_path, lat, lon):
         date_i = base_date + timedelta(days=offset)
         date_i_str = datetime.strftime(date_i, "%Y%m%d")
         wldas_filepath = wldas_path / f"WLDAS_NOAHMP001_DA1_{date_i_str}.D10.nc.SUB.nc4"
-        ds = load_data_with_xarray(wldas_filepath, chunks=None, print_vars=False, print_ds=False)
-        #--- filter by lat lon
+        ds = None
+        try:
+            ds = load_data_with_xarray(wldas_filepath, chunks=None, print_vars=False, print_ds=False)
+        except Exception as e:
+            print(f"An error occurred: {e}")
         if ds: 
             ds_point_value = _filter_wldas_by_lat_lon(ds, lat, lon)
             if ds_point_value:
@@ -308,7 +311,10 @@ def _average_json_files(json_dir):
     all_data = []
     for file_path in file_list:
         with open(file_path, 'r') as f:
-            data = json.load(f)
+            try: 
+                data = json.load(f)
+            except Exception as e:
+                print(f"Could not open json at {f}: {e}")
             all_data.append(data)
 
     all_data_array = np.array(all_data)

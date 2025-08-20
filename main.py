@@ -20,7 +20,7 @@ plus_minus_30_dir = "WLDAS_plus_minus_30"
 
 #wldas.get_wldas_plus_minus_30(dust_path, wldas_path, plus_minus_30_dir)
 
-json_filepath = "WLDAS_plus_minus_30/20010224_1730_lat3407_lon10244.json"
+#json_filepath = "WLDAS_plus_minus_30/20010224_1730_lat3407_lon10244.json"
 #wldas.plot_wldas_plus_minus_30(json_filepath, "WLDAS_plus_minus_30_plots")
 
 wldas.plot_wldas_plus_minus_30_average(plus_minus_30_dir, "WLDAS_plus_minus_30_plots_average")
