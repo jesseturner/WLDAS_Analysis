@@ -12,7 +12,7 @@ from WLDAS_utils import wldas_utils as wldas
 
 
 dust_path = "Line_dust_data/dust_dataset_final_20241226.txt"
-wldas_path = "WLDAS_data_subset"
+wldas_path = "/mnt/data2/jturner/wldas_data"
 plus_minus_30_dir = "WLDAS_plus_minus_30"
 
 # filepath = f"{wldas_path}/WLDAS_NOAHMP001_DA1_20010112.D10.nc.SUB.nc4"
@@ -20,7 +20,7 @@ plus_minus_30_dir = "WLDAS_plus_minus_30"
 
 #wldas.get_wldas_plus_minus_30(dust_path, wldas_path, plus_minus_30_dir)
 
-#json_filepath = "WLDAS_plus_minus_30/20010224_1730_lat3407_lon10244.json"
-#wldas.plot_wldas_plus_minus_30(json_filepath, "WLDAS_plus_minus_30_plots")
+json_filepath = "WLDAS_plus_minus_30/20040219_1730_lat3126_lon10689.json"
+wldas.plot_wldas_plus_minus_30(json_filepath, "WLDAS_plus_minus_30_plots")
 
-wldas.plot_wldas_plus_minus_30_average(plus_minus_30_dir, "WLDAS_plus_minus_30_plots_average")
+#wldas.plot_wldas_plus_minus_30_average(plus_minus_30_dir, "WLDAS_plus_minus_30_plots_average")
