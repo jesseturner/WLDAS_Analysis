@@ -298,7 +298,7 @@ def _line_plot(data, plot_title, plot_dir, plot_path):
     return
 
 def plot_wldas_plus_minus_30_average(json_dir, plot_dir):
-    average_list = _average_json_files(json_dir)
+    average_list, _ = _average_json_files(json_dir)
 
     plot_title = "Average soil moisture associated with each blowing dust event"
     plot_path = f"{plot_dir}/average_soil_moisture.png"
@@ -319,4 +319,29 @@ def _average_json_files(json_dir):
 
     all_data_array = np.array(all_data)
     average_list = np.nanmean(all_data_array, axis=0)
-    return average_list
+    std_list = np.nanstd(all_data_array, axis=0)
+    return average_list, std_list
+
+def plot_wldas_plus_minus_30_average_std(json_dir, plot_dir):
+    average_list, std_list = _average_json_files(json_dir)
+
+    plot_title = "Average soil moisture associated with each blowing dust event"
+    plot_path = f"{plot_dir}/average_soil_moisture_std.png"
+
+    _line_plot_std(average_list, std_list, plot_title, plot_dir, plot_path)
+    return
+
+def _line_plot_std(data, std_data, plot_title, plot_dir, plot_path):
+    plt.figure(figsize=(8, 4))
+    plt.errorbar(np.arange(len(data)), data, yerr=std_data, fmt='-o', color='0',
+                ecolor='0', elinewidth=1, capsize=3)
+    plt.title(plot_title)
+    plt.xlabel("Days From Dust Event")
+    plt.xticks(np.arange(0, 61, 3), labels=np.arange(-30, 31, 3))
+    plt.ylabel("Soil Moisture (m$^3$/m$^3$)")
+    plt.tight_layout()
+    
+    os.makedirs(plot_dir, exist_ok=True)
+    plt.savefig(plot_path)
+    plt.close()
+    return
