@@ -9,17 +9,16 @@ from Line_dust_utils import line_dust_utils as dust
 from datetime import datetime, timedelta
 
 def get_wldas_data(date, chunks=None, print_vars=False, print_ds=False):
-        download_dir = Path("WLDAS_data")
-        filepath = _get_local_wldas(date, download_dir)
-        if not filepath:
-            filepath = _run_download_wldas(date, download_dir)
-        if filepath:
-            ds = load_data_with_xarray(filepath, chunks, print_vars, print_ds)
-        else: 
-            print("No data found locally or at download link.")
-            ds = None
-        
-        return ds
+    download_dir = Path("WLDAS_data")
+    filepath = _get_local_wldas(date, download_dir)
+    if not filepath:
+        filepath = _run_download_wldas(date, download_dir)
+    if filepath:
+        ds = load_data_with_xarray(filepath, chunks, print_vars, print_ds)
+    else: 
+        print("No data found locally or at download link.")
+    
+    return ds
 
 def get_wldas_data_bulk_subset():
     print("Instructions: This is done through NASA DISC.")
@@ -104,17 +103,19 @@ def _write_file_to_local_disk(response, filepath, filename):
     return
 
 def load_data_with_xarray(filepath, chunks, print_vars, print_ds):
-        if filepath:
-            try:
-                ds = xr.open_dataset(filepath, chunks=chunks)
-                if print_ds: print(ds)
-                if print_vars: 
-                    for var in ds.data_vars:
-                        print(f"{var} => {ds[var].attrs.get("standard_name")}, {ds[var].attrs.get("long_name")}, units = {ds[var].attrs.get("units")}")
-            except (FileNotFoundError, OSError) as e:
-                print(f"Could not open dataset at {filepath}: {e}")
-                ds = None
-        return ds
+    ds = None
+
+    if filepath:
+        try:
+            ds = xr.open_dataset(filepath, chunks=chunks)
+            if print_ds: print(ds)
+            if print_vars: 
+                for var in ds.data_vars:
+                    print(f"{var} => {ds[var].attrs.get("standard_name")}, {ds[var].attrs.get("long_name")}, units = {ds[var].attrs.get("units")}")
+        except (FileNotFoundError, OSError) as e:
+            print(f"Could not open dataset at {filepath}: {e}")
+            ds = None
+    return ds
 
 def filter_by_bounds(ds, bounds=None):
     if not isinstance(bounds, list) or len(bounds) != 4:
@@ -228,11 +229,7 @@ def _loop_through_plus_minus_30(date, wldas_path, lat, lon):
         date_i = base_date + timedelta(days=offset)
         date_i_str = datetime.strftime(date_i, "%Y%m%d")
         wldas_filepath = wldas_path / f"WLDAS_NOAHMP001_DA1_{date_i_str}.D10.nc.SUB.nc4"
-        ds = None
-        try:
-            ds = load_data_with_xarray(wldas_filepath, chunks=None, print_vars=False, print_ds=False)
-        except Exception as e:
-            print(f"An error occurred: {e}")
+        ds = load_data_with_xarray(wldas_filepath, chunks=None, print_vars=False, print_ds=False)
         if ds: 
             ds_point_value = _filter_wldas_by_lat_lon(ds, lat, lon)
             if ds_point_value:
