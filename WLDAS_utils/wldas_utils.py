@@ -280,10 +280,15 @@ def _get_formatted_coords(lat_str, lon_str):
     formatted_coords = f"({lat:.2f}, {lon:.2f})"
     return formatted_coords
 
-def _line_plot(data, plot_title, plot_dir, plot_path):
+def _line_plot(data, plot_title, plot_dir, plot_path, ylim=None):
+    """
+    y_lim: [min, max]
+    """
+
     plt.figure(figsize=(8, 4))
     plt.plot(data, color='0', marker='o')
     plt.title(plot_title)
+    plt.ylim(ylim)
     plt.xlabel("Days From Dust Event")
     plt.xticks(np.arange(0, 61, 3), labels=np.arange(-30, 31, 3))
     plt.ylabel("Soil Moisture (m$^3$/m$^3$)")
@@ -294,26 +299,33 @@ def _line_plot(data, plot_title, plot_dir, plot_path):
     plt.close()
     return
 
-def plot_wldas_plus_minus_30_average(json_dir, plot_dir):
-    average_list, _ = _average_json_files(json_dir)
+def plot_wldas_plus_minus_30_average(json_dir, plot_dir, is_std=False, boundary_box=[], location_str="American Southwest"):
+    """
+    boundary_box: [lat_min, lon_min, lat_max, lon_max]
+    """
 
-    plot_title = "Average soil moisture associated with each blowing dust event"
-    plot_path = f"{plot_dir}/average_soil_moisture.png"
-
-    _line_plot(average_list, plot_title, plot_dir, plot_path)
-    return
-
-def plot_wldas_plus_minus_30_std(json_dir, plot_dir):
-    _, std_list = _average_json_files(json_dir)
-
-    plot_title = "Standard deviation of soil moisture associated with each blowing dust event"
-    plot_path = f"{plot_dir}/std_soil_moisture.png"
-
-    _line_plot(std_list, plot_title, plot_dir, plot_path)
-    return
-
-def _average_json_files(json_dir):
     file_list = glob.glob(f"{json_dir}/*.json")
+
+    if boundary_box:
+        file_list = _get_file_list_filtered_by_lat_lon(file_list, boundary_box)
+
+    average_list, std_list = _average_json_files(file_list)
+
+    plot_title = f"Average soil moisture associated with each blowing dust event \n ({location_str})"
+    location_str_save = location_str.lower().replace(" ", "_")
+    plot_path = f"{plot_dir}/average_soil_moisture_{location_str_save}.png"
+    data_list = average_list
+
+    if is_std:
+        plot_title = f"Standard deviation of soil moisture associated with each blowing dust event \n ({location_str})"
+        plot_path = f"{plot_dir}/std_soil_moisture_{location_str_save}.png"
+        data_list = std_list
+        
+    _line_plot(data_list, plot_title, plot_dir, plot_path)
+
+    return
+
+def _average_json_files(file_list):
     all_data = []
     for file_path in file_list:
         with open(file_path, 'r') as f:
@@ -327,3 +339,29 @@ def _average_json_files(json_dir):
     average_list = np.nanmean(all_data_array, axis=0)
     std_list = np.nanstd(all_data_array, axis=0)
     return average_list, std_list
+
+def _get_file_list_filtered_by_lat_lon(file_list, boundary_box):
+    filtered_file_list = []
+    lat_min, lon_min, lat_max, lon_max = boundary_box
+
+    for f in file_list:
+        lat, lon = parse_lat_lon(f)
+        if lat_min <= lat <= lat_max and lon_min <= lon <= lon_max:
+            filtered_file_list.append(f)
+
+    return filtered_file_list
+        
+
+def parse_lat_lon(filename: str) -> tuple[float, float]:
+    """
+    Extract latitude and longitude from filename.
+    Example: '..._lat3062_lon10797.json' -> (30.62, -107.97)
+    """
+    match = re.search(r"lat(\d+)_lon(\d+)", filename)
+    if not match:
+        raise ValueError(f"Could not parse lat/lon from {filename}")
+    
+    lat_str, lon_str = match.groups()
+    lat = float(lat_str[:2] + "." + lat_str[2:])
+    lon = -float(lon_str[:3] + "." + lon_str[3:])  # negative for west
+    return lat, lon
