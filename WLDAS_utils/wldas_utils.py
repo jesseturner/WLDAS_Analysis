@@ -218,7 +218,11 @@ def get_wldas_plus_minus_30(dust_path, wldas_path, plus_minus_30_dir):
         lon = str(row['longitude'])
 
         plus_minus_30_list = _loop_through_plus_minus_30(date, wldas_path, lat, lon)
-        _save_plus_minus_30_list(plus_minus_30_dir, plus_minus_30_list, lat, lon, date, time)
+
+        lat_clean = lat.replace(".", "")
+        lon_clean = lon.replace("-", "").replace(".", "")
+        list_name = f"{date}_{time}_lat{lat_clean}_lon{lon_clean}"
+        _save_plus_minus_30_list(plus_minus_30_dir, plus_minus_30_list, list_name)
     return
 
 
@@ -246,11 +250,9 @@ def _filter_wldas_by_lat_lon(ds, lat, lon):
     ds_point_soil_moisture = float(ds_point['SoilMoi00_10cm_tavg'].values[0])
     return ds_point_soil_moisture
 
-def _save_plus_minus_30_list(plus_minus_30_dir, plus_minus_30_list, lat, lon, date, time):
+def _save_plus_minus_30_list(plus_minus_30_dir, plus_minus_30_list, list_name):
     os.makedirs(plus_minus_30_dir, exist_ok=True)
-    lat_clean = lat.replace(".", "")
-    lon_clean = lon.replace("-", "").replace(".", "")
-    with open(f"{plus_minus_30_dir}/{date}_{time}_lat{lat_clean}_lon{lon_clean}.json", "w") as f:
+    with open(f"{plus_minus_30_dir}/{list_name}.json", "w") as f:
         json.dump(plus_minus_30_list, f)
     return
 
@@ -322,6 +324,20 @@ def plot_wldas_plus_minus_30_average(json_dir, plot_dir, is_std=False, boundary_
         data_list = std_list
         
     _line_plot(data_list, plot_title, plot_dir, plot_path)
+
+    return
+
+def wldas_plus_minus_30_average(json_dir, plot_dir, is_std=False, boundary_box=[], location_str="American Southwest"):
+    """
+    boundary_box: [lat_min, lon_min, lat_max, lon_max]
+    """
+
+    file_list = glob.glob(f"{json_dir}/*.json")
+
+    if boundary_box:
+        file_list = _get_file_list_filtered_by_lat_lon(file_list, boundary_box)
+
+    average_list, std_list = _average_json_files(file_list)
 
     return
 

@@ -18,7 +18,7 @@ plus_minus_30_dir = "WLDAS_plus_minus_30"
 # filepath = f"{wldas_path}/WLDAS_NOAHMP001_DA1_20010112.D10.nc.SUB.nc4"
 # ds = wldas.load_data_with_xarray(filepath, chunks=None, print_vars=False, print_ds=True)
 
-#wldas.get_wldas_plus_minus_30(dust_path, wldas_path, plus_minus_30_dir)
+# wldas.get_wldas_plus_minus_30(dust_path, wldas_path, plus_minus_30_dir)
 
 #json_filepath = "WLDAS_plus_minus_30/20040219_1730_lat3126_lon10689.json"
 #wldas.plot_wldas_plus_minus_30(json_filepath, "WLDAS_plus_minus_30_plots")
@@ -52,11 +52,11 @@ locations = {
     "N Mexico 7": [(30.9, -108.15), (30.4, -107.65)],
 }
 
-for name, ((lat_max, lon_min), (lat_min, lon_max)) in locations.items():
-    boundary_box = [lat_min, lon_min, lat_max, lon_max]
-    for is_std in (True, False):
-        print(
-            f'wldas.plot_wldas_plus_minus_30_average('
-            f'plus_minus_30_dir, "WLDAS_plus_minus_30_plots_average", '
-            f'is_std={is_std}, boundary_box={boundary_box}, location_str="{name}")'
-        )
+# for name, ((lat_max, lon_min), (lat_min, lon_max)) in locations.items():
+#     boundary_box = [lat_min, lon_min, lat_max, lon_max]
+#     for is_std in (True, False):
+#         print(
+#             f'wldas.plot_wldas_plus_minus_30_average('
+#             f'plus_minus_30_dir, "WLDAS_plus_minus_30_plots_average", '
+#             f'is_std={is_std}, boundary_box={boundary_box}, location_str="{name}")'
+#         )
