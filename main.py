@@ -64,3 +64,5 @@ locations = {
 #     print(
 #         f'wldas.plot_wldas_plus_minus_30_average_std("WLDAS_plus_minus_30_average/average_{location_str_name}.json", "WLDAS_plus_minus_30_average/std_{location_str_name}.json", "WLDAS_plus_minus_30_plots_average_std", location_str="{name}")'
 #     )
+
+wldas.plot_wldas_plus_minus_30_average_all("WLDAS_plus_minus_30_average/big_regions/","WLDAS_plus_minus_30_plots_all", ylim=None)

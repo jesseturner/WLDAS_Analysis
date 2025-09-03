@@ -5,6 +5,7 @@ import xarray as xr
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 from Line_dust_utils import line_dust_utils as dust
 from datetime import datetime, timedelta
 
@@ -417,4 +418,34 @@ def _line_plot_dual(data1, data2, plot_title, plot_dir, plot_path, ylim=None):
     os.makedirs(plot_dir, exist_ok=True)
     plt.savefig(plot_path)
     plt.close()
+    return
+
+def plot_wldas_plus_minus_30_average_all(data_dir, plot_dir, ylim=None):
+    plt.figure(figsize=(8, 16))
+
+    files = [f for f in os.listdir(data_dir) if f.endswith(".json")]
+    cmap = cm.get_cmap("Dark2", len(files))  
+
+    for i, fname in enumerate(files):
+        if fname.endswith(".json"):
+            fpath = os.path.join(data_dir, fname)
+            with open(fpath, "r") as f:
+                data = json.load(f)
+
+            label = os.path.splitext(fname)[0]
+            plt.plot(data, marker='o', color=cmap(i), label=label)
+
+    plot_title = f"Average soil moisture associated with each blowing dust event"
+    plot_path = f"{plot_dir}/average_soil_moisture_all.png"
+
+    plt.title(plot_title)
+    plt.xlabel("Index")
+    plt.ylabel("Value")
+    plt.legend()
+
+    plt.tight_layout()
+    os.makedirs(plot_dir, exist_ok=True)
+    plt.savefig(plot_path)
+    plt.close()
+
     return
