@@ -52,16 +52,15 @@ locations = {
     "N Mexico 7": [(30.9, -108.15), (30.4, -107.65)],
 }
 
+# wldas.get_wldas_plus_minus_30_average(plus_minus_30_dir, boundary_box=[28.0, -110.0, 33.3, -105.3], location_str="Chihuahua")
+# wldas.plot_wldas_plus_minus_30_average_std("WLDAS_plus_minus_30_average/average_chihuahua.json", "WLDAS_plus_minus_30_average/std_chihuahua.json", "WLDAS_plus_minus_30_plots_average_std", location_str="Chihuahua")
+
 # for name, ((lat_max, lon_min), (lat_min, lon_max)) in locations.items():
 #     boundary_box = [lat_min, lon_min, lat_max, lon_max]
-#     for is_std in (True, False):
-#         print(
-#             f'wldas.get_wldas_plus_minus_30_average('
-#             f'plus_minus_30_dir, "WLDAS_plus_minus_30_average", '
-#             f'is_std={is_std}, boundary_box={boundary_box}, location_str="{name}")'
-#         )
-
-wldas.get_wldas_plus_minus_30_average(plus_minus_30_dir, boundary_box=[28.0, -110.0, 33.3, -105.3], location_str="Chihuahua")
-wldas.plot_wldas_plus_minus_30_average("WLDAS_plus_minus_30_average/average_chihuahua.json", "WLDAS_plus_minus_30_plots_average", location_str="Chihuahua")
-
-wldas.plot_wldas_plus_minus_30_average_std("WLDAS_plus_minus_30_average/average_chihuahua.json", "WLDAS_plus_minus_30_average/std_chihuahua.json", "WLDAS_plus_minus_30_plots_average_std", location_str="Chihuahua")
+#     print(
+#         f'wldas.get_wldas_plus_minus_30_average("WLDAS_plus_minus_30", boundary_box={boundary_box}, location_str="{name}")'
+#     )
+#     location_str_name = name.lower().replace(" ", "_")
+#     print(
+#         f'wldas.plot_wldas_plus_minus_30_average_std("WLDAS_plus_minus_30_average/average_{location_str_name}.json", "WLDAS_plus_minus_30_average/std_{location_str_name}.json", "WLDAS_plus_minus_30_plots_average_std", location_str="{name}")'
+#     )

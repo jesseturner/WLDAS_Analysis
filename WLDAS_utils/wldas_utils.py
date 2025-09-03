@@ -405,7 +405,7 @@ def _line_plot_dual(data1, data2, plot_title, plot_dir, plot_path, ylim=None):
     ax1.set_ylabel("Soil Moisture (m$^3$/m$^3$)")
     
     ax2 = ax1.twinx()
-    ax2.plot(data2, color='Grey', marker='o', label="Standard Deviation", alpha=0.5)
+    ax2.plot(data2, color='Grey', marker='.', label="Standard Deviation", alpha=0.4)
     ax2.set_ylabel("Standard Deviation")
 
     plt.title(plot_title)
