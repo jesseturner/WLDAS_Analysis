@@ -20,8 +20,8 @@ plus_minus_30_dir = "WLDAS_plus_minus_30"
 
 # wldas.get_wldas_plus_minus_30(dust_path, wldas_path, plus_minus_30_dir)
 
-#json_filepath = "WLDAS_plus_minus_30/20040219_1730_lat3126_lon10689.json"
-#wldas.plot_wldas_plus_minus_30(json_filepath, "WLDAS_plus_minus_30_plots")
+# json_filepath = "WLDAS_plus_minus_30/20021217_1845_lat3041_lon10653.json"
+# wldas.plot_wldas_plus_minus_30(json_filepath, "WLDAS_plus_minus_30_plots")
 
 #--- Print out code to run for each location:
 locations = {
@@ -56,7 +56,10 @@ locations = {
 #     boundary_box = [lat_min, lon_min, lat_max, lon_max]
 #     for is_std in (True, False):
 #         print(
-#             f'wldas.plot_wldas_plus_minus_30_average('
-#             f'plus_minus_30_dir, "WLDAS_plus_minus_30_plots_average", '
+#             f'wldas.get_wldas_plus_minus_30_average('
+#             f'plus_minus_30_dir, "WLDAS_plus_minus_30_average", '
 #             f'is_std={is_std}, boundary_box={boundary_box}, location_str="{name}")'
 #         )
+
+wldas.get_wldas_plus_minus_30_average(plus_minus_30_dir, boundary_box=[28.0, -110.0, 33.3, -105.3], location_str="Chihuahua")
+wldas.plot_wldas_plus_minus_30_average("WLDAS_plus_minus_30_average/average_chihuahua.json", "WLDAS_plus_minus_30_plots_average")

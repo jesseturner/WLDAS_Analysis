@@ -252,6 +252,10 @@ def _filter_wldas_by_lat_lon(ds, lat, lon):
 
 def _save_plus_minus_30_list(plus_minus_30_dir, plus_minus_30_list, list_name):
     os.makedirs(plus_minus_30_dir, exist_ok=True)
+
+    if isinstance(plus_minus_30_list, np.ndarray):
+        plus_minus_30_list = plus_minus_30_list.tolist()
+
     with open(f"{plus_minus_30_dir}/{list_name}.json", "w") as f:
         json.dump(plus_minus_30_list, f)
     return
@@ -301,33 +305,27 @@ def _line_plot(data, plot_title, plot_dir, plot_path, ylim=None):
     plt.close()
     return
 
-def plot_wldas_plus_minus_30_average(json_dir, plot_dir, is_std=False, boundary_box=[], location_str="American Southwest"):
+def plot_wldas_plus_minus_30_average(json_filepath, plot_dir, is_std=False, location_str="American Southwest"):
     """
     boundary_box: [lat_min, lon_min, lat_max, lon_max]
     """
 
-    file_list = glob.glob(f"{json_dir}/*.json")
-
-    if boundary_box:
-        file_list = _get_file_list_filtered_by_lat_lon(file_list, boundary_box)
-
-    average_list, std_list = _average_json_files(file_list)
+    with open(json_filepath, "r") as f:
+        plus_minus_30_list = json.load(f)
 
     plot_title = f"Average soil moisture associated with each blowing dust event \n ({location_str})"
     location_str_save = location_str.lower().replace(" ", "_")
     plot_path = f"{plot_dir}/average_soil_moisture_{location_str_save}.png"
-    data_list = average_list
 
     if is_std:
         plot_title = f"Standard deviation of soil moisture associated with each blowing dust event \n ({location_str})"
         plot_path = f"{plot_dir}/std_soil_moisture_{location_str_save}.png"
-        data_list = std_list
         
-    _line_plot(data_list, plot_title, plot_dir, plot_path)
+    _line_plot(plus_minus_30_list, plot_title, plot_dir, plot_path)
 
     return
 
-def wldas_plus_minus_30_average(json_dir, plot_dir, is_std=False, boundary_box=[], location_str="American Southwest"):
+def get_wldas_plus_minus_30_average(json_dir, boundary_box=[], location_str="American Southwest"):
     """
     boundary_box: [lat_min, lon_min, lat_max, lon_max]
     """
@@ -338,6 +336,13 @@ def wldas_plus_minus_30_average(json_dir, plot_dir, is_std=False, boundary_box=[
         file_list = _get_file_list_filtered_by_lat_lon(file_list, boundary_box)
 
     average_list, std_list = _average_json_files(file_list)
+
+    plus_minus_30_dir = "WLDAS_plus_minus_30_average"
+    location_str_save = location_str.lower().replace(" ", "_")
+    average_list_name = f"average_{location_str_save}"
+    std_list_name = f"std_{location_str_save}"
+    _save_plus_minus_30_list(plus_minus_30_dir, average_list, average_list_name)
+    _save_plus_minus_30_list(plus_minus_30_dir, std_list, std_list_name)
 
     return
 
