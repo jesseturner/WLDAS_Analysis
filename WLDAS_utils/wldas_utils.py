@@ -424,7 +424,10 @@ def plot_wldas_plus_minus_30_average_all(data_dir, plot_dir, ylim=None):
     plt.figure(figsize=(8, 16))
 
     files = [f for f in os.listdir(data_dir) if f.endswith(".json")]
-    cmap = cm.get_cmap("Dark2", len(files))  
+    hex_colors = ["#1f77b4", "#ff7f0e", "#2ca02c", 
+                  "#d62728", "#9467bd", "#8c564b", 
+                  "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"]
+    linestyles = ["-", "--", "-.", ":"] 
 
     for i, fname in enumerate(files):
         if fname.endswith(".json"):
@@ -433,7 +436,9 @@ def plot_wldas_plus_minus_30_average_all(data_dir, plot_dir, ylim=None):
                 data = json.load(f)
 
             label = os.path.splitext(fname)[0]
-            plt.plot(data, marker='o', color=cmap(i), label=label)
+            color = hex_colors[i % len(hex_colors)]
+            style = linestyles[i % len(linestyles)]
+            plt.plot(data, linestyle=style, marker='.', color=color, label=label)
 
     plot_title = f"Average soil moisture associated with each blowing dust event"
     plot_path = f"{plot_dir}/average_soil_moisture_all.png"
