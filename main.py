@@ -62,4 +62,6 @@ locations = {
 #         )
 
 wldas.get_wldas_plus_minus_30_average(plus_minus_30_dir, boundary_box=[28.0, -110.0, 33.3, -105.3], location_str="Chihuahua")
-wldas.plot_wldas_plus_minus_30_average("WLDAS_plus_minus_30_average/average_chihuahua.json", "WLDAS_plus_minus_30_plots_average")
+wldas.plot_wldas_plus_minus_30_average("WLDAS_plus_minus_30_average/average_chihuahua.json", "WLDAS_plus_minus_30_plots_average", location_str="Chihuahua")
+
+wldas.plot_wldas_plus_minus_30_average_std("WLDAS_plus_minus_30_average/average_chihuahua.json", "WLDAS_plus_minus_30_average/std_chihuahua.json", "WLDAS_plus_minus_30_plots_average_std", location_str="Chihuahua")

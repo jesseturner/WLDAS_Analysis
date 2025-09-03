@@ -305,26 +305,6 @@ def _line_plot(data, plot_title, plot_dir, plot_path, ylim=None):
     plt.close()
     return
 
-def plot_wldas_plus_minus_30_average(json_filepath, plot_dir, is_std=False, location_str="American Southwest"):
-    """
-    boundary_box: [lat_min, lon_min, lat_max, lon_max]
-    """
-
-    with open(json_filepath, "r") as f:
-        plus_minus_30_list = json.load(f)
-
-    plot_title = f"Average soil moisture associated with each blowing dust event \n ({location_str})"
-    location_str_save = location_str.lower().replace(" ", "_")
-    plot_path = f"{plot_dir}/average_soil_moisture_{location_str_save}.png"
-
-    if is_std:
-        plot_title = f"Standard deviation of soil moisture associated with each blowing dust event \n ({location_str})"
-        plot_path = f"{plot_dir}/std_soil_moisture_{location_str_save}.png"
-        
-    _line_plot(plus_minus_30_list, plot_title, plot_dir, plot_path)
-
-    return
-
 def get_wldas_plus_minus_30_average(json_dir, boundary_box=[], location_str="American Southwest"):
     """
     boundary_box: [lat_min, lon_min, lat_max, lon_max]
@@ -343,6 +323,18 @@ def get_wldas_plus_minus_30_average(json_dir, boundary_box=[], location_str="Ame
     std_list_name = f"std_{location_str_save}"
     _save_plus_minus_30_list(plus_minus_30_dir, average_list, average_list_name)
     _save_plus_minus_30_list(plus_minus_30_dir, std_list, std_list_name)
+
+    return
+
+def plot_wldas_plus_minus_30_average(json_filepath_average,  plot_dir, location_str="American Southwest"):
+    with open(json_filepath_average, "r") as f:
+        plus_minus_30_list = json.load(f)
+
+    plot_title = f"Average soil moisture associated with each blowing dust event \n ({location_str})"
+    location_str_save = location_str.lower().replace(" ", "_")
+    plot_path = f"{plot_dir}/average_soil_moisture_{location_str_save}.png"
+        
+    _line_plot(plus_minus_30_list, plot_title, plot_dir, plot_path)
 
     return
 
@@ -366,14 +358,14 @@ def _get_file_list_filtered_by_lat_lon(file_list, boundary_box):
     lat_min, lon_min, lat_max, lon_max = boundary_box
 
     for f in file_list:
-        lat, lon = parse_lat_lon(f)
+        lat, lon = _parse_lat_lon(f)
         if lat_min <= lat <= lat_max and lon_min <= lon <= lon_max:
             filtered_file_list.append(f)
 
     return filtered_file_list
         
 
-def parse_lat_lon(filename: str) -> tuple[float, float]:
+def _parse_lat_lon(filename: str) -> tuple[float, float]:
     """
     Extract latitude and longitude from filename.
     Example: '..._lat3062_lon10797.json' -> (30.62, -107.97)
@@ -386,3 +378,43 @@ def parse_lat_lon(filename: str) -> tuple[float, float]:
     lat = float(lat_str[:2] + "." + lat_str[2:])
     lon = -float(lon_str[:3] + "." + lon_str[3:])  # negative for west
     return lat, lon
+
+def plot_wldas_plus_minus_30_average_std(json_filepath_average, json_filepath_std, plot_dir, location_str="American Southwest"):
+    with open(json_filepath_average, "r") as f:
+        plus_minus_30_list = json.load(f)
+
+    with open(json_filepath_std, "r") as f:
+        plus_minus_30_list_std = json.load(f)
+
+    plot_title = f"Average soil moisture associated with each blowing dust event \n ({location_str})"
+    location_str_save = location_str.lower().replace(" ", "_")
+    plot_path = f"{plot_dir}/average_soil_moisture_{location_str_save}.png"
+        
+    _line_plot_dual(plus_minus_30_list, plus_minus_30_list_std, plot_title, plot_dir, plot_path)
+
+    return
+
+def _line_plot_dual(data1, data2, plot_title, plot_dir, plot_path, ylim=None):
+    plt.figure(figsize=(8, 4))
+
+    fig, ax1 = plt.subplots(figsize=(12, 6))
+    ax1.plot(data1, color='0', marker='o', label="Average Soil Moisture")
+    ax1.set_xlabel("Days From Dust Event")
+    ax1.set_xticks(np.arange(0, 61, 3))
+    ax1.set_xticklabels(np.arange(-30, 31, 3))
+    ax1.set_ylabel("Soil Moisture (m$^3$/m$^3$)")
+    
+    ax2 = ax1.twinx()
+    ax2.plot(data2, color='Grey', marker='o', label="Standard Deviation", alpha=0.5)
+    ax2.set_ylabel("Standard Deviation")
+
+    plt.title(plot_title)
+    lines, labels = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    ax1.legend(lines + lines2, labels + labels2, loc="upper right")
+
+    plt.tight_layout()
+    os.makedirs(plot_dir, exist_ok=True)
+    plt.savefig(plot_path)
+    plt.close()
+    return
