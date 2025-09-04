@@ -178,6 +178,14 @@ def create_hist_for_variables(ds, hist_dir):
 
     return ds
 
+def _plot_save(plot_dir, plot_path):
+    plt.tight_layout()
+    os.makedirs(plot_dir, exist_ok=True)
+    plt.savefig(plot_path)
+    plt.close()
+
+    return
+
 def plot_hist_for_variables(ds, hist_dir):
     date = _datetime_from_xarray_date(ds.time)
     
@@ -197,9 +205,8 @@ def plot_hist_for_variables(ds, hist_dir):
         plt.title(f"Histogram of {variable} ({long_name})")
         plt.xlabel(f"{units}")
         plt.ylabel("Frequency")
-        plt.tight_layout()
-        plt.savefig(f"{hist_dir}/{variable}.png")
-        plt.close()
+
+        _plot_save(hist_dir, f"{hist_dir}/{variable}.png")
 
 def _datetime_from_xarray_date(xarray_time):
     #--- grabbing the first time
@@ -299,11 +306,8 @@ def _line_plot(data, plot_title, plot_dir, plot_path, ylim=None):
     plt.xlabel("Days From Dust Event")
     plt.xticks(np.arange(0, 61, 3), labels=np.arange(-30, 31, 3))
     plt.ylabel("Soil Moisture (m$^3$/m$^3$)")
-    plt.tight_layout()
-    
-    os.makedirs(plot_dir, exist_ok=True)
-    plt.savefig(plot_path)
-    plt.close()
+
+    _plot_save(plot_dir, plot_path)
     return
 
 def get_wldas_plus_minus_30_average(json_dir, boundary_box=[], location_str="American Southwest"):
@@ -414,10 +418,7 @@ def _line_plot_dual(data1, data2, plot_title, plot_dir, plot_path, ylim=None):
     lines2, labels2 = ax2.get_legend_handles_labels()
     ax1.legend(lines + lines2, labels + labels2, loc="upper right")
 
-    plt.tight_layout()
-    os.makedirs(plot_dir, exist_ok=True)
-    plt.savefig(plot_path)
-    plt.close()
+    _plot_save(plot_dir, plot_path)
     return
 
 def plot_wldas_plus_minus_30_average_all(data_dir, plot_dir, ylim=None):
@@ -448,9 +449,6 @@ def plot_wldas_plus_minus_30_average_all(data_dir, plot_dir, ylim=None):
     plt.ylabel("Value")
     plt.legend()
 
-    plt.tight_layout()
-    os.makedirs(plot_dir, exist_ok=True)
-    plt.savefig(plot_path)
-    plt.close()
+    _plot_save(plot_dir, plot_path)
 
     return
