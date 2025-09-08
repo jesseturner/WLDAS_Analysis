@@ -55,14 +55,39 @@ locations = {
 # wldas.get_wldas_plus_minus_30_average(plus_minus_30_dir, boundary_box=[28.0, -110.0, 33.3, -105.3], location_str="Chihuahua")
 # wldas.plot_wldas_plus_minus_30_average_std("WLDAS_plus_minus_30_average/average_chihuahua.json", "WLDAS_plus_minus_30_average/std_chihuahua.json", "WLDAS_plus_minus_30_plots_average_std", location_str="Chihuahua")
 
-# for name, ((lat_max, lon_min), (lat_min, lon_max)) in locations.items():
-#     boundary_box = [lat_min, lon_min, lat_max, lon_max]
-#     print(
-#         f'wldas.get_wldas_plus_minus_30_average("WLDAS_plus_minus_30", boundary_box={boundary_box}, location_str="{name}")'
-#     )
-#     location_str_name = name.lower().replace(" ", "_")
-#     print(
-#         f'wldas.plot_wldas_plus_minus_30_average_std("WLDAS_plus_minus_30_average/average_{location_str_name}.json", "WLDAS_plus_minus_30_average/std_{location_str_name}.json", "WLDAS_plus_minus_30_plots_average_std", location_str="{name}")'
-#     )
+for name, ((lat_max, lon_min), (lat_min, lon_max)) in locations.items():
+    boundary_box = [lat_min, lon_min, lat_max, lon_max]
+    # print(
+    #     f'wldas.get_wldas_plus_minus_30_average("WLDAS_plus_minus_30", boundary_box={boundary_box}, location_str="{name}")'
+    # )
+    location_str_name = name.lower().replace(" ", "_")
+    print(
+        f'wldas.plot_wldas_plus_minus_30_average_std("WLDAS_plus_minus_30_average/average_{location_str_name}.json", "WLDAS_plus_minus_30_average/std_{location_str_name}.json", "WLDAS_plus_minus_30_plots_average_std", location_str="{name}")'
+    )
 
-wldas.plot_wldas_plus_minus_30_average_all("WLDAS_plus_minus_30_average/big_regions/","WLDAS_plus_minus_30_plots_all", ylim=None)
+# wldas.plot_wldas_plus_minus_30_average_all("WLDAS_plus_minus_30_average/big_regions/","WLDAS_plus_minus_30_plots_all", ylim=None)
+
+wldas.plot_wldas_plus_minus_30_average_std("WLDAS_plus_minus_30_average/average_chihuahua.json", "WLDAS_plus_minus_30_average/std_chihuahua.json", "WLDAS_plus_minus_30_plots_average_std", location_str="Chihuahua")
+wldas.plot_wldas_plus_minus_30_average_std("WLDAS_plus_minus_30_average/average_west_texas.json", "WLDAS_plus_minus_30_average/std_west_texas.json", "WLDAS_plus_minus_30_plots_average_std", location_str="West Texas")
+wldas.plot_wldas_plus_minus_30_average_std("WLDAS_plus_minus_30_average/average_central_high_plains.json", "WLDAS_plus_minus_30_average/std_central_high_plains.json", "WLDAS_plus_minus_30_plots_average_std", location_str="Central High Plains")
+wldas.plot_wldas_plus_minus_30_average_std("WLDAS_plus_minus_30_average/average_nevada.json", "WLDAS_plus_minus_30_average/std_nevada.json", "WLDAS_plus_minus_30_plots_average_std", location_str="Nevada")
+wldas.plot_wldas_plus_minus_30_average_std("WLDAS_plus_minus_30_average/average_utah.json", "WLDAS_plus_minus_30_average/std_utah.json", "WLDAS_plus_minus_30_plots_average_std", location_str="Utah")
+wldas.plot_wldas_plus_minus_30_average_std("WLDAS_plus_minus_30_average/average_southern_california.json", "WLDAS_plus_minus_30_average/std_southern_california.json", "WLDAS_plus_minus_30_plots_average_std", location_str="Southern California")
+wldas.plot_wldas_plus_minus_30_average_std("WLDAS_plus_minus_30_average/average_four_corners.json", "WLDAS_plus_minus_30_average/std_four_corners.json", "WLDAS_plus_minus_30_plots_average_std", location_str="Four Corners")
+wldas.plot_wldas_plus_minus_30_average_std("WLDAS_plus_minus_30_average/average_san_luis_valley.json", "WLDAS_plus_minus_30_average/std_san_luis_valley.json", "WLDAS_plus_minus_30_plots_average_std", location_str="San Luis Valley")
+wldas.plot_wldas_plus_minus_30_average_std("WLDAS_plus_minus_30_average/average_n_mexico_1.json", "WLDAS_plus_minus_30_average/std_n_mexico_1.json", "WLDAS_plus_minus_30_plots_average_std", location_str="N Mexico 1")
+wldas.plot_wldas_plus_minus_30_average_std("WLDAS_plus_minus_30_average/average_carson_sink.json", "WLDAS_plus_minus_30_average/std_carson_sink.json", "WLDAS_plus_minus_30_plots_average_std", location_str="Carson Sink")
+wldas.plot_wldas_plus_minus_30_average_std("WLDAS_plus_minus_30_average/average_n_mexico_2.json", "WLDAS_plus_minus_30_average/std_n_mexico_2.json", "WLDAS_plus_minus_30_plots_average_std", location_str="N Mexico 2")
+wldas.plot_wldas_plus_minus_30_average_std("WLDAS_plus_minus_30_average/average_n_mexico_3.json", "WLDAS_plus_minus_30_average/std_n_mexico_3.json", "WLDAS_plus_minus_30_plots_average_std", location_str="N Mexico 3")
+wldas.plot_wldas_plus_minus_30_average_std("WLDAS_plus_minus_30_average/average_black_rock_1.json", "WLDAS_plus_minus_30_average/std_black_rock_1.json", "WLDAS_plus_minus_30_plots_average_std", location_str="Black Rock 1")
+wldas.plot_wldas_plus_minus_30_average_std("WLDAS_plus_minus_30_average/average_west_texas_1.json", "WLDAS_plus_minus_30_average/std_west_texas_1.json", "WLDAS_plus_minus_30_plots_average_std", location_str="West Texas 1")
+wldas.plot_wldas_plus_minus_30_average_std("WLDAS_plus_minus_30_average/average_n_mexico_4.json", "WLDAS_plus_minus_30_average/std_n_mexico_4.json", "WLDAS_plus_minus_30_plots_average_std", location_str="N Mexico 4")
+wldas.plot_wldas_plus_minus_30_average_std("WLDAS_plus_minus_30_average/average_n_mexico_5.json", "WLDAS_plus_minus_30_average/std_n_mexico_5.json", "WLDAS_plus_minus_30_plots_average_std", location_str="N Mexico 5")
+wldas.plot_wldas_plus_minus_30_average_std("WLDAS_plus_minus_30_average/average_white_sands.json", "WLDAS_plus_minus_30_average/std_white_sands.json", "WLDAS_plus_minus_30_plots_average_std", location_str="White Sands")
+wldas.plot_wldas_plus_minus_30_average_std("WLDAS_plus_minus_30_average/average_west_texas_2.json", "WLDAS_plus_minus_30_average/std_west_texas_2.json", "WLDAS_plus_minus_30_plots_average_std", location_str="West Texas 2")
+wldas.plot_wldas_plus_minus_30_average_std("WLDAS_plus_minus_30_average/average_slv2.json", "WLDAS_plus_minus_30_average/std_slv2.json", "WLDAS_plus_minus_30_plots_average_std", location_str="SLV2")
+wldas.plot_wldas_plus_minus_30_average_std("WLDAS_plus_minus_30_average/average_n_mexico_6.json", "WLDAS_plus_minus_30_average/std_n_mexico_6.json", "WLDAS_plus_minus_30_plots_average_std", location_str="N Mexico 6")
+wldas.plot_wldas_plus_minus_30_average_std("WLDAS_plus_minus_30_average/average_ne_az.json", "WLDAS_plus_minus_30_average/std_ne_az.json", "WLDAS_plus_minus_30_plots_average_std", location_str="NE AZ")
+wldas.plot_wldas_plus_minus_30_average_std("WLDAS_plus_minus_30_average/average_nw_new_mexico.json", "WLDAS_plus_minus_30_average/std_nw_new_mexico.json", "WLDAS_plus_minus_30_plots_average_std", location_str="NW New Mexico")
+wldas.plot_wldas_plus_minus_30_average_std("WLDAS_plus_minus_30_average/average_black_rock_2.json", "WLDAS_plus_minus_30_average/std_black_rock_2.json", "WLDAS_plus_minus_30_plots_average_std", location_str="Black Rock 2")
+wldas.plot_wldas_plus_minus_30_average_std("WLDAS_plus_minus_30_average/average_n_mexico_7.json", "WLDAS_plus_minus_30_average/std_n_mexico_7.json", "WLDAS_plus_minus_30_plots_average_std", location_str="N Mexico 7")

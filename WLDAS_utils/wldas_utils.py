@@ -178,11 +178,11 @@ def create_hist_for_variables(ds, hist_dir):
 
     return ds
 
-def _plot_save(plot_dir, plot_path):
+def _plot_save(fig, plot_dir, plot_path):
     plt.tight_layout()
     os.makedirs(plot_dir, exist_ok=True)
     plt.savefig(plot_path)
-    plt.close()
+    plt.close(fig)
 
     return
 
@@ -200,13 +200,13 @@ def plot_hist_for_variables(ds, hist_dir):
         long_name, units, counts, bin_edges = hist_store[variable]
         bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
 
-        plt.figure(figsize=(8, 4))
+        fig = plt.figure(figsize=(8, 4))
         plt.bar(bin_centers, counts, width=np.diff(bin_edges), align="center", edgecolor="blue", color='blue', alpha=0.7,)
         plt.title(f"Histogram of {variable} ({long_name})")
         plt.xlabel(f"{units}")
         plt.ylabel("Frequency")
 
-        _plot_save(hist_dir, f"{hist_dir}/{variable}.png")
+        _plot_save(fig, hist_dir, f"{hist_dir}/{variable}.png")
 
 def _datetime_from_xarray_date(xarray_time):
     #--- grabbing the first time
@@ -299,7 +299,7 @@ def _line_plot(data, plot_title, plot_dir, plot_path, ylim=None):
     y_lim: [min, max]
     """
 
-    plt.figure(figsize=(8, 4))
+    fig = plt.figure(figsize=(8, 4))
     plt.plot(data, color='0', marker='o')
     plt.title(plot_title)
     plt.ylim(ylim)
@@ -307,7 +307,7 @@ def _line_plot(data, plot_title, plot_dir, plot_path, ylim=None):
     plt.xticks(np.arange(0, 61, 3), labels=np.arange(-30, 31, 3))
     plt.ylabel("Soil Moisture (m$^3$/m$^3$)")
 
-    _plot_save(plot_dir, plot_path)
+    _plot_save(fig, plot_dir, plot_path)
     return
 
 def get_wldas_plus_minus_30_average(json_dir, boundary_box=[], location_str="American Southwest"):
@@ -400,7 +400,6 @@ def plot_wldas_plus_minus_30_average_std(json_filepath_average, json_filepath_st
     return
 
 def _line_plot_dual(data1, data2, plot_title, plot_dir, plot_path, ylim=None):
-    plt.figure(figsize=(8, 4))
 
     fig, ax1 = plt.subplots(figsize=(12, 6))
     ax1.plot(data1, color='0', marker='o', label="Average Soil Moisture")
@@ -408,9 +407,12 @@ def _line_plot_dual(data1, data2, plot_title, plot_dir, plot_path, ylim=None):
     ax1.set_xticks(np.arange(0, 61, 3))
     ax1.set_xticklabels(np.arange(-30, 31, 3))
     ax1.set_ylabel("Soil Moisture (m$^3$/m$^3$)")
+    y_lim1, y_lim2 = _get_sliding_y_window(ax1, window_size=0.07)
+    ax1.set_ylim(y_lim1, y_lim2)
     
     ax2 = ax1.twinx()
     ax2.plot(data2, color='Grey', marker='.', label="Standard Deviation", alpha=0.4)
+    ax2.set_ylim(0.02, 0.08)
     ax2.set_ylabel("Standard Deviation")
 
     plt.title(plot_title)
@@ -418,11 +420,18 @@ def _line_plot_dual(data1, data2, plot_title, plot_dir, plot_path, ylim=None):
     lines2, labels2 = ax2.get_legend_handles_labels()
     ax1.legend(lines + lines2, labels + labels2, loc="upper right")
 
-    _plot_save(plot_dir, plot_path)
+    _plot_save(fig, plot_dir, plot_path)
     return
 
+def _get_sliding_y_window(ax, window_size):
+    ymin, ymax = ax.get_ylim()
+    ycenter = (ymin + ymax) / 2
+    y_lim1, y_lim2 = ycenter - window_size/2, ycenter + window_size/2
+
+    return y_lim1, y_lim2
+
 def plot_wldas_plus_minus_30_average_all(data_dir, plot_dir, ylim=None):
-    plt.figure(figsize=(8, 16))
+    fig = plt.figure(figsize=(8, 16))
 
     files = [f for f in os.listdir(data_dir) if f.endswith(".json")]
     hex_colors = ["#1f77b4", "#ff7f0e", "#2ca02c", 
@@ -449,6 +458,6 @@ def plot_wldas_plus_minus_30_average_all(data_dir, plot_dir, ylim=None):
     plt.ylabel("Value")
     plt.legend()
 
-    _plot_save(plot_dir, plot_path)
+    _plot_save(fig, plot_dir, plot_path)
 
     return
