@@ -407,7 +407,7 @@ def _line_plot_dual(data1, data2, plot_title, plot_dir, plot_path, ylim=None):
     ax1.set_xticks(np.arange(0, 61, 3))
     ax1.set_xticklabels(np.arange(-30, 31, 3))
     ax1.set_ylabel("Soil Moisture (m$^3$/m$^3$)")
-    y_lim1, y_lim2 = _get_sliding_y_window(ax1, window_size=0.07)
+    y_lim1, y_lim2 = _get_sliding_y_window(ax1, window_size=0.05)
     ax1.set_ylim(y_lim1, y_lim2)
     
     ax2 = ax1.twinx()
