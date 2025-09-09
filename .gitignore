@@ -7,3 +7,5 @@ Line_dust_data/*.txt
 *.nc4*
 *.pdf*
 *.json
+*.tif
+*.csv
