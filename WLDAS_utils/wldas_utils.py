@@ -384,6 +384,12 @@ def _parse_lat_lon(filename: str) -> tuple[float, float]:
     lon = -float(lon_str[:3] + "." + lon_str[3:])  # negative for west
     return lat, lon
 
+def _parse_date(filename):
+    match = re.search(r"/(\d{8})_", filename)
+    if match:
+        date_str = match.group(1)
+    return date_str
+
 def plot_wldas_plus_minus_30_average_std(json_filepath_average, json_filepath_std, plot_dir, location_str="American Southwest"):
     with open(json_filepath_average, "r") as f:
         plus_minus_30_list = json.load(f)
@@ -461,3 +467,58 @@ def plot_wldas_plus_minus_30_average_all(data_dir, plot_dir, ylim=None):
     _plot_save(fig, plot_dir, plot_path)
 
     return
+
+def get_wldas_plus_minus_30_average_soil_texture(json_dir, usda_filepath, soil_id, soil_name):
+
+    file_list_all = glob.glob(f"{json_dir}/*.json")
+
+    file_list = _get_file_list_filtered_by_soil_texture(file_list_all, usda_filepath, soil_id)
+    print(f"{len(file_list)} of {len(file_list_all)} found for {soil_name}.")
+
+    average_list, std_list = _average_json_files(file_list)
+
+    plus_minus_30_dir = "WLDAS_plus_minus_30_average_soil_textures"
+    soil_name_save = soil_name.lower().replace(" ", "_")
+    average_list_name = f"average_{soil_name_save}"
+    std_list_name = f"std_{soil_name_save}"
+    _save_plus_minus_30_list(plus_minus_30_dir, average_list, average_list_name)
+    _save_plus_minus_30_list(plus_minus_30_dir, std_list, std_list_name)
+
+    return
+
+def _get_file_list_filtered_by_soil_texture(file_list, usda_filepath, soil_id):
+    filtered_file_list = []
+    texture_df = _open_usda_texture_csv(usda_filepath)
+    count = 0
+
+    for f in file_list:
+        lat, lon = _parse_lat_lon(f)
+        date = _parse_date(f)
+
+        texture_case = texture_df[
+                 (texture_df["lat"].astype(str) == str(lat)) & 
+                 (texture_df["lon"].astype(str) == str(lon)) & 
+                 (texture_df["YYYYMMDD"].astype(str) == str(date))]
+        
+        if len(texture_case) == 0:
+            count += 1
+            #print(f"{date} {lat}, {lon} is not found in texture data.")
+            continue
+        
+        #assert len(texture_case) == 1, f"Texture data has {len(texture_case)} matches for this case."
+        
+        if texture_case.SAMPLE_1.values[0] == soil_id:
+            filtered_file_list.append(f)
+    print(f"{count} files not found.")
+
+    return filtered_file_list
+
+
+def _open_usda_texture_csv(usda_filepath):
+    df = pd.read_csv(usda_filepath)
+    return df
+
+def counts_of_usda_texture_values(usda_filepath):
+    df = _open_usda_texture_csv(usda_filepath)
+    counts = df["SAMPLE_1"].value_counts().sort_index()
+    return counts
