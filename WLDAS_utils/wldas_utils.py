@@ -436,32 +436,54 @@ def _get_sliding_y_window(ax, window_size):
 
     return y_lim1, y_lim2
 
-def plot_wldas_plus_minus_30_average_all(data_dir, plot_dir, ylim=None):
-    fig = plt.figure(figsize=(8, 16))
+def plot_wldas_plus_minus_30_average_all(average_dir, std_dir=None, plot_dir="WLDAS_plus_minus_30_plots", counts_dict=None):
+#--- This function is not refined
+    fig, ax = plt.subplots(figsize=(9, 12))
 
-    files = [f for f in os.listdir(data_dir) if f.endswith(".json")]
-    hex_colors = ["#1f77b4", "#ff7f0e", "#2ca02c", 
-                  "#d62728", "#9467bd", "#8c564b", 
-                  "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"]
-    linestyles = ["-", "--", "-.", ":"] 
+    files = [f for f in os.listdir(average_dir) if f.endswith(".json")]
+    hex_colors = [
+        "#1f77b4",  # bright blue
+        "#ff7f0e",  # orange
+        "#2ca02c",  # green
+        "#d62728",  # red
+        "#9467bd",  # purple
+        "#8c564b",  # brown
+        "#e377c2"   # pink
+    ]
+
+    #--- Filter files to counts greater than 50
+    if counts_dict:
+        files = [f for f in files if counts_dict[f.replace("average_", "").replace(".json", "")] > 50]
 
     for i, fname in enumerate(files):
         if fname.endswith(".json"):
-            fpath = os.path.join(data_dir, fname)
+            fpath = os.path.join(average_dir, fname)
             with open(fpath, "r") as f:
                 data = json.load(f)
-
-            label = os.path.splitext(fname)[0]
+            
+            type_name = fname.replace("average_", "").replace(".json", "")
+            label = f"{os.path.splitext(fname)[0].replace("_", " ").replace("average ", "")} ({counts_dict[type_name]} cases)"
             color = hex_colors[i % len(hex_colors)]
-            style = linestyles[i % len(linestyles)]
-            plt.plot(data, linestyle=style, marker='.', color=color, label=label)
+            width = 6*(counts_dict[type_name] - min(counts_dict.values())) / (max(counts_dict.values()) - min(counts_dict.values()))
+            ax.plot(data, linestyle='-', color=color, label=label, linewidth=width)
 
+            if std_dir:
+                fname = fname.replace("average", "std")
+                fpath = os.path.join(std_dir, fname)
+                with open(fpath, "r") as f:
+                    std = json.load(f)
+                ax.fill_between(range(len(data)), 
+                    np.array(data) - np.array(std)/15, np.array(data) + np.array(std)/15, color=color, alpha=0.1)
+
+    ax.set_xticks(np.arange(0, 61, 3))
+    ax.set_xticklabels(np.arange(-30, 31, 3))
+    ax.axvline(x=30, color='grey', linestyle='-', linewidth=6, zorder=-1, alpha=0.1)
     plot_title = f"Average soil moisture associated with each blowing dust event"
     plot_path = f"{plot_dir}/average_soil_moisture_all.png"
 
     plt.title(plot_title)
-    plt.xlabel("Index")
-    plt.ylabel("Value")
+    plt.xlabel("Days From Dust Event")
+    plt.ylabel("Soil Moisture (m$^3$/m$^3$)")
     plt.legend()
 
     _plot_save(fig, plot_dir, plot_path)
@@ -502,10 +524,7 @@ def _get_file_list_filtered_by_soil_texture(file_list, usda_filepath, soil_id):
         
         if len(texture_case) == 0:
             count += 1
-            #print(f"{date} {lat}, {lon} is not found in texture data.")
             continue
-        
-        #assert len(texture_case) == 1, f"Texture data has {len(texture_case)} matches for this case."
         
         if texture_case.SAMPLE_1.values[0] == soil_id:
             filtered_file_list.append(f)
@@ -520,5 +539,23 @@ def _open_usda_texture_csv(usda_filepath):
 
 def counts_of_usda_texture_values(usda_filepath):
     df = _open_usda_texture_csv(usda_filepath)
-    counts = df["SAMPLE_1"].value_counts().sort_index()
-    return counts
+    counts = df["SAMPLE_1"].value_counts().sort_index().to_dict()
+
+    soil_mapping = {
+        1: "Clay",
+        2: "Clay loam",
+        3: "Loam",
+        4: "Loamy sand",
+        5: "Sand",
+        6: "Sandy clay",
+        7: "Sandy clay loam",
+        8: "Sandy loam",
+        9: "Silt",
+        10: "Silty clay",
+        11: "Silty clay loam",
+        12: "Silt loam"
+    }
+
+    counts_named = {soil_mapping[k].lower().replace(" ", "_"): v for k, v in counts.items()}
+
+    return counts_named

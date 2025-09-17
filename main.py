@@ -84,6 +84,8 @@ usda_filepath = "soil_type_data/new_point_USDA_texture.csv"
 name = "Silty Clay Loam"
 save_name = "silty_clay_loam"
 soil_id = 11
-wldas.get_wldas_plus_minus_30_average_soil_texture("WLDAS_plus_minus_30", usda_filepath, soil_id, name)
+# wldas.get_wldas_plus_minus_30_average_soil_texture("WLDAS_plus_minus_30", usda_filepath, soil_id, name)
+# wldas.plot_wldas_plus_minus_30_average_std(f"WLDAS_plus_minus_30_average_soil_textures/average_{save_name}.json", f"WLDAS_plus_minus_30_average_soil_textures/std_{save_name}.json", "WLDAS_plus_minus_30_plots_average_std_soil_texture", location_str=save_name)
 counts = wldas.counts_of_usda_texture_values(usda_filepath)
-wldas.plot_wldas_plus_minus_30_average_std(f"WLDAS_plus_minus_30_average_soil_textures/average_{save_name}.json", f"WLDAS_plus_minus_30_average_soil_textures/std_{save_name}.json", "WLDAS_plus_minus_30_plots_average_std_soil_texture", location_str=save_name)
+print(counts)
+wldas.plot_wldas_plus_minus_30_average_all(average_dir="WLDAS_plus_minus_30_average_soil_textures/average", std_dir="WLDAS_plus_minus_30_average_soil_textures/std", plot_dir="WLDAS_plus_minus_30_plots_average_std_soil_texture", counts_dict=counts)
