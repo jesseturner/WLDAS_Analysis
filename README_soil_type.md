@@ -1,6 +1,6 @@
 **The following was made by Max Bleiweiss:**
 
-The data come from:  DOWNLOAD_FTP_URL=ftp://ftp.soilgrids.org/data/recent/TEXMHT_M_sl1_250m_ll.tif
+Data source:  DOWNLOAD_FTP_URL=ftp://ftp.soilgrids.org/data/recent/TEXMHT_M_sl1_250m_ll.tif
 
 The data were subsetted and intersected with the new lat/lon shapefile to yield:
 
