@@ -12,4 +12,5 @@ dependencies:
   - xarray
   - requests
   - dask
+  - geopandas
 prefix: /Applications/anaconda3/envs/wldas_env

@@ -9,3 +9,4 @@ Line_dust_data/*.txt
 *.json
 *.tif
 *.csv
+*WRB2014_soil_map/
