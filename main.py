@@ -21,7 +21,7 @@ plus_minus_30_dir = "WLDAS_plus_minus_30"
 # wldas.get_wldas_plus_minus_30(dust_path, wldas_path, plus_minus_30_dir)
 
 # json_filepath = "WLDAS_plus_minus_30/20021217_1845_lat3041_lon10653.json"
-# wldas.plot_wldas_plus_minus_30(json_filepath, "WLDAS_plus_minus_30_plots")
+#wldas.plot_wldas_plus_minus_30(json_filepath, "WLDAS_plus_minus_30_plots")
 
 #--- Print out code to run for each location:
 locations = {
@@ -52,8 +52,8 @@ locations = {
     # "N Mexico 7": [(30.9, -108.15), (30.4, -107.65)],
 }
 
-# wldas.get_wldas_plus_minus_30_average(plus_minus_30_dir, boundary_box=[28.0, -110.0, 33.3, -105.3], location_str="Chihuahua")
-# wldas.plot_wldas_plus_minus_30_average_std("WLDAS_plus_minus_30_average/average_chihuahua.json", "WLDAS_plus_minus_30_average/std_chihuahua.json", "WLDAS_plus_minus_30_plots_average_std", location_str="Chihuahua")
+wldas.get_wldas_plus_minus_30_average(plus_minus_30_dir)
+wldas.plot_wldas_plus_minus_30_average("WLDAS_plus_minus_30_average/average_american_southwest.json", "WLDAS_plus_minus_30_plots_average")
 
 # for name, ((lat_max, lon_min), (lat_min, lon_max)) in locations.items():
 #     boundary_box = [lat_min, lon_min, lat_max, lon_max]
@@ -80,12 +80,12 @@ locations = {
 # 11: Silty clay loam
 # 12: Silt loam
 
-usda_filepath = "soil_type_data/new_point_USDA_texture.csv"
-name = "Silty Clay Loam"
-save_name = "silty_clay_loam"
-soil_id = 11
+# usda_filepath = "soil_type_data/new_point_USDA_texture.csv"
+# name = "Silty Clay Loam"
+# save_name = "silty_clay_loam"
+# soil_id = 11
 # wldas.get_wldas_plus_minus_30_average_soil_texture("WLDAS_plus_minus_30", usda_filepath, soil_id, name)
 # wldas.plot_wldas_plus_minus_30_average_std(f"WLDAS_plus_minus_30_average_soil_textures/average_{save_name}.json", f"WLDAS_plus_minus_30_average_soil_textures/std_{save_name}.json", "WLDAS_plus_minus_30_plots_average_std_soil_texture", location_str=save_name)
-counts = wldas.counts_of_usda_texture_values(usda_filepath)
-print(counts)
-wldas.plot_wldas_plus_minus_30_average_all(average_dir="WLDAS_plus_minus_30_average_soil_textures/average", std_dir="WLDAS_plus_minus_30_average_soil_textures/std", plot_dir="WLDAS_plus_minus_30_plots_average_std_soil_texture", counts_dict=counts)
+# counts = wldas.counts_of_usda_texture_values(usda_filepath)
+# print(counts)
+# wldas.plot_wldas_plus_minus_30_average_all(average_dir="WLDAS_plus_minus_30_average_soil_textures/average", std_dir="WLDAS_plus_minus_30_average_soil_textures/std", plot_dir="WLDAS_plus_minus_30_plots_average_std_soil_texture", counts_dict=counts)

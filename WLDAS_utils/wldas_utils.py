@@ -130,7 +130,7 @@ def filter_by_bounds(ds, bounds=None):
 def filter_by_dust_points(ds, dust_path):
     #--- WLDAS dataset within a range of any point that has ever been a dust source
 
-    dust_df = dust._read_dust_data_into_df(dust_path)
+    dust_df = dust.read_dust_data_into_df(dust_path)
 
     #--- Set range from each dust source
     buffer_deg = 0.1
@@ -217,7 +217,7 @@ def get_wldas_plus_minus_30(dust_path, wldas_path, plus_minus_30_dir):
 #--- For each dust case, get the WLDAS soil moisture for that location
 #--- over the timespan from 30 days before to 30 days after
     wldas_path = Path(wldas_path)
-    dust_df = dust._read_dust_data_into_df(dust_path)
+    dust_df = dust.read_dust_data_into_df(dust_path)
     for index, row in dust_df.iterrows():
         print(f"Plus minus 30 for {index} of {len(dust_df)}")
         date = str(row['Date (YYYYMMDD)'])

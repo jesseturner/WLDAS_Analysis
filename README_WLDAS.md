@@ -1,4 +1,8 @@
-Repo: https://github.com/jesseturner/spectral_analysis
+Sources: 
+* Repo: https://github.com/jesseturner/spectral_analysis
+* Downloading WLDAS data requires `.netrc` set with GES DISC username and password. Might also require `.urs_cookies` created and `.dodsrc` with path to cookies and netrc.
+* WLDAS functions are in `WLDAS_utils/wldas_utils.py`.
+* WLDAS subset download instructions are in `get_wldas_data_bulk_subset()`.
 
 Hypothesis: Dust regions show different frequency distributions of certain surface variables compared to the entire US Southwest. 
 
@@ -9,7 +13,3 @@ Overview:
 - Both methods use the full time range from 2001-2020. 
 
 Using the code: `WLDAS_utils/wldas_utils.py`. 
-
-Results in `WLDAS_hist_plots`. Using WLDAS data from 2001-2020. 
-
-
