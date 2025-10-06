@@ -9,15 +9,52 @@ def open_wrb2014_file(wrb2014_file_dir, plot_dir, plot_path):
     print(f"Loaded {len(layers)} shapefiles")
 
     gdf = gpd.GeoDataFrame(pd.concat(layers, ignore_index=True))
-    print(gdf)
-
+    #--- EPSG:4326 is the standard for lat/lon coordinates (WGS84)
+    gdf = gdf.to_crs("EPSG:4326")
     return gdf
 
-    # fig, ax = plt.subplots(figsize=(10, 10))
-    # for gdf in layers:
-    #     gdf.plot(ax=ax)
-    # _plot_save(fig, plot_dir, plot_path)    
-    # return
+def count_points_in_regions(gdf_regions, gdf_points):
+    points_with_regions = gpd.sjoin(gdf_points, gdf_regions, how="left", predicate="within")
+    counts_df = points_with_regions.groupby('SU_SYMBOL').size().reset_index(name='count')
+    
+    return counts_df
+
+def add_info_to_counts(df_counts):
+    code_info = [
+        {'SU_SYMBOL': 'AC', 'name': 'Acrisols', 'description': 'Low-activity clays, low base status', 'category': 'Soils with clay-enriched subsoil'},
+        {'SU_SYMBOL': 'AR', 'name': 'Arenosols', 'description': 'Sandy', 'category': ' Soils with little or no profile differentiation'},
+        {'SU_SYMBOL': 'CH', 'name': 'Chernozems', 'description': 'Very dark topsoil, secondary carbonates', 'category': 'Pronounced accumulation of organic matter in the mineral topsoil'},
+        {'SU_SYMBOL': 'CL', 'name': 'Calcisols', 'description': 'Accumulation of secondary carbonates', 'category': 'Accumulation of moderately soluble salts or non-saline substances'},
+        {'SU_SYMBOL': 'CM', 'name': 'Cambisols', 'description': 'Moderately developed', 'category': 'Soils with little or no profile differentiation'},
+        {'SU_SYMBOL': 'DS', 'name': 'Dunes', 'description': 'Dunes and shifting sands', 'category': 'Miscellaneous units'},
+        {'SU_SYMBOL': 'FL', 'name': 'Fluvisols', 'description': 'Stratified fluviatile, marine or lacustrine sediments', 'category': 'Soils with little or no profile differentiation'},
+        {'SU_SYMBOL': 'GL', 'name': 'Gleysols', 'description': 'Groundwater-affected, underwater or in tidal areas', 'category': ' Soils distinguished by Fe/Al chemistry'},
+        {'SU_SYMBOL': 'KS', 'name': 'Kastanozems', 'description': 'Dark topsoil, secondary carbonates', 'category': 'Pronounced accumulation of organic matter in the mineral topsoil'},
+        {'SU_SYMBOL': 'LP', 'name': 'Leptosols', 'description': 'Thin or with many coarse fragments', 'category': 'Soils with limitations to root growth'},
+        {'SU_SYMBOL': 'LV', 'name': 'Luvisols', 'description': 'High-activity clays, high base status', 'category': 'Soils with clay-enriched subsoil'},
+        {'SU_SYMBOL': 'PH', 'name': 'Phaeozems', 'description': 'Dark topsoil, no secondary carbonates (unless very deep), high base status', 'category': 'Pronounced accumulation of organic matter in the mineral topsoil'},
+        {'SU_SYMBOL': 'RG', 'name': 'Regosols', 'description': 'No significant profile development', 'category': 'Soils with little or no profile differentiation'},
+        {'SU_SYMBOL': 'SN', 'name': 'Solonetz', 'description': 'With a high content of exchangeable Na', 'category': 'Soils with limitations to root growth'},
+        {'SU_SYMBOL': 'VR', 'name': 'Vertisols', 'description': 'Alternating wet-dry conditions, shrink-swell clay minerals', 'category': 'Soils with limitations to root growth'},
+        {'SU_SYMBOL': 'WR', 'name': 'Inland waters', 'description': 'Inland waters', 'category': 'Miscellaneous units'},
+        ]
+
+    df_lookup = pd.DataFrame(code_info)
+    df = df_counts.merge(df_lookup, on='SU_SYMBOL', how='left')
+
+    return df
+
+def plot_counts(df_counts, plot_dir, plot_path):
+
+    fig = plt.figure(figsize=(8, 4))
+    plt.bar(df_counts['name'], df_counts['count'], color='0')
+    plt.title("Counts of WRB2014 soil orders associated with dust event origin points")
+    plt.xlabel("Soil Order")
+    plt.ylabel("Count")
+    plt.xticks(rotation=45, ha='right')
+
+    _plot_save(fig, plot_dir, plot_path)
+    return
 
 def _plot_save(fig, plot_dir, plot_path):
     plt.tight_layout()
