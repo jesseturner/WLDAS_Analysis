@@ -15,3 +15,4 @@ counts_df = soil_orders.add_info_to_counts(counts_df)
 print(counts_df)
 
 soil_orders.plot_counts(counts_df, plot_dir, "soil_orders/wrb2014_counts")
+soil_orders.create_legend_png(counts_df, plot_dir, "soil_orders/wrb2014_counts_legend")

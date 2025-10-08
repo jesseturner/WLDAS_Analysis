@@ -28,7 +28,7 @@ def add_info_to_counts(df_counts):
         {'SU_SYMBOL': 'CM', 'name': 'Cambisols', 'description': 'Moderately developed', 'category': 'Soils with little or no profile differentiation'},
         {'SU_SYMBOL': 'DS', 'name': 'Dunes', 'description': 'Dunes and shifting sands', 'category': 'Miscellaneous units'},
         {'SU_SYMBOL': 'FL', 'name': 'Fluvisols', 'description': 'Stratified fluviatile, marine or lacustrine sediments', 'category': 'Soils with little or no profile differentiation'},
-        {'SU_SYMBOL': 'GL', 'name': 'Gleysols', 'description': 'Groundwater-affected, underwater or in tidal areas', 'category': ' Soils distinguished by Fe/Al chemistry'},
+        {'SU_SYMBOL': 'GL', 'name': 'Gleysols', 'description': 'Groundwater-affected, underwater or in tidal areas', 'category': 'Soils distinguished by Fe/Al chemistry'},
         {'SU_SYMBOL': 'KS', 'name': 'Kastanozems', 'description': 'Dark topsoil, secondary carbonates', 'category': 'Pronounced accumulation of organic matter in the mineral topsoil'},
         {'SU_SYMBOL': 'LP', 'name': 'Leptosols', 'description': 'Thin or with many coarse fragments', 'category': 'Soils with limitations to root growth'},
         {'SU_SYMBOL': 'LV', 'name': 'Luvisols', 'description': 'High-activity clays, high base status', 'category': 'Soils with clay-enriched subsoil'},
@@ -59,7 +59,28 @@ def plot_counts(df_counts, plot_dir, plot_path):
 def _plot_save(fig, plot_dir, plot_path):
     plt.tight_layout()
     os.makedirs(plot_dir, exist_ok=True)
-    plt.savefig(plot_path)
+    plt.savefig(plot_path, bbox_inches='tight', dpi=300)
     plt.close(fig)
 
+    return
+
+def create_legend_png(df_counts, plot_dir, plot_path):
+
+    fig, ax = plt.subplots(figsize=(16, 6))
+    ax.set_axis_off()
+
+    table_data = list(zip(df_counts['name'], df_counts['category'], df_counts['description']))
+
+    table = ax.table(cellText=table_data,
+                    colLabels=['Name', 'Category', 'Description'],
+                    loc='center',
+                    colWidths=[0.1, 0.4, 0.5])
+    table.auto_set_font_size(False)
+    table.set_fontsize(12)
+
+    for key, cell in table.get_celld().items():
+        cell.get_text().set_ha('left')   # horizontal alignment: left/center/right
+        cell.get_text().set_va('center') # vertical alignment: top/center/bottom
+
+    _plot_save(fig, plot_dir, plot_path)
     return
