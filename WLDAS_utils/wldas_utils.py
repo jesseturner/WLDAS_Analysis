@@ -4,7 +4,7 @@ from tqdm import tqdm
 import xarray as xr
 import numpy as np
 import matplotlib.pyplot as plt
-from Line_dust_utils import line_dust_utils as dust
+from Line_dust_data import line_dust_utils as dust
 from datetime import datetime, timedelta
 from usda_texture_data import usda_texture_utils as texture
 

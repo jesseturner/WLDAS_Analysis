@@ -1,5 +1,5 @@
 from soil_orders import soil_orders_utils as soil_orders
-from Line_dust_utils import line_dust_utils as dust
+from Line_dust_data import line_dust_utils as dust
 import os
 
 plot_dir = "/home/jturner/WLDAS_Analysis/soil_orders"
