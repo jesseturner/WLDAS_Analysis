@@ -3,7 +3,7 @@ import os, glob
 import pandas as pd
 import matplotlib.pyplot as plt
 
-def open_wrb2014_file(wrb2014_file_dir, plot_dir, plot_path):
+def open_wrb2014_file(wrb2014_file_dir):
     shapefiles = glob.glob(os.path.join(wrb2014_file_dir, "*.shp"))
     layers = [gpd.read_file(shp) for shp in shapefiles]
     print(f"Loaded {len(layers)} shapefiles")
@@ -21,22 +21,59 @@ def count_points_in_regions(gdf_regions, gdf_points):
 
 def add_info_to_counts(df_counts):
     code_info = [
-        {'SU_SYMBOL': 'AC', 'name': 'Acrisols', 'description': 'Low-activity clays, low base status', 'category': 'Soils with clay-enriched subsoil'},
-        {'SU_SYMBOL': 'AR', 'name': 'Arenosols', 'description': 'Sandy', 'category': 'Soils with little or no profile differentiation'},
-        {'SU_SYMBOL': 'CH', 'name': 'Chernozems', 'description': 'Very dark topsoil, secondary carbonates', 'category': 'Pronounced accumulation of organic matter in the mineral topsoil'},
-        {'SU_SYMBOL': 'CL', 'name': 'Calcisols', 'description': 'Accumulation of secondary carbonates', 'category': 'Accumulation of moderately soluble salts or non-saline substances'},
-        {'SU_SYMBOL': 'CM', 'name': 'Cambisols', 'description': 'Moderately developed', 'category': 'Soils with little or no profile differentiation'},
-        {'SU_SYMBOL': 'DS', 'name': 'Dunes', 'description': 'Dunes and shifting sands', 'category': 'Miscellaneous units'},
-        {'SU_SYMBOL': 'FL', 'name': 'Fluvisols', 'description': 'Stratified fluviatile, marine or lacustrine sediments', 'category': 'Soils with little or no profile differentiation'},
-        {'SU_SYMBOL': 'GL', 'name': 'Gleysols', 'description': 'Groundwater-affected, underwater or in tidal areas', 'category': 'Soils distinguished by Fe/Al chemistry'},
-        {'SU_SYMBOL': 'KS', 'name': 'Kastanozems', 'description': 'Dark topsoil, secondary carbonates', 'category': 'Pronounced accumulation of organic matter in the mineral topsoil'},
+        {'SU_SYMBOL': 'HS', 'name': 'Histosols', 'description': '', 'category': 'Soils with thick organic layers'},
+        
+        {'SU_SYMBOL': 'AT', 'name': 'Anthrosols', 'description': 'With long and intensive agricultural use', 'category': 'Soils with strong human influence'},
+        {'SU_SYMBOL': 'TC', 'name': 'Technosols', 'description': 'Containing significant amounts of artefacts', 'category': 'Soils with strong human influence'},
+        
+        {'SU_SYMBOL': 'CR', 'name': 'Cryosols', 'description': 'Permafrost-affected', 'category': 'Soils with limitations to root growth'},
         {'SU_SYMBOL': 'LP', 'name': 'Leptosols', 'description': 'Thin or with many coarse fragments', 'category': 'Soils with limitations to root growth'},
-        {'SU_SYMBOL': 'LV', 'name': 'Luvisols', 'description': 'High-activity clays, high base status', 'category': 'Soils with clay-enriched subsoil'},
-        {'SU_SYMBOL': 'PH', 'name': 'Phaeozems', 'description': 'Dark topsoil, no secondary carbonates (unless very deep), high base status', 'category': 'Pronounced accumulation of organic matter in the mineral topsoil'},
-        {'SU_SYMBOL': 'RG', 'name': 'Regosols', 'description': 'No significant profile development', 'category': 'Soils with little or no profile differentiation'},
         {'SU_SYMBOL': 'SN', 'name': 'Solonetz', 'description': 'With a high content of exchangeable Na', 'category': 'Soils with limitations to root growth'},
         {'SU_SYMBOL': 'VR', 'name': 'Vertisols', 'description': 'Alternating wet-dry conditions, shrink-swell clay minerals', 'category': 'Soils with limitations to root growth'},
+        {'SU_SYMBOL': 'SC', 'name': 'Solonchaks', 'description': 'High concentration of soluble salts', 'category': 'Soils with limitations to root growth'},
+
+        {'SU_SYMBOL': 'GL', 'name': 'Gleysols', 'description': 'Groundwater-affected, underwater or in tidal areas', 'category': 'Soils distinguished by Fe/Al chemistry'},
+        {'SU_SYMBOL': 'AN', 'name': 'Andosols', 'description': 'Allophanes and/or Al-humus complexes', 'category': 'Soils distinguished by Fe/Al chemistry'},
+        {'SU_SYMBOL': 'PZ', 'name': 'Podzols', 'description': 'Subsoil accumulation of humus and/or oxides', 'category': 'Soils distinguished by Fe/Al chemistry'},
+        {'SU_SYMBOL': 'PT', 'name': 'Plinthosols', 'description': 'Accumulation and redistribution of Fe', 'category': 'Soils distinguished by Fe/Al chemistry'},
+        {'SU_SYMBOL': 'PL', 'name': 'Planosols', 'description': 'Stagnant water, abrupt textural difference', 'category': 'Soils distinguished by Fe/Al chemistry'},
+        {'SU_SYMBOL': 'ST', 'name': 'Stagnosols', 'description': 'Stagnant water, structural difference and/or moderate textural difference', 'category': 'Soils distinguished by Fe/Al chemistry'},
+        {'SU_SYMBOL': 'NT', 'name': 'Nitisols', 'description': 'Low-activity clays, P fixation, many Fe oxides, strongly structured', 'category': 'Soils distinguished by Fe/Al chemistry'},
+        {'SU_SYMBOL': 'FR', 'name': 'Ferralsols', 'description': 'Dominance of kaolinite and oxides', 'category': 'Soils distinguished by Fe/Al chemistry'},
+
+        {'SU_SYMBOL': 'CH', 'name': 'Chernozems', 'description': 'Very dark topsoil, secondary carbonates', 'category': 'Pronounced accumulation of organic matter in the mineral topsoil'},
+        {'SU_SYMBOL': 'KS', 'name': 'Kastanozems', 'description': 'Dark topsoil, secondary carbonates', 'category': 'Pronounced accumulation of organic matter in the mineral topsoil'},
+        {'SU_SYMBOL': 'PH', 'name': 'Phaeozems', 'description': 'Dark topsoil, no secondary carbonates (unless very deep), high base status', 'category': 'Pronounced accumulation of organic matter in the mineral topsoil'},
+        {'SU_SYMBOL': 'UM', 'name': 'Umbrisols', 'description': 'Dark topsoil, low base status', 'category': 'Pronounced accumulation of organic matter in the mineral topsoil'},
+
+        {'SU_SYMBOL': 'DU', 'name': 'Durisols', 'description': 'Accumulation of, and cementation by, secondary silica', 'category': 'Accumulation of moderately soluble salts or non-saline substances'},
+        {'SU_SYMBOL': 'GY', 'name': 'Gypsosols', 'description': 'Accumulation of secondary gypsum', 'category': 'Accumulation of moderately soluble salts or non-saline substances'},
+        {'SU_SYMBOL': 'CL', 'name': 'Calcisols', 'description': 'Accumulation of secondary carbonates', 'category': 'Accumulation of moderately soluble salts or non-saline substances'},
+
+        {'SU_SYMBOL': 'RT', 'name': 'Retisols', 'description': 'Interfingering of coarser-textured, lighter-coloured material into a finer-textured, stronger coloured layer', 'category': 'Soils with clay-enriched subsoil'},
+        {'SU_SYMBOL': 'AC', 'name': 'Acrisols', 'description': 'Low-activity clays, low base status', 'category': 'Soils with clay-enriched subsoil'},
+        {'SU_SYMBOL': 'LX', 'name': 'Lixisols', 'description': 'Low-activity clays, high base status', 'category': 'Soils with clay-enriched subsoil'},
+        {'SU_SYMBOL': 'AL', 'name': 'Alisols', 'description': 'High-activity clays, low base status', 'category': 'Soils with clay-enriched subsoil'},
+        {'SU_SYMBOL': 'LV', 'name': 'Luvisols', 'description': 'High-activity clays, high base status', 'category': 'Soils with clay-enriched subsoil'},
+
+        {'SU_SYMBOL': 'CM', 'name': 'Cambisols', 'description': 'Moderately developed', 'category': 'Soils with little or no profile differentiation'},
+        {'SU_SYMBOL': 'FL', 'name': 'Fluvisols', 'description': 'Stratified fluviatile, marine or lacustrine sediments', 'category': 'Soils with little or no profile differentiation'},
+        {'SU_SYMBOL': 'AR', 'name': 'Arenosols', 'description': 'Sandy', 'category': 'Soils with little or no profile differentiation'},
+        {'SU_SYMBOL': 'RG', 'name': 'Regosols', 'description': 'No significant profile development', 'category': 'Soils with little or no profile differentiation'},
+
+        {'SU_SYMBOL': 'DS', 'name': 'Dunes', 'description': 'Dunes and shifting sands', 'category': 'Miscellaneous units'},
+        {'SU_SYMBOL': 'ST', 'name': 'Salt flats', 'description': 'Salt flats', 'category': 'Miscellaneous units'},
+        {'SU_SYMBOL': 'RD', 'name': 'Rock debris', 'description': 'Rock debris', 'category': 'Miscellaneous units'},
         {'SU_SYMBOL': 'WR', 'name': 'Inland waters', 'description': 'Inland waters', 'category': 'Miscellaneous units'},
+        {'SU_SYMBOL': 'GG', 'name': 'Glaciers and snow', 'description': 'Glaciers and snow', 'category': 'Miscellaneous units'},
+        {'SU_SYMBOL': 'UR', 'name': 'Urban', 'description': 'Urban', 'category': 'Miscellaneous units'},
+        {'SU_SYMBOL': 'IS', 'name': 'Island', 'description': 'Island', 'category': 'Miscellaneous units'},
+        {'SU_SYMBOL': 'NI', 'name': 'No data', 'description': 'No data', 'category': 'Miscellaneous units'},
+
+        #--- Reassigned from FAO74 to WRB2014
+        {'SU_SYMBOL': 'PD', 'name': 'Podzoluvisols (Retisols)', 'description': 'Interfingering of coarser-textured, lighter-coloured material into a finer-textured, stronger coloured layer', 'category': 'Soils with clay-enriched subsoil'},
+        {'SU_SYMBOL': 'GR', 'name': 'Greyzems (Phaeozems)', 'description': 'Dark topsoil, no secondary carbonates (unless very deep), high base status', 'category': 'Pronounced accumulation of organic matter in the mineral topsoil'},
+        {'SU_SYMBOL': 'RK', 'name': 'Rock debris', 'description': 'Rock debris', 'category': 'Miscellaneous units'},
         ]
 
     df_lookup = pd.DataFrame(code_info)
@@ -45,7 +82,7 @@ def add_info_to_counts(df_counts):
 
     return df
 
-def plot_counts(df_counts, plot_dir, plot_path):
+def plot_counts(df_counts, plot_dir, plot_name):
 
     fig = plt.figure(figsize=(8, 4))
     plt.bar(df_counts['name'], df_counts['count'], color='0')
@@ -54,18 +91,18 @@ def plot_counts(df_counts, plot_dir, plot_path):
     plt.ylabel("Count")
     plt.xticks(rotation=45, ha='right')
 
-    _plot_save(fig, plot_dir, plot_path)
+    _plot_save(fig, plot_dir, plot_name)
     return
 
-def _plot_save(fig, plot_dir, plot_path):
+def _plot_save(fig, plot_dir, plot_name):
     plt.tight_layout()
     os.makedirs(plot_dir, exist_ok=True)
-    plt.savefig(plot_path, bbox_inches='tight', dpi=300)
+    plt.savefig(plot_name, bbox_inches='tight', dpi=300)
     plt.close(fig)
 
     return
 
-def create_legend_png(df_counts, plot_dir, plot_path):
+def create_legend_png(df_counts, plot_dir, plot_name):
 
     fig, ax = plt.subplots(figsize=(16, 6))
     ax.set_axis_off()
@@ -91,5 +128,18 @@ def create_legend_png(df_counts, plot_dir, plot_path):
             cell.set_text_props(weight='bold', color='white')
             cell.set_facecolor('#000000')
 
-    _plot_save(fig, plot_dir, plot_path)
+    _plot_save(fig, plot_dir, plot_name)
     return
+
+def get_wrb2014_distributions(gdf):
+    #--- Filter this to American Southwest
+    print(gdf.columns)
+    print(gdf['Shape_Area'])
+
+    area_by_symbol = gdf.groupby('SU_SYMBOL')['Shape_Area'].sum().reset_index()
+    print(area_by_symbol)
+
+    return area_by_symbol
+
+def plot_counts_and_total(df_counts, df_counts_total, plot_dir, plot_name):
+    
