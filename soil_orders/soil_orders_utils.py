@@ -2,6 +2,7 @@ import geopandas as gpd
 import os, glob
 import pandas as pd
 import matplotlib.pyplot as plt
+import numpy as np
 
 def open_wrb2014_file(wrb2014_file_dir):
     shapefiles = glob.glob(os.path.join(wrb2014_file_dir, "*.shp"))
@@ -104,7 +105,7 @@ def _plot_save(fig, plot_dir, plot_name):
 
 def create_legend_png(df_counts, plot_dir, plot_name):
 
-    fig, ax = plt.subplots(figsize=(16, 6))
+    fig, ax = plt.subplots(figsize=(16, 12))
     ax.set_axis_off()
 
     table_data = list(zip(df_counts['name'], df_counts['category'], df_counts['description']))
@@ -133,13 +134,28 @@ def create_legend_png(df_counts, plot_dir, plot_name):
 
 def get_wrb2014_distributions(gdf):
     #--- Filter this to American Southwest
-    print(gdf.columns)
-    print(gdf['Shape_Area'])
-
     area_by_symbol = gdf.groupby('SU_SYMBOL')['Shape_Area'].sum().reset_index()
-    print(area_by_symbol)
 
     return area_by_symbol
 
 def plot_counts_and_total(df_counts, df_counts_total, plot_dir, plot_name):
-    
+
+    fig, ax1 = plt.subplots(figsize=(8,5))
+
+    bars1 = ax1.bar(df_counts['name'], df_counts['count'], color='skyblue', label='Dust soil orders')
+    ax1.set_ylabel('Dust event count')
+    ax1.set_xlabel('Soil order')
+
+    ax2 = ax1.twinx()
+    bars2 = ax2.bar(df_counts_total['name'], df_counts_total['Shape_Area'], color='salmon', alpha=0.6, label='Total soil orders')
+    ax2.set_ylabel('WRB soil total area')
+
+    plt.title("Counts of WRB2014 soil orders")
+    x = np.arange(len(df_counts_total['name']))
+    ax1.set_xticks(x)
+    ax1.set_xticklabels(df_counts_total['name'], rotation=45, ha='right')
+    ax1.legend(loc='upper left')
+    ax2.legend(loc='upper right')
+
+    _plot_save(fig, plot_dir, plot_name)
+    return
