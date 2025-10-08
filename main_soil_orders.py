@@ -11,6 +11,7 @@ df = dust.read_dust_data_into_df(dust_path)
 dust_gdf = dust.convert_df_to_gdf(df)
 
 counts_df = soil_orders.count_points_in_regions(gdf, dust_gdf)
+counts_d_total = soil_orders.count_total(gdf)
 counts_df = soil_orders.add_info_to_counts(counts_df)
 print(counts_df)
 
