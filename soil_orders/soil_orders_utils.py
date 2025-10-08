@@ -22,7 +22,7 @@ def count_points_in_regions(gdf_regions, gdf_points):
 def add_info_to_counts(df_counts):
     code_info = [
         {'SU_SYMBOL': 'AC', 'name': 'Acrisols', 'description': 'Low-activity clays, low base status', 'category': 'Soils with clay-enriched subsoil'},
-        {'SU_SYMBOL': 'AR', 'name': 'Arenosols', 'description': 'Sandy', 'category': ' Soils with little or no profile differentiation'},
+        {'SU_SYMBOL': 'AR', 'name': 'Arenosols', 'description': 'Sandy', 'category': 'Soils with little or no profile differentiation'},
         {'SU_SYMBOL': 'CH', 'name': 'Chernozems', 'description': 'Very dark topsoil, secondary carbonates', 'category': 'Pronounced accumulation of organic matter in the mineral topsoil'},
         {'SU_SYMBOL': 'CL', 'name': 'Calcisols', 'description': 'Accumulation of secondary carbonates', 'category': 'Accumulation of moderately soluble salts or non-saline substances'},
         {'SU_SYMBOL': 'CM', 'name': 'Cambisols', 'description': 'Moderately developed', 'category': 'Soils with little or no profile differentiation'},
@@ -77,10 +77,18 @@ def create_legend_png(df_counts, plot_dir, plot_path):
                     colWidths=[0.1, 0.4, 0.5])
     table.auto_set_font_size(False)
     table.set_fontsize(12)
+    table.scale(1, 1.5)
 
-    for key, cell in table.get_celld().items():
+    #--- Customize all cells
+    for row, cell in table.get_celld().items():
         cell.get_text().set_ha('left')   # horizontal alignment: left/center/right
         cell.get_text().set_va('center') # vertical alignment: top/center/bottom
+        
+    #--- Highlight the header
+    for (row, col), cell in table.get_celld().items():
+        if row == 0:
+            cell.set_text_props(weight='bold', color='white')
+            cell.set_facecolor('#40466e')
 
     _plot_save(fig, plot_dir, plot_path)
     return
