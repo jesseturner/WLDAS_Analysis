@@ -41,6 +41,7 @@ def add_info_to_counts(df_counts):
 
     df_lookup = pd.DataFrame(code_info)
     df = df_counts.merge(df_lookup, on='SU_SYMBOL', how='left')
+    df = df.sort_values(by=['category', 'name'], ascending=[True, True])
 
     return df
 
@@ -88,7 +89,7 @@ def create_legend_png(df_counts, plot_dir, plot_path):
     for (row, col), cell in table.get_celld().items():
         if row == 0:
             cell.set_text_props(weight='bold', color='white')
-            cell.set_facecolor('#40466e')
+            cell.set_facecolor('#000000')
 
     _plot_save(fig, plot_dir, plot_path)
     return
