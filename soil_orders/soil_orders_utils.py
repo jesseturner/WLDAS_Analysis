@@ -19,11 +19,6 @@ def count_points_in_regions(gdf_regions, gdf_points):
     
     return counts_df
 
-def count_total(gdf_regions):
-    counts_df = gdf_regions.groupby('SU_SYMBOL').size().reset_index(name='count')
-    
-    return counts_df
-
 def add_info_to_counts(df_counts):
     code_info = [
         {'SU_SYMBOL': 'AC', 'name': 'Acrisols', 'description': 'Low-activity clays, low base status', 'category': 'Soils with clay-enriched subsoil'},
