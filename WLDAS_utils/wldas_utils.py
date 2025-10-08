@@ -2,12 +2,11 @@ from pathlib import Path
 import requests, os, sys, pickle, json, re, glob
 from tqdm import tqdm
 import xarray as xr
-import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.cm as cm
 from Line_dust_utils import line_dust_utils as dust
 from datetime import datetime, timedelta
+from usda_texture_data import usda_texture_utils as texture
 
 def get_wldas_data(date, chunks=None, print_vars=False, print_ds=False):
     download_dir = Path("WLDAS_data")
@@ -510,7 +509,7 @@ def get_wldas_plus_minus_30_average_soil_texture(json_dir, usda_filepath, soil_i
 
 def _get_file_list_filtered_by_soil_texture(file_list, usda_filepath, soil_id):
     filtered_file_list = []
-    texture_df = _open_usda_texture_csv(usda_filepath)
+    texture_df = texture._open_usda_texture_csv(usda_filepath)
     count = 0
 
     for f in file_list:
@@ -533,29 +532,3 @@ def _get_file_list_filtered_by_soil_texture(file_list, usda_filepath, soil_id):
     return filtered_file_list
 
 
-def _open_usda_texture_csv(usda_filepath):
-    df = pd.read_csv(usda_filepath)
-    return df
-
-def counts_of_usda_texture_values(usda_filepath):
-    df = _open_usda_texture_csv(usda_filepath)
-    counts = df["SAMPLE_1"].value_counts().sort_index().to_dict()
-
-    soil_mapping = {
-        1: "Clay",
-        2: "Clay loam",
-        3: "Loam",
-        4: "Loamy sand",
-        5: "Sand",
-        6: "Sandy clay",
-        7: "Sandy clay loam",
-        8: "Sandy loam",
-        9: "Silt",
-        10: "Silty clay",
-        11: "Silty clay loam",
-        12: "Silt loam"
-    }
-
-    counts_named = {soil_mapping[k].lower().replace(" ", "_"): v for k, v in counts.items()}
-
-    return counts_named
