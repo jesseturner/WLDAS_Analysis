@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from Line_dust_data import line_dust_utils as dust
 from datetime import datetime, timedelta
-from usda_texture_data import usda_texture_utils as texture
+from USDA_texture_data import usda_texture_utils as texture
 
 def get_wldas_data(date, chunks=None, print_vars=False, print_ds=False):
     download_dir = Path("WLDAS_data")
