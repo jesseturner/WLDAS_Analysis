@@ -140,15 +140,16 @@ def get_wrb2014_distributions(gdf):
 
 def plot_counts_and_total(df_counts, df_counts_total, plot_dir, plot_name):
 
+
     fig, ax1 = plt.subplots(figsize=(8,5))
 
     bars1 = ax1.bar(df_counts['name'], df_counts['count'], color='skyblue', label='Dust soil orders')
-    ax1.set_ylabel('Dust event count')
+    ax1.set_ylabel('Dust event (count)')
     ax1.set_xlabel('Soil order')
 
     ax2 = ax1.twinx()
-    bars2 = ax2.bar(df_counts_total['name'], df_counts_total['Shape_Area'], color='salmon', alpha=0.6, label='Total soil orders')
-    ax2.set_ylabel('WRB soil total area')
+    bars2 = ax2.bar(df_counts_total['name'], df_counts_total['Shape_Area'], color='salmon', label='Total soil orders')
+    ax2.set_ylabel('WRB soil total area (square degrees)')
 
     plt.title("Counts of WRB2014 soil orders")
     x = np.arange(len(df_counts_total['name']))
@@ -156,6 +157,11 @@ def plot_counts_and_total(df_counts, df_counts_total, plot_dir, plot_name):
     ax1.set_xticklabels(df_counts_total['name'], rotation=45, ha='right')
     ax1.legend(loc='upper left')
     ax2.legend(loc='upper right')
+
+    #--- Draw vertical separators between groups
+    boundaries = df_counts_total.groupby('category').size().cumsum()[:-1]
+    for b in boundaries:
+        ax2.axvline(b - 0.5, color='gray', linewidth=1, zorder=-1)
 
     _plot_save(fig, plot_dir, plot_name)
     return
