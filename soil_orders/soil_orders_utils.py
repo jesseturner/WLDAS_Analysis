@@ -143,12 +143,12 @@ def plot_counts_and_total(df_counts, df_counts_total, plot_dir, plot_name):
 
     fig, ax1 = plt.subplots(figsize=(8,5))
 
-    bars1 = ax1.bar(df_counts['name'], df_counts['count'], color='skyblue', label='Dust soil orders')
+    bars1 = ax1.bar(df_counts['name'], df_counts['count'], color='skyblue', label='Dust soil orders', alpha=0.5)
     ax1.set_ylabel('Dust event (count)')
     ax1.set_xlabel('Soil order')
 
     ax2 = ax1.twinx()
-    bars2 = ax2.bar(df_counts_total['name'], df_counts_total['Shape_Area'], color='salmon', label='Total soil orders')
+    bars2 = ax2.bar(df_counts_total['name'], df_counts_total['Shape_Area'], color='salmon', label='Total soil orders', alpha=0.5)
     ax2.set_ylabel('WRB soil total area (square degrees)')
 
     plt.title("Counts of WRB2014 soil orders")
