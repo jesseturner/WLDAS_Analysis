@@ -1,6 +1,4 @@
 import pandas as pd
-from shapely.geometry import Point
-import geopandas as gpd
 
 def read_dust_data_into_df(dust_path):
     
@@ -13,10 +11,3 @@ def read_dust_data_into_df(dust_path):
     dust_df = dust_df.dropna(subset=['latitude', 'longitude'])
 
     return dust_df
-
-def convert_df_to_gdf(df):
-    geometry = [Point(xy) for xy in zip(df['longitude'], df['latitude'])]
-    #--- EPSG:4326 is the standard for lat/lon coordinates (WGS84)
-    gdf_points = gpd.GeoDataFrame(df, geometry=geometry, crs="EPSG:4326")
-
-    return gdf_points
