@@ -14,7 +14,20 @@ def read_dust_data_into_df(dust_path):
 
 def filter_to_region(dust_df, location_name):
     """
-    Select the dust events from the dictionary of dust locations. 
+    Get dust events filtered to a region.
+    """
+    
+    lat_min, lat_max, lon_min, lon_max = _get_coords_for_region(location_name)
+
+    dust_df_filtered = dust_df[
+        (dust_df['latitude'] <= lat_max) & (dust_df['latitude'] >= lat_min) &
+        (dust_df['longitude'] >= lon_min) & (dust_df['longitude'] <= lon_max)
+    ]
+    return dust_df_filtered
+
+def _get_coords_for_region(location_name):
+    """
+    Get the lat and lon range from the dictionary of regions used in Line 2025. 
     """
     locations = {
         "Chihuahua": [(33.3, -110.0), (28.0, -105.3)],
@@ -50,12 +63,7 @@ def filter_to_region(dust_df, location_name):
     lat_min, lat_max = min(lats), max(lats)
     lon_min, lon_max = min(lons), max(lons)
 
-    dust_df_filtered = dust_df[
-        (dust_df['latitude'] <= lat_max) & (dust_df['latitude'] >= lat_min) &
-        (dust_df['longitude'] >= lon_min) & (dust_df['longitude'] <= lon_max)
-    ]
-    return dust_df_filtered
-
+    return lat_min, lat_max, lon_min, lon_max
 
     
 

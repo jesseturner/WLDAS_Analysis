@@ -4,9 +4,9 @@ from tqdm import tqdm
 import xarray as xr
 import numpy as np
 import matplotlib.pyplot as plt
-from Line_dust_data import line_dust_utils as dust
 from datetime import datetime, timedelta
 from USDA_texture_data import usda_texture_utils as texture
+import pandas as pd
 
 def get_wldas_data(date, chunks=None, print_vars=False, print_ds=False):
     download_dir = Path("WLDAS_data")
@@ -102,7 +102,7 @@ def _write_file_to_local_disk(response, filepath, filename):
                 pbar.update(len(chunk))
     return
 
-def load_data_with_xarray(filepath, chunks, print_vars, print_ds):
+def load_data_with_xarray(filepath, chunks=None, print_vars=False, print_ds=False):
     ds = None
 
     if filepath:
@@ -530,4 +530,98 @@ def _get_file_list_filtered_by_soil_texture(file_list, usda_filepath, soil_id):
 
     return filtered_file_list
 
+def create_region_average_over_time(wldas_dir, location_name, save_dir):
+    """
+    Get average soil moistures for a region over the times in the WLDAS directory.
+    """
 
+    lat_min, lat_max, lon_min, lon_max = _get_coords_for_region(location_name)
+
+    dates = []
+    moistures = []
+    std = []
+    file_list = glob.glob(os.path.join(wldas_dir, "*.nc4"))
+    for count, filepath in enumerate(file_list, start=1):
+        ds = load_data_with_xarray(os.path.join(wldas_dir,filepath))
+
+        filtered_ds = ds.sel(
+            lat=slice(lat_min, lat_max),
+            lon=slice(lon_min, lon_max)
+        )
+
+        dt = filtered_ds.time
+        moisture = filtered_ds["SoilMoi00_10cm_tavg"].mean(dim=['time', 'lat', 'lon'])
+        moisture_std = filtered_ds["SoilMoi00_10cm_tavg"].std(dim=['time', 'lat', 'lon'])
+        dates.append(dt[0].values)
+        moistures.append(moisture.values)
+        std.append(moisture_std.values)
+
+        if count % 100 == 0:
+            print(f"{count} / {len(file_list)}")
+
+    region_moisture_df = pd.DataFrame({
+        'moisture': moistures, 
+        'standard deviation': std}, 
+        index=dates
+    )
+    region_moisture_df.sort_index(inplace=True)
+
+    region_moisture_df.to_csv(os.path.join(save_dir,f'region_moisture_{location_name}.csv'))
+
+    return
+
+def _get_coords_for_region(location_name):
+    """
+    Get the lat and lon range from the dictionary of regions used in Line 2025. 
+    """
+    locations = {
+        "Chihuahua": [(33.3, -110.0), (28.0, -105.3)],
+        "West Texas": [(35.0, -104.0), (31.8, -100.5)],
+        "Central High Plains": [(43.0, -105.0), (36.5, -98.0)],
+        "Nevada": [(43.0, -120.7), (37.0, -114.5)],
+        "Utah": [(42.0, -114.5), (37.5, -109.0)],
+        "Southern California": [(37.0, -119.0), (30.0, -114.2)],
+        "Four Corners": [(37.5, -112.5), (34.4, -107.0)],
+        "San Luis Valley": [(38.5, -106.5), (37.0, -105.3)],
+
+        "N Mexico 1": [(31.8, -107.6), (31.3, -107.1)],
+        "Carson Sink": [(40.1, -118.75), (39.6, -118.25)],
+        "N Mexico 2": [(31.4, -108.25), (30.9, -107.75)],
+        "N Mexico 3": [(31.1, -107.15), (30.6, -106.65)],
+        "Black Rock 1": [(41.15, -119.35), (40.65, -118.85)],
+        "West Texas 1": [(32.95, -102.35), (32.45, -101.85)],
+        "N Mexico 4": [(30.65, -107.65), (30.15, -107.15)],
+        "N Mexico 5": [(31.0, -106.65), (30.5, -106.15)],
+        "White Sands": [(33.15, -106.6), (32.65, -106.1)],
+        "West Texas 2": [(33.5, -102.8), (33.0, -102.30)],
+        "SLV2": [(38.05, -106.15), (37.55, -105.65)],
+        "N Mexico 6": [(29.55, -107.05), (29.05, -106.55)],
+        "NE AZ": [(35.7, -111.1), (35.2, -110.6)],
+        "NW New Mexico": [(36.15, -108.85), (35.65, -108.35)],
+        "Black Rock 2": [(40.75, -119.9), (40.25, -119.4)],
+        "N Mexico 7": [(30.9, -108.15), (30.4, -107.65)],
+    }
+    coords = locations[location_name]
+    lats = [p[0] for p in coords]
+    lons = [p[1] for p in coords]
+
+    lat_min, lat_max = min(lats), max(lats)
+    lon_min, lon_max = min(lons), max(lons)
+
+    return lat_min, lat_max, lon_min, lon_max
+
+def plot_region_average_over_time(csv_path,  plot_dir, location_str):
+    moisture_df = pd.read_csv(csv_path)
+
+    plot_title = f"Average soil moisture in {location_str}"
+    location_str_save = location_str.lower().replace(" ", "_")
+    plot_path = f"{plot_dir}/region_moisture_{location_str_save}.png"
+
+    fig, ax = plt.subplots(figsize=(24, 6))
+    ax.plot(moisture_df['moisture'], linestyle='-', color='black')
+    plt.title(plot_title)
+    plt.xlabel("Date")
+    plt.ylabel("Soil Moisture (m$^3$/m$^3$)")
+    _plot_save(fig, plot_dir, plot_path)
+
+    return

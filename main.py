@@ -14,18 +14,20 @@ dust_df = dust.read_dust_data_into_df(dust_path)
 
 #ds = wldas.plot_hist_for_variables(ds, "WLDAS_hist_test")
 
-wldas_path = "/mnt/data2/jturner/wldas_data"
+wldas_path = "/mnt/data2/jturner/wldas_data" #--- All 20 years of data
 plus_minus_30_dir = "WLDAS_plus_minus_30"
 
-# filepath = f"{wldas_path}/WLDAS_NOAHMP001_DA1_20010112.D10.nc.SUB.nc4"
-# ds = wldas.load_data_with_xarray(filepath, chunks=None, print_vars=False, print_ds=True)
+filepath = f"{wldas_path}/WLDAS_NOAHMP001_DA1_20010112.D10.nc.SUB.nc4"
+ds = wldas.load_data_with_xarray(filepath, chunks=None, print_vars=False, print_ds=True)
 
 # wldas.get_wldas_plus_minus_30(dust_df, wldas_path, plus_minus_30_dir)
 
 # json_filepath = "WLDAS_plus_minus_30/20021217_1845_lat3041_lon10653.json"
 # wldas.plot_wldas_plus_minus_30(json_filepath, "WLDAS_plus_minus_30_plots")
 
-print(dust_df)
-
 dust_df_region = dust.filter_to_region(dust_df, location_name="Chihuahua")
 print(dust_df_region)
+
+# wldas.create_region_average_over_time(wldas_dir=wldas_path, location_name="Chihuahua", save_dir="WLDAS_plots")
+csv_path = "WLDAS_plots/region_moisture_Chihuahua.csv"
+wldas.plot_region_average_over_time(csv_path, plot_dir="WLDAS_plots", location_str="Chihuahua")
