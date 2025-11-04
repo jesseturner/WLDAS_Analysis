@@ -4,6 +4,7 @@ from tqdm import tqdm
 import xarray as xr
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 from datetime import datetime, timedelta
 from USDA_texture_data import usda_texture_utils as texture
 import pandas as pd
@@ -611,7 +612,7 @@ def _get_coords_for_region(location_name):
     return lat_min, lat_max, lon_min, lon_max
 
 def plot_region_average_over_time(csv_path,  plot_dir, location_str):
-    moisture_df = pd.read_csv(csv_path)
+    moisture_df = pd.read_csv(csv_path, index_col=0, parse_dates=True)
 
     plot_title = f"Average soil moisture in {location_str}"
     location_str_save = location_str.lower().replace(" ", "_")
@@ -622,6 +623,47 @@ def plot_region_average_over_time(csv_path,  plot_dir, location_str):
     plt.title(plot_title)
     plt.xlabel("Date")
     plt.ylabel("Soil Moisture (m$^3$/m$^3$)")
+    _plot_save(fig, plot_dir, plot_path)
+
+    return
+
+def plot_region_average_over_year(csv_path, dust_region_df, plot_dir, location_str):
+    """
+    Plotting the day-of-year moisture and dust events. 
+    csv_path : created in create_region_average_over_time(). 
+    dust_region_df : created in line_dust_utils, read_dust_data_into_df() and filter_to_region().
+    """
+
+    moisture_df = pd.read_csv(csv_path, index_col=0, parse_dates=True)
+    moisture_df['year'] = moisture_df.index.year
+    moisture_df['doy'] = moisture_df.index.dayofyear
+
+    dust_region_df = dust_region_df.copy()
+    dust_region_df['date'] = pd.to_datetime(dust_region_df['Date (YYYYMMDD)'], format='%Y%m%d')
+    dust_region_df['year'] = dust_region_df['date'].dt.year
+    dust_region_df['doy'] = dust_region_df['date'].dt.dayofyear
+
+    fig, ax = plt.subplots(figsize=(18, 6))
+
+    years = sorted(moisture_df['year'].unique())
+    colors = cm.copper(np.linspace(0, 1, len(years)))
+
+    #--- Plotting soil moisture lines
+    for color, (year, group) in zip(colors, moisture_df.groupby('year')):
+        plt.plot(group['doy'], group['moisture'], color=color, label=str(year), zorder=2)
+
+    #--- Plotting dust events
+    for doy in sorted(dust_region_df['doy'].unique()):
+        plt.axvline(doy, color='blue', linestyle='-', alpha=0.6, linewidth=1, zorder=1)
+
+    plot_title = f"Average soil moisture in {location_str}"
+    location_str_save = location_str.lower().replace(" ", "_")
+    plot_path = f"{plot_dir}/region_moisture_{location_str_save}_year.png"
+
+    plt.title(plot_title)
+    plt.xlabel("Day of Year")
+    plt.ylabel("Soil Moisture (m$^3$/m$^3$)")
+    plt.legend()
     _plot_save(fig, plot_dir, plot_path)
 
     return

@@ -25,9 +25,10 @@ ds = wldas.load_data_with_xarray(filepath, chunks=None, print_vars=False, print_
 # json_filepath = "WLDAS_plus_minus_30/20021217_1845_lat3041_lon10653.json"
 # wldas.plot_wldas_plus_minus_30(json_filepath, "WLDAS_plus_minus_30_plots")
 
-dust_df_region = dust.filter_to_region(dust_df, location_name="Chihuahua")
-print(dust_df_region)
+dust_region_df = dust.filter_to_region(dust_df, location_name="Chihuahua")
+print(dust_region_df)
 
 # wldas.create_region_average_over_time(wldas_dir=wldas_path, location_name="Chihuahua", save_dir="WLDAS_plots")
 csv_path = "WLDAS_plots/region_moisture_Chihuahua.csv"
-wldas.plot_region_average_over_time(csv_path, plot_dir="WLDAS_plots", location_str="Chihuahua")
+# wldas.plot_region_average_over_time(csv_path, plot_dir="WLDAS_plots", location_str="Chihuahua")
+wldas.plot_region_average_over_year(csv_path, dust_region_df=dust_region_df, plot_dir="WLDAS_plots", location_str="Chihuahua")
