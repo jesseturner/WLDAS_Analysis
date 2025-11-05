@@ -667,3 +667,57 @@ def plot_region_average_over_year(csv_path, dust_region_df, plot_dir, location_s
     _plot_save(fig, plot_dir, plot_path)
 
     return
+
+def plot_harmonic_analysis(csv_path, dust_region_df, plot_dir, location_str):
+
+    moisture_df = pd.read_csv(csv_path, index_col=0, parse_dates=True)
+
+    #--- Get dust events per day, filling in missing days with zeroes
+    dust_region_df = dust_region_df.copy()
+    dust_region_df['date'] = pd.to_datetime(dust_region_df['Date (YYYYMMDD)'], format='%Y%m%d')
+    daily_counts = dust_region_df.groupby('date').size()
+    all_days = pd.date_range(daily_counts.index.min(), daily_counts.index.max())
+    daily_counts = daily_counts.reindex(all_days, fill_value=0)
+    dust_values = daily_counts.values
+
+    #--- Normalize data
+    moist_values = moisture_df["moisture"] - np.mean(moisture_df["moisture"])
+    dust_values = dust_values - np.mean(dust_values)
+
+    #--- FFT magnitudes
+    moist_fft_values = np.abs(np.fft.rfft(moist_values))
+    dust_fft_values = np.abs(np.fft.rfft(dust_values))
+
+    #--- Frequencies in cycles per year
+    moist_freq = np.fft.rfftfreq(len(moist_values), d=1.0/365.25)
+    dust_freq = np.fft.rfftfreq(len(dust_values), d=1.0/365.25)
+
+    nyquist = moist_freq[-1]
+    print("Nyquist frequency (cycles/year):", nyquist)
+
+    fig, ax = plt.subplots(figsize=(18, 6))
+
+    color1 = "#377eb8"
+    ax.plot(moist_freq, moist_fft_values, color=color1, linewidth=3, alpha=0.6)
+    ax.tick_params(axis='y', labelcolor=color1)
+    ax.set_ylabel('Moisture Amplitudes', color=color1, size=24) 
+    ax.set_xlim(0,6)
+    ax.set_xlabel('Frequencies in cycles per year', color='black', size=24) 
+    ax.tick_params(axis='x', labelsize=18)
+    
+    ax1 = ax.twinx()
+    color2 = "#AB7A4A"
+    ax1.plot(dust_freq, dust_fft_values, color=color2, linewidth=3, alpha=0.6)
+    ax1.tick_params(axis='y', labelcolor=color2)
+    ax1.set_ylabel('Dust Amplitudes', color=color2, size=24) 
+
+    plot_title = f"Frequency Spectrum (FFT) of soil moisture in {location_str}"
+    location_str_save = location_str.lower().replace(" ", "_")
+    plot_path = f"{plot_dir}/frequencies_{location_str_save}_year.png"
+
+    plt.title(plot_title, size=24)
+    plt.xlabel("Frequency (cycles per year)")
+    _plot_save(fig, plot_dir, plot_path)
+
+
+    return
