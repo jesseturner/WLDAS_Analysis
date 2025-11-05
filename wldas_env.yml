@@ -13,4 +13,5 @@ dependencies:
   - requests
   - dask
   - geopandas
+  - python-ternary
 prefix: /Applications/anaconda3/envs/wldas_env

@@ -165,10 +165,9 @@ def create_hist_for_variables(ds, hist_dir):
 
     return ds
 
-def _plot_save(fig, plot_dir, plot_path):
-    plt.tight_layout()
-    os.makedirs(plot_dir, exist_ok=True)
-    plt.savefig(plot_path)
+def _plot_save(fig, fig_dir, fig_name):
+    os.makedirs(f"{fig_dir}", exist_ok=True)
+    plt.savefig(f"{fig_dir}/{fig_name}.png", dpi=200, bbox_inches='tight')
     plt.close(fig)
 
     return
