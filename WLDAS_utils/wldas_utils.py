@@ -668,7 +668,7 @@ def plot_region_average_over_year(csv_path, dust_region_df, plot_dir, location_s
 
     return
 
-def plot_harmonic_analysis(csv_path, dust_region_df, plot_dir, location_str):
+def plot_frequency_analysis(csv_path, dust_region_df, plot_dir, location_str):
 
     moisture_df = pd.read_csv(csv_path, index_col=0, parse_dates=True)
 

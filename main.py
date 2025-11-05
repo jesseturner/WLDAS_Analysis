@@ -32,4 +32,4 @@ print(dust_region_df)
 csv_path = "WLDAS_plots/region_moisture_Chihuahua.csv"
 # wldas.plot_region_average_over_time(csv_path, plot_dir="WLDAS_plots", location_str="Chihuahua")
 # wldas.plot_region_average_over_year(csv_path, dust_region_df=dust_region_df, plot_dir="WLDAS_plots", location_str="Chihuahua")
-wldas.plot_harmonic_analysis(csv_path, dust_region_df=dust_region_df, plot_dir="WLDAS_plots", location_str="Chihuahua")
+wldas.plot_frequency_analysis(csv_path, dust_region_df=dust_region_df, plot_dir="WLDAS_plots", location_str="Chihuahua")
