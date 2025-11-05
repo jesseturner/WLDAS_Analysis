@@ -14,3 +14,5 @@ The data were subsetted and intersected with the new lat/lon shapefile to yield:
 10: Silty clay
 11: Silty clay loam
 12: Silt loam
+
+Rejected in favor of the GLDAS soil texture data because it has fractions of soil types. And it is more related to the WDLAS dataset. 
