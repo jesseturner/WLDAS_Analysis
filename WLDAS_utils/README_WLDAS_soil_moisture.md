@@ -10,20 +10,13 @@ Overview:
 
 Using the code: `WLDAS_utils/wldas_utils.py`. 
 
-Data is initially downloaded to `WLDAS_data_subset` 
-using the `get_wldas_data_bulk_subset()` method 
-and the .txt file in the repository. 
-
-For each dust case in the Line dust dataset, 
-we create a time list of soil moistures 
-associated with the nearest WLDAS grid point 
-using `get_wldas_plus_minus_30()`. This is saved 
-as a JSON file in `WLDAS_plus_minus_30`. 
-
-We can plot the soil moisture record (30 days before to 30 days after) 
-for individual cases with `plot_wldas_plus_minus_30()`.
-
-We can plot the combined soil moisture pattern
-with dust events centered at the 0 day mark 
-using `get_wldas_plus_minus_30_average()` and 
-`plot_wldas_plus_minus_30_average()`. 
+Instructions for getting WDLAS subset:
+1. https://disc.gsfc.nasa.gov/datasets?keywords=WLDAS
+2. Subset directory
+3. Download list of links
+4. Earthdata authentication:
+    * `.netrc` with username and password
+    * `.urs_cookies` created
+    * `.dodsrc` with path to cookies and netrc
+5. Add subset text file to directory `<url.txt>`
+6. `wget --load-cookies ~/.urs_cookies --save-cookies ~/.urs_cookies --keep-session-cookies --content-disposition -i '<url.txt>'`
