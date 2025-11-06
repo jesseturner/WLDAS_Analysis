@@ -1,7 +1,8 @@
 import xarray as xr
-import ternary
 import matplotlib.pyplot as plt
 import os
+import pandas as pd
+import plotly.express as px
 
 def open_gldas_file(gldas_path):
     ds = xr.open_dataset(gldas_path)
@@ -61,34 +62,42 @@ def get_texture_averages_for_region(ds):
     clay_fraction = ds["GLDAS_soilfraction_clay"].mean(dim=['lat', 'lon', 'time'])
     sand_fraction = ds["GLDAS_soilfraction_sand"].mean(dim=['lat', 'lon', 'time'])
     silt_fraction = ds["GLDAS_soilfraction_silt"].mean(dim=['lat', 'lon', 'time'])
-    print(f"Clay fraction: {clay_fraction:.3f}")
-    print(f"Sand fraction: {sand_fraction:.3f}")
-    print(f"Silt fraction: {silt_fraction:.3f}")
-    return [clay_fraction, silt_fraction, sand_fraction]
+    texture_fractions_df = pd.DataFrame([{
+        'Clay': clay_fraction.values, 
+        'Sand': sand_fraction.values,
+        'Silt': silt_fraction.values}])
 
-def create_ternary_plot(clay_silt_sand, fig_dir, fig_name):
+    return texture_fractions_df
+
+def create_ternary_plot(texture_fractions_df, fig_dir, fig_name, location_name):
     """
     clay_silt_sand : [clay_fraction, silt_fraction, sand_fraction], like from get_texture_averages_for_region()
     """
-    fig, tax = ternary.figure(scale=1.0)
-    tax.boundary(linewidth=2.0)
-    tax.gridlines(multiple=0.1, color="grey")
+    fig = px.scatter_ternary(texture_fractions_df, a="Sand", b="Silt", c="Clay", 
+                             title=f"Distribution of Soil Texture: {location_name}")
+    
+    fig.update_traces(marker=dict(
+        size=15,
+        color='royalblue',
+        line=dict(width=1, color='black'),
+        opacity=0.8
+    ))
+    
+    fig.update_layout(
+        ternary=dict(
+            aaxis=dict(showticklabels=False),
+            baxis=dict(showticklabels=False),
+            caxis=dict(showticklabels=False)
+        ),
+    )
 
-    tax.left_axis_label("Clay", offset=0.16)
-    tax.right_axis_label("Sand", offset=0.16)
-    tax.bottom_axis_label("Silt", offset=0.06)
-
-    tax.plot([clay_silt_sand], marker='o', color='red', markersize=10)
-
-    tax.ticks(axis='lbr', linewidth=1, multiple=0.1)
-    tax.clear_matplotlib_ticks()
-    _plot_save(fig, fig_dir, fig_name)
+    fig.write_image(f"{os.path.join(fig_dir, fig_name)}.png", width=600, height=600, scale=2) 
 
     return
 
 def _plot_save(fig, fig_dir, fig_name):
     os.makedirs(f"{fig_dir}", exist_ok=True)
-    plt.savefig(f"{fig_dir}/{fig_name}.png", dpi=200, bbox_inches='tight')
+    plt.savefig(f"{os.path.join(fig_dir, fig_name)}.png", dpi=200, bbox_inches='tight')
     plt.close(fig)
 
     return

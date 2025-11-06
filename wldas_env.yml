@@ -13,5 +13,6 @@ dependencies:
   - requests
   - dask
   - geopandas
-  - python-ternary
+  - plotly
+  - python-kaleido
 prefix: /Applications/anaconda3/envs/wldas_env
