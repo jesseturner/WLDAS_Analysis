@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import os
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 
 def open_gldas_file(gldas_path):
     ds = xr.open_dataset(gldas_path)
@@ -69,18 +70,19 @@ def get_texture_averages_for_region(ds):
 
     return texture_fractions_df
 
-def create_ternary_plot(texture_fractions_df, fig_dir, fig_name, location_name):
+def create_ternary_plot(texture_fractions_df, fig_dir, fig_name, fig_title, texture_average_df=None):
     """
-    clay_silt_sand : [clay_fraction, silt_fraction, sand_fraction], like from get_texture_averages_for_region()
+    texture_fractions_df from get_texture_for_dust_events()
+    texture_average_df from get_texture_averages_for_region()
     """
     fig = px.scatter_ternary(texture_fractions_df, a="Sand", b="Silt", c="Clay", 
-                             title=f"Distribution of Soil Texture: {location_name}")
+                             title=fig_title)
     
     fig.update_traces(marker=dict(
-        size=15,
-        color='royalblue',
+        size=12,
+        color='#DDC9B4',
         line=dict(width=1, color='black'),
-        opacity=0.8
+        opacity=0.3
     ))
     
     fig.update_layout(
@@ -90,6 +92,20 @@ def create_ternary_plot(texture_fractions_df, fig_dir, fig_name, location_name):
             caxis=dict(showticklabels=False)
         ),
     )
+    #--- Adding average point in red
+    fig.add_trace(go.Scatterternary(
+        a=texture_average_df['Sand'],
+        b=texture_average_df['Silt'],
+        c=texture_average_df['Clay'],
+        mode='markers',
+        marker=dict(
+            size=12,
+            color='#404E7C',
+            line=dict(width=1, color='black'), 
+            opacity=1.0
+        ),
+        name='Regional average'
+    ))
 
     fig.write_image(f"{os.path.join(fig_dir, fig_name)}.png", width=600, height=600, scale=2) 
 
@@ -101,3 +117,26 @@ def _plot_save(fig, fig_dir, fig_name):
     plt.close(fig)
 
     return
+
+def get_texture_for_dust_events(texture_ds, dust_df):
+
+    clay_fractions = []
+    sand_fractions = []
+    silt_fractions = []
+
+    for idx, row in dust_df.iterrows():
+        lat = row['latitude']
+        lon = row['longitude']
+        
+        point = texture_ds.sel(lat=lat, lon=lon, method='nearest')
+        
+        clay_fractions.append(point["GLDAS_soilfraction_clay"].values[0])
+        sand_fractions.append(point["GLDAS_soilfraction_sand"].values[0])
+        silt_fractions.append(point["GLDAS_soilfraction_silt"].values[0])
+
+    texture_fractions_df = pd.DataFrame({
+        'Clay': clay_fractions, 
+        'Sand': sand_fractions,
+        'Silt': silt_fractions})
+
+    return texture_fractions_df
