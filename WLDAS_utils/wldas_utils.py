@@ -167,7 +167,7 @@ def create_hist_for_variables(ds, hist_dir):
 
 def _plot_save(fig, fig_dir, fig_name):
     os.makedirs(f"{fig_dir}", exist_ok=True)
-    plt.savefig(f"{fig_dir}/{fig_name}.png", dpi=200, bbox_inches='tight')
+    plt.savefig(f"{os.path.join(fig_dir, fig_name)}.png", dpi=200, bbox_inches='tight')
     plt.close(fig)
 
     return
