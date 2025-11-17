@@ -7,9 +7,10 @@ from Line_dust_data import line_dust_utils as dust
 # print(counts)
 
 gldas_path = "GLDAS_soil_texture/GLDASp4_soilfraction_025d.nc4"
-location_name = "Nevada"
+location_name = "American Southwest"
 texture_ds = gldas.open_gldas_file(gldas_path)
 texture_ds = gldas.filter_to_region(texture_ds, location_name)
+print(texture_ds)
 texture_average_df = gldas.get_texture_averages_for_region(texture_ds)
 print(texture_average_df)
 
