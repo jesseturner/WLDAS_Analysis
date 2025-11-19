@@ -66,6 +66,3 @@ def _get_coords_for_region(location_name):
     lon_min, lon_max = min(lons), max(lons)
 
     return lat_min, lat_max, lon_min, lon_max
-
-    
-

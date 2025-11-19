@@ -3,6 +3,8 @@ import os, glob
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+from shapely.geometry import Point
+import geopandas as gpd
 
 def open_wrb2014_file(wrb2014_file_dir):
     shapefiles = glob.glob(os.path.join(wrb2014_file_dir, "*.shp"))
@@ -19,6 +21,16 @@ def count_points_in_regions(gdf_regions, gdf_points):
     counts_df = points_with_regions.groupby('SU_SYMBOL').size().reset_index(name='count')
     
     return counts_df
+
+def convert_df_to_gdf(df): 
+    """
+    Dust dataframe to format comparable to soil orders.
+    """
+    geometry = [Point(xy) for xy in zip(df['longitude'], df['latitude'])]
+    #--- EPSG:4326 is the standard for lat/lon coordinates (WGS84)
+    gdf_points = gpd.GeoDataFrame(df, geometry=geometry, crs="EPSG:4326")
+
+    return gdf_points
 
 def add_info_to_counts(df_counts):
     code_info = [
