@@ -1,35 +1,24 @@
-from WLDAS_utils import wldas_utils as wldas
 from Line_dust_data import line_dust_utils as dust
+from GLDAS_soil_texture import gldas_texture_utils as gldas
+import pandas as pd
 
+#--- Get dust data
 dust_path="Line_dust_data/dust_dataset_final_20241226.txt"
 dust_df = dust.read_dust_data_into_df(dust_path)
-
-#ds = wldas.get_wldas_data(datetime(2003, 1, 9), chunks={"lat": 300, "lon": 300}, print_vars=True, print_ds=True)
-
-#ds = wldas.filter_by_bounds(ds, bounds=[27.5,44,-128,-100])
-
-#ds = wldas.filter_by_dust_points(ds, dust_df)
-
-#ds = wldas.create_hist_for_variables(ds, "WLDAS_hist_test")
-
-#ds = wldas.plot_hist_for_variables(ds, "WLDAS_hist_test")
-
-wldas_path = "/mnt/data2/jturner/wldas_data" #--- All 20 years of data
-plus_minus_30_dir = "WLDAS_plus_minus_30"
-
-filepath = f"{wldas_path}/WLDAS_NOAHMP001_DA1_20010112.D10.nc.SUB.nc4"
-ds = wldas.load_data_with_xarray(filepath, chunks=None, print_vars=False, print_ds=True)
-
-# wldas.get_wldas_plus_minus_30(dust_df, wldas_path, plus_minus_30_dir)
-
-# json_filepath = "WLDAS_plus_minus_30/20021217_1845_lat3041_lon10653.json"
-# wldas.plot_wldas_plus_minus_30(json_filepath, "WLDAS_plus_minus_30_plots")
-
 dust_region_df = dust.filter_to_region(dust_df, location_name="Chihuahua")
-print(dust_region_df)
 
-# wldas.create_region_average_over_time(wldas_dir=wldas_path, location_name="Chihuahua", save_dir="WLDAS_plots")
-csv_path = "WLDAS_plots/region_moisture_Chihuahua.csv"
-# wldas.plot_region_average_over_time(csv_path, plot_dir="WLDAS_plots", location_str="Chihuahua")
-# wldas.plot_region_average_over_year(csv_path, dust_region_df=dust_region_df, plot_dir="WLDAS_plots", location_str="Chihuahua")
-wldas.plot_frequency_analysis(csv_path, dust_region_df=dust_region_df, plot_dir="WLDAS_plots", location_str="Chihuahua")
+#--- Create universal table for all surface variables
+uni_df = dust_df[['Date (YYYYMMDD)', 'latitude', 'longitude']].copy()
+uni_df.columns = ['Date', 'Lat', 'Lon']
+
+#--- Add texture data to universal table
+gldas_path = "GLDAS_soil_texture/GLDASp4_soilfraction_025d.nc4"
+location_name = "American Southwest"
+texture_ds = gldas.open_gldas_file(gldas_path)
+texture_ds = gldas.filter_to_region(texture_ds, location_name)
+texture_fractions_df = gldas.get_texture_for_dust_events(texture_ds, dust_df)
+uni_df = pd.concat([uni_df.reset_index(drop=True), texture_fractions_df.reset_index(drop=True)], axis=1)
+uni_df = uni_df.rename(columns={'Clay': 'GLDAS (Clay)', 
+                                'Sand': 'GLDAS (Sand)',
+                                'Silt': 'GLDAS (Silt)',})
+print(uni_df)
