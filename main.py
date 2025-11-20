@@ -35,3 +35,4 @@ uni_df = pd.concat([uni_df.reset_index(drop=True), dust_soil_df[column].reset_in
 uni_df = uni_df.rename(columns={'SU_SYMBOL': 'Soil Order'})
 print(uni_df)
 
+#--- Fill dataframe with non-dust days and locations
