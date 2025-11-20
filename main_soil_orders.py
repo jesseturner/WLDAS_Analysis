@@ -12,10 +12,14 @@ dust_path = "/home/jturner/WLDAS_Analysis/Line_dust_data/dust_dataset_final_2024
 df = dust.read_dust_data_into_df(dust_path)
 dust_gdf = soil_orders.convert_df_to_gdf(df)
 
+#--- Create dataframe of soil order for each event
+dust_soil_df = soil_orders.get_soil_order_for_dust_events(gdf, dust_gdf)
+print(dust_soil_df)
+
 #--- Count soil orders for each dust event
 counts_df = soil_orders.count_points_in_regions(gdf, dust_gdf)
 counts_df = soil_orders.add_info_to_counts(counts_df)
-print(counts_df)
+# print(counts_df)
 # soil_orders.plot_counts(counts_df, plot_dir, "soil_orders/wrb2014_counts")
 
 #--- Count total soil order distributions

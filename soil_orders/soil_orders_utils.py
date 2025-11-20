@@ -22,6 +22,17 @@ def count_points_in_regions(gdf_regions, gdf_points):
     
     return counts_df
 
+def get_soil_order_for_dust_events(gdf_regions, gdf_points):
+    gdf_points = gdf_points.to_crs(gdf_regions.crs)
+
+    dust_soil_df = gpd.sjoin(
+        gdf_points,
+        gdf_regions[['SU_SYMBOL', 'geometry']],  # only keep needed columns
+        how='left',
+        predicate='within'  # or 'intersects' depending on your data
+    )
+    return dust_soil_df
+
 def convert_df_to_gdf(df): 
     """
     Dust dataframe to format comparable to soil orders.
