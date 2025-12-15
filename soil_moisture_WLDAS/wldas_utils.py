@@ -18,20 +18,18 @@ def create_moist_histogram(dir_path):
     sample = random.sample(files, sample_num)
     print(f"Sampling {sample_num} files...")
 
+    #--- create total histogram for sample
     hist_total = None
-
-    #--- create histogram for sample
-    #------ add logic for handling failures
     for i in tqdm(sample):
         try:
             ds = xr.open_dataset(os.path.join(dir_path, i))
 
-            bins = np.linspace(0, 0.5, 31)
+            bins = np.linspace(0, 0.5, 61)
 
             hist = histogram(
                 ds["SoilMoi00_10cm_tavg"],
                 bins=[bins],
-                dim=["time"]
+                dim=["time", "lat", "lon"]
             )
 
             if hist_total is None:
@@ -41,14 +39,40 @@ def create_moist_histogram(dir_path):
         except Exception as e:
             print(f"Skipping {i} due to misalignment of files...")
 
-    #--- assign bin centers
-    bin_centers = 0.5 * (bins[:-1] + bins[1:])
-    hist_total = hist_total.assign_coords(bin=bin_centers)
+    #--- create dust-producing histogram for sample
+    #------ currently too slow
+    # from line_dust_data import line_dust_utils as dust
+    # hist_dust = None
+    # for i in tqdm(sample):
+    #     try:
+    #         ds = xr.open_dataset(os.path.join(dir_path, i))
+    #         ds = filter_by_bounds(ds, bounds=[27.5,44,-128,-100])
+
+    #         dust_df = dust.read_dust_data_into_df("line_dust_data/dust_dataset_final_20241226.txt")
+    #         dust_region_df = dust.filter_to_region(dust_df, location_name="American Southwest")
+    #         ds_filtered = filter_by_dust_points(ds, dust_region_df)
+
+    #         bins = np.linspace(0, 0.5, 61)
+
+    #         hist = histogram(
+    #             ds_filtered["SoilMoi00_10cm_tavg"],
+    #             bins=[bins],
+    #             dim=["time", "lat", "lon"]
+    #         )
+
+    #         if hist_dust is None:
+    #             hist_dust = hist
+    #         else:
+    #             hist_dust += hist
+    #     except Exception as e:
+    #         print(f"Skipping {i} due to misalignment of files...")
 
     #--- create histogram plot
     fig = plt.figure(figsize=(8, 4))
-    plt.bar(hist_total.bin.values, hist_total.values, width=hist_total.bin.values[1]-hist_total.bin.values[0],
+    plt.bar(hist_total.SoilMoi00_10cm_tavg_bin.values, hist_total.values, width=hist_total.SoilMoi00_10cm_tavg_bin.values[1]-hist_total.SoilMoi00_10cm_tavg_bin.values[0],
             align="center", edgecolor="blue", color='blue', alpha=0.7)
+    # plt.bar(hist_dust.SoilMoi00_10cm_tavg_bin.values, hist_dust.values, width=hist_dust.SoilMoi00_10cm_tavg_bin.values[1]-hist_dust.SoilMoi00_10cm_tavg_bin.values[0],
+    #     align="center", edgecolor="orange", color='orange', alpha=0.7)
     plt.title(f"Histogram of Soil Moisture (WLDAS)")
     plt.xlabel("$m^{3}/m^{-3}$")
     plt.ylabel("Frequency")
