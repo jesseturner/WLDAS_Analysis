@@ -15,4 +15,5 @@ dependencies:
   - geopandas
   - plotly
   - python-kaleido
+  - xhistogram
 prefix: /Applications/anaconda3/envs/wldas_env

@@ -1,4 +1,3 @@
-from pathlib import Path
 import requests, os, sys, pickle, json, re, glob
 from tqdm import tqdm
 import xarray as xr
@@ -7,9 +6,59 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from datetime import datetime, timedelta
 import pandas as pd
+import random
+from xhistogram.xarray import histogram
+
+
+def create_moist_histogram(dir_path):
+    files = os.listdir(dir_path)
+    print(f"{len(files)} WLDAS moisture files...")
+
+    sample_num = 20
+    sample = random.sample(files, sample_num)
+    print(f"Sampling {sample_num} files...")
+
+    hist_total = None
+
+    #--- create histogram for sample
+    #------ add logic for handling failures
+    for i in tqdm(sample):
+        try:
+            ds = xr.open_dataset(os.path.join(dir_path, i))
+
+            bins = np.linspace(0, 0.5, 31)
+
+            hist = histogram(
+                ds["SoilMoi00_10cm_tavg"],
+                bins=[bins],
+                dim=["time"]
+            )
+
+            if hist_total is None:
+                hist_total = hist
+            else:
+                hist_total += hist
+        except Exception as e:
+            print(f"Skipping {i} due to misalignment of files...")
+
+    #--- assign bin centers
+    bin_centers = 0.5 * (bins[:-1] + bins[1:])
+    hist_total = hist_total.assign_coords(bin=bin_centers)
+
+    #--- create histogram plot
+    fig = plt.figure(figsize=(8, 4))
+    plt.bar(hist_total.bin.values, hist_total.values, width=hist_total.bin.values[1]-hist_total.bin.values[0],
+            align="center", edgecolor="blue", color='blue', alpha=0.7)
+    plt.title(f"Histogram of Soil Moisture (WLDAS)")
+    plt.xlabel("$m^{3}/m^{-3}$")
+    plt.ylabel("Frequency")
+
+    _plot_save(fig, fig_dir="figures", fig_name="moisture_hist")
+
+    return
 
 def get_wldas_data(date, chunks=None, print_vars=False, print_ds=False):
-    download_dir = Path("WLDAS_data")
+    download_dir = "WLDAS_data"
     filepath = _get_local_wldas(date, download_dir)
     if not filepath:
         filepath = _run_download_wldas(date, download_dir)
@@ -201,7 +250,7 @@ def _datetime_from_xarray_date(xarray_time):
 def get_wldas_plus_minus_30(dust_df, wldas_path, plus_minus_30_dir):
 #--- For each dust case, get the WLDAS soil moisture for that location
 #--- over the timespan from 30 days before to 30 days after
-    wldas_path = Path(wldas_path)
+    wldas_path = wldas_path
     for index, row in dust_df.iterrows():
         print(f"Plus minus 30 for {index} of {len(dust_df)}")
         date = str(row['Date (YYYYMMDD)'])
