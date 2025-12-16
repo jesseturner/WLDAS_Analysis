@@ -1,12 +1,13 @@
+data/raw/*
+data/processed/*
+
 *.nc
 __pycache__
 *.png
 *.pkl
-Line_dust_data/*.txt
 *.out
 *.nc4*
 *.pdf*
 *.json
 *.tif
 *.csv
-*WRB2014_soil_map/

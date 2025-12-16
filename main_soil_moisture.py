@@ -1,5 +1,5 @@
-from soil_moisture_WLDAS import wldas_utils as moist
-from line_dust_data import line_dust_utils as dust
+from modules_soil_moisture import wldas_utils as moist
+from modules_line_dust import line_dust_utils as dust
 
 #--- open soil moisture subset files
 moist.create_moist_histogram(dir_path="/mnt/data2/jturner/wldas_data/")
