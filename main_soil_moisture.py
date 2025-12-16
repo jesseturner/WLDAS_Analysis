@@ -1,10 +1,6 @@
 from modules_soil_moisture import wldas_utils as moist
 from modules_line_dust import line_dust_utils as dust
 
-#--- open soil moisture subset files
-wldas_path = "/mnt/data2/jturner/wldas_data/"
-moist.create_moist_histogram(dir_path=wldas_path)
-
 #--- Relate WLDAS soil moisture to dust data
 dust_path="data/raw/line_dust/dust_dataset_final_20241226.txt"
 dust_df = dust.read_dust_data_into_df(dust_path)
@@ -29,3 +25,8 @@ dust_region_df = dust.filter_to_region(dust_df, location_name="American Southwes
 # wldas.plot_region_average_over_time(csv_path, plot_dir=fig_dir, location_str="Chihuahua")
 # wldas.plot_region_average_over_year(csv_path, dust_region_df=dust_region_df, plot_dir=fig_dir, location_str="Chihuahua")
 # wldas.plot_frequency_analysis(csv_path, dust_region_df=dust_region_df, plot_dir=fig_dir, location_str="Chihuahua")
+
+#--- Plot processed histogram data
+total_hist = "data/processed/wldas_soil_moisture_hist_total"
+dust_hist = "data/processed/wldas_soil_moisture_hist_dust"
+moist.plot_hist_for_moisture(dust_hist)
