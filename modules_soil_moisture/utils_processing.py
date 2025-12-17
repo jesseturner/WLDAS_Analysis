@@ -1,93 +1,10 @@
-import requests, os, sys, pickle, json, re, glob
-from tqdm import tqdm
+import os, pickle, json, re, glob
 import xarray as xr
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from datetime import datetime, timedelta
 import pandas as pd
-
-
-def get_wldas_data(date, chunks=None, print_vars=False, print_ds=False):
-    download_dir = "WLDAS_data"
-    filepath = _get_local_wldas(date, download_dir)
-    if not filepath:
-        filepath = _run_download_wldas(date, download_dir)
-    if filepath:
-        ds = load_data_with_xarray(filepath, chunks, print_vars, print_ds)
-    else: 
-        print("No data found locally or at download link.")
-    
-    return ds
-
-def _get_local_wldas(date, download_dir):
-    date_str = date.strftime("%Y%m%d")
-    matches = list(download_dir.glob(f"*{date_str}*"))
-    if matches:
-        filepath = str(matches[0])
-        print(f"Found file: {filepath}")
-    else: filepath = None
-    return filepath
-
-def _run_download_wldas(date, download_dir):
-    #--- Set .netrc with GES DISC username and password
-    #--- Add a reminder if there is a "no permissions" error
-
-    YYYY = date.strftime('%Y')
-    MM = date.strftime('%m')
-    DD = date.strftime('%d')
-
-    url = f"https://hydro1.gesdisc.eosdis.nasa.gov/data/WLDAS/WLDAS_NOAHMP001_DA1.D1.0/{YYYY}/{MM}/WLDAS_NOAHMP001_DA1_{YYYY}{MM}{DD}.D10.nc"
-
-    #--- Create session with NASA Earthdata login
-    session = requests.Session()
-    session.auth = (os.getenv("EARTHDATA_USERNAME"), os.getenv("EARTHDATA_PASSWORD"))
-
-    #--- Make download directory
-    download_dir.mkdir(parents=True, exist_ok=True)
-
-    filepath = _download_wldas(session, url, download_dir)
-    return filepath
-
-def _download_wldas(session, url, download_dir):
-    print(f"Connecting to {url}...")
-    response = session.get(url, stream=True)
-    print("Connection established. Starting download...")
-
-    if response.status_code == 200:
-
-        filename = _extract_filename(response, url)
-        filepath = download_dir / filename
-        _write_file_to_local_disk(response, filepath, filename)
-
-        print(f"Downloaded to {filepath}")
-    else:
-        print(f"Failed to download: {response.status_code} {response.reason}")
-        print(response.text)
-
-    return filepath
-
-def _extract_filename(response, url):
-    cd = response.headers.get('content-disposition')
-    if cd and 'filename=' in cd:
-        filename = cd.split('filename=')[-1].strip('\"')
-    else:
-        filename = url.split('/')[-1]
-    return filename
-    
-def _write_file_to_local_disk(response, filepath, filename):
-    total_size = int(response.headers.get('content-length', 0))
-    chunk_size = 8192
-
-    use_tqdm = sys.stderr.isatty() # Only use progress bar for in commandline
-    with open(filepath, 'wb') as f, tqdm(
-        total=total_size, unit='B', unit_scale=True, desc=filename, disable=not use_tqdm
-    ) as pbar:
-        for chunk in response.iter_content(chunk_size=chunk_size):
-            if chunk:
-                f.write(chunk)
-                pbar.update(len(chunk))
-    return
 
 def load_data_with_xarray(filepath, chunks=None, print_vars=False, print_ds=False):
     ds = None
@@ -103,6 +20,7 @@ def load_data_with_xarray(filepath, chunks=None, print_vars=False, print_ds=Fals
             print(f"Could not open dataset at {filepath}: {e}")
             ds = None
     return ds
+
 
 def filter_by_bounds(ds, bounds=None):
     if not isinstance(bounds, list) or len(bounds) != 4:
@@ -195,18 +113,21 @@ def plot_hist_for_variables(ds, hist_dir):
     return
 
 def plot_hist_for_moisture(hist_dir):
-    with open(os.path.join(hist_dir,"dust_points_20010102.pkl")) as f:
+    with open(os.path.join(hist_dir,"dust_points_20010106.pkl"), "rb") as f:
         hist_store = pickle.load(f)
 
-        print(hist_store)
+        moist_data = hist_store['SoilMoi00_10cm_tavg']
+        bin_edges = moist_data[3]
+        counts = moist_data[2]
+        widths = bin_edges[1:] - bin_edges[:-1]
 
-        # fig = plt.figure(figsize=(8, 4))
-        # plt.bar(bin_centers, counts, width=np.diff(bin_edges), align="center", edgecolor="blue", color='blue', alpha=0.7,)
-        # plt.title(f"Histogram of {variable} ({long_name})")
-        # plt.xlabel(f"{units}")
-        # plt.ylabel("Frequency")
+        fig = plt.figure(figsize=(8, 4))
+        plt.bar(bin_edges[:-1], counts, width=widths, align="center", edgecolor="blue", color='blue', alpha=0.7,)
+        plt.title(f"Histogram of soil moisture")
+        plt.xlabel("$ m^{3} m^{-3} $")
+        plt.ylabel("Frequency")
 
-        # _plot_save(fig, hist_dir, f"{hist_dir}/{variable}.png")
+        _plot_save(fig, "figures", "example_hist")
     return
 
 def _datetime_from_xarray_date(xarray_time):

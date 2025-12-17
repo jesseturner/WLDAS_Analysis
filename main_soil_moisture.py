@@ -1,10 +1,10 @@
-from modules_soil_moisture import wldas_utils as moist
+from modules_soil_moisture import utils_processing as moist
 from modules_line_dust import line_dust_utils as dust
 
 #--- Relate WLDAS soil moisture to dust data
-dust_path="data/raw/line_dust/dust_dataset_final_20241226.txt"
-dust_df = dust.read_dust_data_into_df(dust_path)
-dust_region_df = dust.filter_to_region(dust_df, location_name="American Southwest")
+# dust_path="data/raw/line_dust/dust_dataset_final_20241226.txt"
+# dust_df = dust.read_dust_data_into_df(dust_path)
+# dust_region_df = dust.filter_to_region(dust_df, location_name="American Southwest")
 # ds = wldas.filter_by_dust_points(ds, dust_df)
 # ds = wldas.create_hist_for_variables(ds, "WLDAS_hist_test")
 # ds = wldas.plot_hist_for_variables(ds, "WLDAS_hist_test")
@@ -27,6 +27,10 @@ dust_region_df = dust.filter_to_region(dust_df, location_name="American Southwes
 # wldas.plot_frequency_analysis(csv_path, dust_region_df=dust_region_df, plot_dir=fig_dir, location_str="Chihuahua")
 
 #--- Plot processed histogram data
-total_hist = "data/processed/wldas_soil_moisture_hist_total"
-dust_hist = "data/processed/wldas_soil_moisture_hist_dust"
-moist.plot_hist_for_moisture(dust_hist)
+# total_hist = "data/processed/wldas_soil_moisture_hist_total"
+# dust_hist = "data/processed/wldas_soil_moisture_hist_dust"
+# moist.plot_hist_for_moisture(dust_hist)
+
+#--- TESTING
+from datetime import datetime
+moist.get_wldas_data(date=datetime(2021, 12, 6), download_dir="temp")
