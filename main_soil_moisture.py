@@ -1,4 +1,6 @@
-from modules_soil_moisture import utils_processing as moist
+from modules_soil_moisture import utils_downloading as wldas_dl
+from modules_soil_moisture import utils_processing as wldas_proc
+from modules_soil_moisture import utils_plotting as wldas_plot
 from modules_line_dust import line_dust_utils as dust
 
 #--- Relate WLDAS soil moisture to dust data
@@ -31,6 +33,16 @@ from modules_line_dust import line_dust_utils as dust
 # dust_hist = "data/processed/wldas_soil_moisture_hist_dust"
 # moist.plot_hist_for_moisture(dust_hist)
 
-#--- TESTING
-from datetime import datetime
-moist.get_wldas_data(date=datetime(2021, 12, 6), download_dir="temp")
+#=======================
+
+#--- Downloading WLDAS
+#------ Primary method is a subset download described in data/readme.md
+# from datetime import datetime
+# wldas_dl.get_wldas_data(date=datetime(2021, 12, 6), download_dir="z_temp")
+
+#--- Processing WLDAS
+wldas_path = "/mnt/data2/jturner/wldas_data"
+sample_filepath = f"{wldas_path}/WLDAS_NOAHMP001_DA1_20010112.D10.nc.SUB.nc4"
+ds = wldas_proc.load_data_with_xarray(filepath=sample_filepath, chunks=None, print_vars=False, print_ds=False)
+ds = wldas_proc.filter_by_bounds(ds, location_name="American Southwest")
+print(ds)
