@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from shapely.geometry import Point
 import geopandas as gpd
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
 
 def open_wrb2014_file(wrb2014_file_dir):
     shapefiles = glob.glob(os.path.join(wrb2014_file_dir, "*.shp"))
@@ -121,7 +123,7 @@ def plot_counts(df_counts, plot_dir, plot_name):
 def _plot_save(fig, plot_dir, plot_name):
     plt.tight_layout()
     os.makedirs(plot_dir, exist_ok=True)
-    plt.savefig(plot_name, bbox_inches='tight', dpi=300)
+    plt.savefig(os.path.join(plot_dir, plot_name), bbox_inches='tight', dpi=300)
     plt.close(fig)
 
     return
@@ -188,3 +190,80 @@ def plot_counts_and_total(df_counts, df_counts_total, plot_dir, plot_name):
 
     _plot_save(fig, plot_dir, plot_name)
     return
+
+def plot_map_for_sel_order(gdf, order_symbol, location, plot_title, plot_dir, plot_name):
+    """
+    gdf: from open_wrb2014_file()
+    order_symbol: example is "CL" for Calcisols [check add_info_to_counts()]
+    """
+
+    gdf_sel = gdf[gdf["SU_SYMBOL"] == order_symbol]
+    print(gdf_sel)
+
+    fig = plt.figure(figsize=(10, 8))
+    ax = plt.axes(projection=ccrs.PlateCarree())
+
+    ax.coastlines(resolution='50m', color='black', linewidth=1)
+    ax.add_feature(cfeature.STATES, edgecolor='black', linewidth=1)
+    ax.add_feature(cfeature.OCEAN, facecolor="lightblue")
+
+    gdf_sel.plot(
+        ax=ax,
+        transform=ccrs.PlateCarree(),
+        facecolor="orange",
+        edgecolor="black",
+        linewidth=0.8,
+        alpha=0.7, 
+        zorder=3
+    )
+
+    lat_min, lat_max, lon_min, lon_max = _get_coords_for_region(location)
+    extent = [lon_min, lon_max, lat_min, lat_max]
+    ax.set_extent(extent, crs=ccrs.PlateCarree())
+
+    ax.set_title(plot_title)
+
+    _plot_save(fig, plot_dir, plot_name)
+    return
+
+def _get_coords_for_region(location_name):
+    '''
+    Get the lat and lon range from the dictionary of regions used in Line 2025. 
+    '''
+    locations = {
+        "American Southwest": [(44, -128), (27.5, -100)],
+
+        "Chihuahua": [(33.3, -110.0), (28.0, -105.3)],
+        "West Texas": [(35.0, -104.0), (31.8, -100.5)],
+        "Central High Plains": [(43.0, -105.0), (36.5, -98.0)],
+        "Nevada": [(43.0, -120.7), (37.0, -114.5)],
+        "Utah": [(42.0, -114.5), (37.5, -109.0)],
+        "Southern California": [(37.0, -119.0), (30.0, -114.2)],
+        "Four Corners": [(37.5, -112.5), (34.4, -107.0)],
+        "San Luis Valley": [(38.5, -106.5), (37.0, -105.3)],
+
+        "N Mexico 1": [(31.8, -107.6), (31.3, -107.1)],
+        "Carson Sink": [(40.1, -118.75), (39.6, -118.25)],
+        "N Mexico 2": [(31.4, -108.25), (30.9, -107.75)],
+        "N Mexico 3": [(31.1, -107.15), (30.6, -106.65)],
+        "Black Rock 1": [(41.15, -119.35), (40.65, -118.85)],
+        "West Texas 1": [(32.95, -102.35), (32.45, -101.85)],
+        "N Mexico 4": [(30.65, -107.65), (30.15, -107.15)],
+        "N Mexico 5": [(31.0, -106.65), (30.5, -106.15)],
+        "White Sands": [(33.15, -106.6), (32.65, -106.1)],
+        "West Texas 2": [(33.5, -102.8), (33.0, -102.30)],
+        "SLV2": [(38.05, -106.15), (37.55, -105.65)],
+        "N Mexico 6": [(29.55, -107.05), (29.05, -106.55)],
+        "NE AZ": [(35.7, -111.1), (35.2, -110.6)],
+        "NW New Mexico": [(36.15, -108.85), (35.65, -108.35)],
+        "Black Rock 2": [(40.75, -119.9), (40.25, -119.4)],
+        "N Mexico 7": [(30.9, -108.15), (30.4, -107.65)],
+    }
+    coords = locations[location_name]
+    lats = [p[0] for p in coords]
+    lons = [p[1] for p in coords]
+
+    lat_min, lat_max = min(lats), max(lats)
+    lon_min, lon_max = min(lons), max(lons)
+
+    return lat_min, lat_max, lon_min, lon_max
