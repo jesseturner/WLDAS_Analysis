@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import os
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
+import numpy as np
 
 def open_gldas_file(gldas_path):
     ds = xr.open_dataset(gldas_path)
@@ -72,19 +72,18 @@ def get_texture_averages_for_region(ds):
 
     return texture_fractions_df
 
-def create_ternary_plot(texture_fractions_df, fig_dir, fig_name, fig_title, texture_average_df=None):
+def create_ternary_plot(texture_fractions_df, fig_dir, fig_name, fig_title):
     """
-    texture_fractions_df from get_texture_for_dust_events()
-    texture_average_df from get_texture_averages_for_region()
+    texture_fractions_df: from get_texture_for_dust_events() or get_texture_random_sample()
     """
     fig = px.scatter_ternary(texture_fractions_df, a="Sand", b="Silt", c="Clay", 
                              title=fig_title)
     
     fig.update_traces(marker=dict(
-        size=12,
+        size=6,
         color='#DDC9B4',
         line=dict(width=1, color='black'),
-        opacity=0.3
+        opacity=0.2
     ))
     
     fig.update_layout(
@@ -94,20 +93,6 @@ def create_ternary_plot(texture_fractions_df, fig_dir, fig_name, fig_title, text
             caxis=dict(showticklabels=False)
         ),
     )
-    #--- Adding average point in red
-    fig.add_trace(go.Scatterternary(
-        a=texture_average_df['Sand'],
-        b=texture_average_df['Silt'],
-        c=texture_average_df['Clay'],
-        mode='markers',
-        marker=dict(
-            size=12,
-            color='#404E7C',
-            line=dict(width=1, color='black'), 
-            opacity=1.0
-        ),
-        name='Regional average'
-    ))
 
     fig.write_image(f"{os.path.join(fig_dir, fig_name)}.png", width=600, height=600, scale=2) 
 
@@ -121,6 +106,13 @@ def _plot_save(fig, fig_dir, fig_name):
     return
 
 def get_texture_for_dust_events(texture_ds, dust_df):
+    """
+    Creates a texture dataframe for each dust point. 
+
+    texture_ds: from open_gldas_file() or filter_to_region().
+
+    Similar to get_texture_for_dust_events().
+    """
 
     clay_fractions = []
     sand_fractions = []
@@ -140,5 +132,22 @@ def get_texture_for_dust_events(texture_ds, dust_df):
         'Clay': clay_fractions, 
         'Sand': sand_fractions,
         'Silt': silt_fractions})
+
+    return texture_fractions_df
+
+def get_texture_all(texture_ds):
+    """
+    Creates a texture dataframe from the total dataset. 
+
+    texture_ds: from open_gldas_file() or filter_to_region().
+    sample_size: int
+
+    Similar to get_texture_for_dust_events().
+    """
+
+    texture_fractions_df = pd.DataFrame({
+        'Clay': texture_ds['GLDAS_soilfraction_clay'].values.ravel(), 
+        'Sand': texture_ds['GLDAS_soilfraction_sand'].values.ravel(),
+        'Silt': texture_ds['GLDAS_soilfraction_silt'].values.ravel()})
 
     return texture_fractions_df
