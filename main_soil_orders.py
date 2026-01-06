@@ -12,17 +12,17 @@ dust_path = "data/raw/line_dust/dust_dataset_final_20241226.txt"
 dust_df = dust.read_dust_data_into_df(dust_path)
 
 #--- Create dataframe of soil order for each event
-dust_gdf = soil_orders.convert_df_to_gdf(dust_df)
+# dust_gdf = soil_orders.convert_df_to_gdf(dust_df)
 # dust_soil_df = soil_orders.get_soil_order_for_dust_events(gdf, dust_gdf)
 # print(dust_soil_df)
 
 #--- Count soil orders for each dust event
-counts_df = soil_orders.count_points_in_regions(gdf, dust_gdf)
-counts_df = soil_orders.add_info_to_counts(counts_df)
+# counts_df = soil_orders.count_points_in_regions(gdf, dust_gdf)
+# counts_df = soil_orders.add_info_to_counts(counts_df)
 
-plot_dir = "figures"
-print(counts_df)
-soil_orders.plot_counts(counts_df, plot_dir="figures", plot_name="wrb2014_counts")
+# plot_dir = "figures"
+# print(counts_df)
+# soil_orders.plot_counts(counts_df, plot_dir="figures", plot_name="wrb2014_counts")
 
 #--- Count total soil order distributions
 # counts_df_total = soil_orders.get_wrb2014_distributions(gdf)
@@ -33,8 +33,8 @@ soil_orders.plot_counts(counts_df, plot_dir="figures", plot_name="wrb2014_counts
 # soil_orders.create_legend_png(counts_df_total, plot_dir, "soil_orders/wrb2014_counts_legend")
 
 #--- Plot map of soil order
-# soil_orders.plot_map_for_sel_order(gdf, order_symbol="CL", 
-#                                    location="American Southwest",
-#                                    dust_df=dust_df,
-#                                    plot_title="Map of Calcisols", 
-#                                    plot_dir="figures", plot_name="map_calcisols")
+soil_orders.plot_map_for_sel_order(gdf, order_symbol_list=["CL", "RG", "FL"], 
+                                   location="American Southwest",
+                                   dust_df=dust_df,
+                                   plot_title="Map of Calcisols", 
+                                   plot_dir="figures", plot_name="map_calcisols")

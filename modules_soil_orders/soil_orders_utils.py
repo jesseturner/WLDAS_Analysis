@@ -120,7 +120,7 @@ def plot_counts(df_counts, plot_dir, plot_name):
     plt.xticks(rotation=45, ha='right')
 
     _plot_save(fig, plot_dir, plot_name)
-    
+
     return
 
 def _plot_save(fig, plot_dir, plot_name):
@@ -194,34 +194,39 @@ def plot_counts_and_total(df_counts, df_counts_total, plot_dir, plot_name):
     _plot_save(fig, plot_dir, plot_name)
     return
 
-def plot_map_for_sel_order(gdf, order_symbol, location, dust_df, plot_title, plot_dir, plot_name):
+def plot_map_for_sel_order(gdf, order_symbol_list, location, dust_df, plot_title, plot_dir, plot_name):
     """
     Map of a soil order overlaid with points for the dust events. 
 
     gdf: from open_wrb2014_file()
     order_symbol: example is "CL" for Calcisols [check add_info_to_counts()]
+    order_symbol_list: ["CL", "RG", "FL"]
     """
-
-    gdf_sel = gdf[gdf["SU_SYMBOL"] == order_symbol]
-    print(gdf_sel)
+    
+    colors = ["orange", "green", "purple"]
 
     fig = plt.figure(figsize=(10, 8))
     ax = plt.axes(projection=ccrs.PlateCarree())
 
-    ax.coastlines(resolution='50m', color='black', linewidth=1)
-    ax.add_feature(cfeature.STATES, edgecolor='black', linewidth=1)
+    ax.coastlines(resolution="50m", color="black", linewidth=1)
+    ax.add_feature(cfeature.STATES, edgecolor="black", linewidth=1)
     ax.add_feature(cfeature.OCEAN, facecolor="lightblue", zorder=6)
 
-    #--- Plot soil type locations
-    gdf_sel.plot(
-        ax=ax,
-        transform=ccrs.PlateCarree(),
-        facecolor="orange",
-        edgecolor="black",
-        linewidth=0.8,
-        alpha=0.7, 
-        zorder=1
-    )
+    for order, color in zip(order_symbol_list, colors):
+        gdf_sel = gdf[gdf["SU_SYMBOL"] == order]
+
+        gdf_sel.plot(
+            ax=ax,
+            transform=ccrs.PlateCarree(),
+            facecolor=color,
+            edgecolor="black",
+            linewidth=0.8,
+            alpha=0.7,
+            zorder=1,
+            label=order
+        )
+
+    ax.legend(title="Soil Order")
 
     #--- Plot dust points
     ax.scatter(
