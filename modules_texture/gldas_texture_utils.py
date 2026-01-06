@@ -151,3 +151,36 @@ def get_texture_all(texture_ds):
         'Silt': texture_ds['GLDAS_soilfraction_silt'].values.ravel()})
 
     return texture_fractions_df
+
+def plot_three_histograms(texture_fractions_df_all, texture_fractions_df_dust, fig_dir, fig_name):
+
+    fractions = ["Sand", "Silt", "Clay"]
+
+    fig, axes = plt.subplots(1, 3, figsize=(15, 4), sharey=True)
+
+    for ax, frac in zip(axes, fractions):
+        ax.hist(
+            texture_fractions_df_all[frac].dropna(),
+            bins=20,
+            alpha=0.6,
+            density=True,
+            label="All soils"
+        )
+        ax.hist(
+            texture_fractions_df_dust[frac].dropna(),
+            bins=20,
+            alpha=0.6,
+            density=True,
+            label="Dust soils"
+        )
+
+        ax.set_title(frac)
+        ax.set_xlabel("Percent")
+        ax.set_ylabel("Density")
+
+    axes[0].legend()
+
+    _plot_save(fig, fig_dir, fig_name)
+
+
+    return
