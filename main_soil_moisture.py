@@ -36,16 +36,18 @@ ds_dust_low_res = ds_dust.isel(lat=slice(0, None, 10), lon=slice(0, None, 10))
 
 
 #--- Plot the average soil moisture
-wldas_plot.plot_map_avg_moisture(ds_low_res, 
-                                 fig_title="Average soil moisture", 
-                                 location="American Southwest",
-                                 fig_dir="figures", 
-                                 fig_name="ex_average_soil_moisture")
-wldas_plot.plot_map_avg_moisture(ds_dust_low_res, 
-                                 fig_title="Average soil moisture (dust sources)", 
-                                 location="American Southwest",
-                                 fig_dir="figures", 
-                                 fig_name="ex_average_soil_moisture_dust")
+# wldas_plot.plot_map_avg_moisture(ds_low_res, 
+#                                  fig_title="Average soil moisture", 
+#                                  location="American Southwest",
+#                                  fig_dir="figures", 
+#                                  fig_name="ex_average_soil_moisture")
+# wldas_plot.plot_map_avg_moisture(ds_dust_low_res, 
+#                                  fig_title="Average soil moisture (dust sources)", 
+#                                  location="American Southwest",
+#                                  fig_dir="figures", 
+#                                  fig_name="ex_average_soil_moisture_dust")
+
+
 
 #=======================
 # Methods below are being improved
@@ -63,9 +65,9 @@ wldas_plot.plot_map_avg_moisture(ds_dust_low_res,
 # plus_minus_30_dir = "data/processed/WLDAS_plus_minus_30"
 # filepath = f"{wldas_path}/WLDAS_NOAHMP001_DA1_20010112.D10.nc.SUB.nc4"
 # ds = wldas.load_data_with_xarray(filepath, chunks=None, print_vars=False, print_ds=True)
-# wldas.get_wldas_plus_minus_30(dust_df, wldas_path, plus_minus_30_dir)
+# wldas_plot.get_wldas_plus_minus_30(dust_df, wldas_path, "data/processed/WLDAS_plus_minus_30")
 # json_filepath = "data/processed/WLDAS_plus_minus_30/20021217_1845_lat3041_lon10653.json"
-# wldas.plot_wldas_plus_minus_30(json_filepath, "WLDAS_plus_minus_30_plots")
+# wldas_plot.plot_wldas_plus_minus_30(json_filepath, "WLDAS_plus_minus_30_plots")
 
 #--- Tracking WLDAS moisture patterns (total, yearly, frequency)
 # fig_dir = "figures"

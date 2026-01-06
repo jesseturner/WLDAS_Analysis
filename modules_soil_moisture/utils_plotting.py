@@ -154,7 +154,7 @@ def plot_wldas_plus_minus_30(json_filepath, plot_dir):
     formatted_date = f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:]} {time_str[:2]}:{time_str[2:]}"
 
     plot_title = f"{formatted_date} {formatted_coords}"
-    plot_path = f"{plot_dir}/{date_str}_{time_str}_{lat_str}_{lon_str}.png"
+    plot_path = f"{date_str}_{time_str}_{lat_str}_{lon_str}.png"
 
     _line_plot(plus_minus_30_list, plot_title, plot_dir, plot_path)
     return
