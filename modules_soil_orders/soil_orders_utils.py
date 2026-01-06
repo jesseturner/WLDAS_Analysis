@@ -110,14 +110,17 @@ def add_info_to_counts(df_counts):
 
 def plot_counts(df_counts, plot_dir, plot_name):
 
+    df_counts_sorted = df_counts.sort_values("count", ascending=False)
+
     fig = plt.figure(figsize=(8, 4))
-    plt.bar(df_counts['name'], df_counts['count'], color='0')
+    plt.bar(df_counts_sorted['name'], df_counts_sorted['count'], color='0')
     plt.title("Counts of WRB2014 soil orders associated with dust event origin points")
     plt.xlabel("Soil Order")
     plt.ylabel("Count")
     plt.xticks(rotation=45, ha='right')
 
     _plot_save(fig, plot_dir, plot_name)
+    
     return
 
 def _plot_save(fig, plot_dir, plot_name):
@@ -193,6 +196,8 @@ def plot_counts_and_total(df_counts, df_counts_total, plot_dir, plot_name):
 
 def plot_map_for_sel_order(gdf, order_symbol, location, dust_df, plot_title, plot_dir, plot_name):
     """
+    Map of a soil order overlaid with points for the dust events. 
+
     gdf: from open_wrb2014_file()
     order_symbol: example is "CL" for Calcisols [check add_info_to_counts()]
     """
