@@ -191,7 +191,7 @@ def plot_counts_and_total(df_counts, df_counts_total, plot_dir, plot_name):
     _plot_save(fig, plot_dir, plot_name)
     return
 
-def plot_map_for_sel_order(gdf, order_symbol, location, plot_title, plot_dir, plot_name):
+def plot_map_for_sel_order(gdf, order_symbol, location, dust_df, plot_title, plot_dir, plot_name):
     """
     gdf: from open_wrb2014_file()
     order_symbol: example is "CL" for Calcisols [check add_info_to_counts()]
@@ -205,8 +205,9 @@ def plot_map_for_sel_order(gdf, order_symbol, location, plot_title, plot_dir, pl
 
     ax.coastlines(resolution='50m', color='black', linewidth=1)
     ax.add_feature(cfeature.STATES, edgecolor='black', linewidth=1)
-    ax.add_feature(cfeature.OCEAN, facecolor="lightblue")
+    ax.add_feature(cfeature.OCEAN, facecolor="lightblue", zorder=6)
 
+    #--- Plot soil type locations
     gdf_sel.plot(
         ax=ax,
         transform=ccrs.PlateCarree(),
@@ -214,8 +215,20 @@ def plot_map_for_sel_order(gdf, order_symbol, location, plot_title, plot_dir, pl
         edgecolor="black",
         linewidth=0.8,
         alpha=0.7, 
-        zorder=3
+        zorder=1
     )
+
+    #--- Plot dust points
+    ax.scatter(
+        dust_df["longitude"],
+        dust_df["latitude"],
+        transform=ccrs.PlateCarree(),
+        s=6,
+        marker="o",
+        c="black",
+        alpha=0.3,
+        zorder=2
+        )
 
     lat_min, lat_max, lon_min, lon_max = _get_coords_for_region(location)
     extent = [lon_min, lon_max, lat_min, lat_max]

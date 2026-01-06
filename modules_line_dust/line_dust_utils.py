@@ -3,7 +3,7 @@ import pandas as pd
 def read_dust_data_into_df(dust_path):
     
     dust_df = pd.read_csv(dust_path, sep=r'\s+', skiprows=2, header=None)
-    dust_df.columns = ['Date (YYYYMMDD)', 'start time (UTC)', 'latitude', 'longitude', 'Jesse Check']
+    dust_df.columns = ['Date (YYYYMMDD)', 'start time (UTC)', 'latitude', 'longitude', 'Jesse check']
 
     #--- Clean lat/lon data
     dust_df['latitude'] = pd.to_numeric(dust_df['latitude'], errors='coerce')

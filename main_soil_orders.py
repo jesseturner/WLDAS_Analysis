@@ -8,11 +8,11 @@ wrb2014_file_dir = os.path.join(data_dir, "WRB2014_soil_map")
 gdf = soil_orders.open_wrb2014_file(wrb2014_file_dir)
 
 #--- Get Line dust dataset
-# dust_path = "data/raw/line_dust/dust_dataset_final_20241226.txt"
-# df = dust.read_dust_data_into_df(dust_path)
-# dust_gdf = soil_orders.convert_df_to_gdf(df)
+dust_path = "data/raw/line_dust/dust_dataset_final_20241226.txt"
+dust_df = dust.read_dust_data_into_df(dust_path)
 
 #--- Create dataframe of soil order for each event
+# dust_gdf = soil_orders.convert_df_to_gdf(dust_df)
 # dust_soil_df = soil_orders.get_soil_order_for_dust_events(gdf, dust_gdf)
 # print(dust_soil_df)
 
@@ -33,7 +33,9 @@ gdf = soil_orders.open_wrb2014_file(wrb2014_file_dir)
 # soil_orders.create_legend_png(counts_df_total, plot_dir, "soil_orders/wrb2014_counts_legend")
 
 #--- Plot map of soil order
+print(dust_df)
 soil_orders.plot_map_for_sel_order(gdf, order_symbol="CL", 
                                    location="American Southwest",
+                                   dust_df=dust_df,
                                    plot_title="Map of Calcisols", 
                                    plot_dir="figures", plot_name="map_calcisols")
