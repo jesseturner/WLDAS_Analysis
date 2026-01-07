@@ -19,18 +19,16 @@ time.time_all_functions(wldas_plot)
 #--- Sample the WLDAS data
 wldas_path = "/mnt/data2/jturner/wldas_data"
 file_dir = Path(wldas_path)
-file_sample = random.sample(list(file_dir.glob("*.nc4")), 90)
+file_sample = random.sample(list(file_dir.glob("*.nc4")), 300)
 
 #--- Load files in xarray dataset
-ds = wldas_proc.load_mf_data_with_xarray(file_sample)
+ds = wldas_proc.open_wldas_files_as_xarray_ds(file_sample)
 ds = wldas_proc.filter_by_bounds(ds, location_name="American Southwest")
-print(ds)
 
 #--- Filter moisture dataset to dust-producing regions
 dust_path="data/raw/line_dust/dust_dataset_final_20241226.txt"
 dust_df = dust.read_dust_data_into_df(dust_path)
-print(dust_df)
-# ds_dust_ever = wldas_proc.filter_by_ever_dust_points(ds, dust_df)
+ds_dust_ever = wldas_proc.filter_by_ever_dust_points(ds, dust_df)
 # ds_dust_current = wldas_proc.filter_by_current_dust_points(ds, dust_df)
 
 #--- Plot the average soil moisture
@@ -50,5 +48,5 @@ print(dust_df)
 #                                  fig_name="ex_average_soil_moisture_dust")
 
 #--- Plot histogram comparison between dust and all moisture measurements
-# wldas_plot.hist_comparison_plot(ds, ds_dust_ever)
+wldas_plot.hist_comparison_plot(ds, ds_dust_ever)
 # wldas_plot.hist_comparison_stats(ds, ds_dust_ever)

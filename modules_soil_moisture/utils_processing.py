@@ -1,16 +1,16 @@
 import xarray as xr
 
-def load_mf_data_with_xarray(file_list):
+def open_wldas_files_as_xarray_ds(file_list):
     '''
     Loads WLDAS data into an xarray dataset. 
 
     :param file_list: [str]
     '''
 
-    ds = xr.open_mfdataset(file_list, combine='nested', concat_dim='time')
-    ds = ds.drop_vars('time_bnds')
-    ds.attrs.clear()
-    ds = ds.sortby('time')
+    #--- Combining by_coords requires the data to be matched properly (subset together)
+    ds = xr.open_mfdataset(file_list, combine='by_coords', chunks=None)
+    ds = ds.chunk({'time': 30, 'lat': 90, 'lon': 180})
+    ds = ds.drop("time_bnds")
 
     return ds
 
@@ -80,20 +80,17 @@ def filter_by_ever_dust_points(ds, dust_df):
     #--- Set range from each dust source
     buffer_deg = 0.1
 
-    #--- Initialize empty mask
-    lat = ds['lat']
-    lon = ds['lon']
-    mask = xr.zeros_like(lat * 0 + lon * 0, dtype=bool)
+    lat = ds.lat
+    lon = ds.lon
 
-    #--- Create mask with boxes around each dust point
-    for point_lat, point_lon in zip(dust_df['latitude'], dust_df['longitude']):
-        lat_mask = (lat >= point_lat - buffer_deg) & (lat <= point_lat + buffer_deg)
-        lon_mask = (lon >= point_lon - buffer_deg) & (lon <= point_lon + buffer_deg)
-        # Use broadcasting to apply lat/lon condition over grid
-        point_mask = lat_mask & lon_mask
-        mask = mask | point_mask
-    
-    #--- Apply mask to WLDAS dataset
+    dust_lat = xr.DataArray(dust_df["latitude"], dims="points")
+    dust_lon = xr.DataArray(dust_df["longitude"], dims="points")
+
+    lat_mask = (lat >= dust_lat - buffer_deg) & (lat <= dust_lat + buffer_deg)
+    lon_mask = (lon >= dust_lon - buffer_deg) & (lon <= dust_lon + buffer_deg)
+
+    mask = (lat_mask & lon_mask).any("points")
+
     ds = ds.where(mask, drop=True)
     
     return ds

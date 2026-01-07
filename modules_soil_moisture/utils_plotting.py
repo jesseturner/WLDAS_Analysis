@@ -4,7 +4,6 @@ import cartopy.crs as ccrs
 import cartopy.feature as feature
 import numpy as np
 
-
 def _plot_save(fig, fig_dir, fig_name):
     os.makedirs(f"{fig_dir}", exist_ok=True)
     plt.savefig(f"{os.path.join(fig_dir, fig_name)}.png", dpi=200, bbox_inches='tight')
@@ -93,28 +92,45 @@ def hist_comparison_plot(ds_all, ds_dust):
     '''
     Plot histograms of soil moisture comparison 
     between complete dataset and dust-filtered dataset.
+    Set up for large xarray dataset (~80 GB).
 
     :param ds_all: from filter_by_bounds()
     :param ds_dust: from filter_by_dust_points()
     '''
 
-    moist_all = ds_all["SoilMoi00_10cm_tavg"].values.flatten()
-    moist_dust = ds_dust["SoilMoi00_10cm_tavg"].values.flatten()
+    bins = np.linspace(0.0, 0.6, 31)
+
+    hist_all = _dask_histogram(ds_all["SoilMoi00_10cm_tavg"], bins).compute()
+    hist_dust = _dask_histogram(ds_dust["SoilMoi00_10cm_tavg"], bins).compute()
+
+    bin_widths = np.diff(bins)
+    hist_all = hist_all / hist_all.sum() / bin_widths
+    hist_dust = hist_dust / hist_dust.sum() / bin_widths
 
     fig = plt.figure(figsize=(8,6))
-    plt.hist(moist_all, bins=30, alpha=0.5, density=True, 
-             label='All regions', color='blue')
-    plt.hist(moist_dust, bins=30, alpha=0.5, density=True,
-            label='Dust regions', color='orange')
-    plt.xlabel('m$^3$ m$^{-3}$')
-    plt.ylabel('Density')
-    plt.title('Soil moisture content \n (0-10 cm below surface)')
+    plt.bar(bins[:-1], hist_all, width=bin_widths, alpha=0.5,
+            label="All regions", align="edge")
+    plt.bar(bins[:-1], hist_dust, width=bin_widths, alpha=0.5,
+            label="Dust regions", align="edge")
+    plt.xlabel("m$^3$ m$^{-3}$")
+    plt.ylabel("Density")
+    plt.title("Soil moisture content\n(0-10 cm below surface)")
     plt.legend()
-    plt.show()
     
     _plot_save(fig, "figures", "example_hist")
 
     return
+
+def _dask_histogram(da, bins):
+    hist = da.data.map_blocks(
+        np.histogram,
+        bins=bins,
+        density=False,
+        dtype=float,
+        drop_axis=[1, 2],  # lat, lon
+        new_axis=[0]
+    )
+    return hist.sum(axis=tuple(range(1, hist.ndim)))
 
 def hist_comparison_stats(ds_all, ds_dust):
     '''
