@@ -409,3 +409,50 @@ def plot_frequency_analysis(csv_path, dust_region_df, plot_dir, location_str):
 
 
     return
+
+def hist_comparison_plot(ds_all, ds_dust):
+    '''
+    Plot histograms of soil moisture comparison 
+    between complete dataset and dust-filtered dataset.
+
+    :param ds_all: from filter_by_bounds()
+    :param ds_dust: from filter_by_dust_points()
+    '''
+
+    moist_all = ds_all["SoilMoi00_10cm_tavg"].values.flatten()
+    moist_dust = ds_dust["SoilMoi00_10cm_tavg"].values.flatten()
+
+    fig = plt.figure(figsize=(8,6))
+    plt.hist(moist_all, bins=30, alpha=0.5, density=True, 
+             label='All regions', color='blue')
+    plt.hist(moist_dust, bins=30, alpha=0.5, density=True,
+            label='Dust regions', color='orange')
+    plt.xlabel('m$^3$ m$^{-3}$')
+    plt.ylabel('Density')
+    plt.title('Soil moisture content \n (0-10 cm below surface)')
+    plt.legend()
+    plt.show()
+    
+    _plot_save(fig, "figures", "example_hist")
+
+    return
+
+def hist_comparison_stats(ds_all, ds_dust):
+    '''
+    KS test and p-value for the dust and all soil moisture datasets. 
+    
+    :param ds_all: from filter_by_bounds()
+    :param ds_dust: from filter_by_dust_points()
+    '''
+
+    from scipy.stats import ks_2samp
+
+    moist_all = ds_all["SoilMoi00_10cm_tavg"].values.flatten()
+    moist_dust = ds_dust["SoilMoi00_10cm_tavg"].values.flatten()
+    
+    moist_all = moist_all[~np.isnan(moist_all)]
+    moist_dust = moist_dust[~np.isnan(moist_dust)]
+    stat, p_value = ks_2samp(moist_all, moist_dust)
+    print(f"KS statistic: {stat:.4f}, p-value: {p_value:.4f}")
+
+    return

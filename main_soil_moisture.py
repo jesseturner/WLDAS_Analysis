@@ -30,12 +30,11 @@ dust_path="data/raw/line_dust/dust_dataset_final_20241226.txt"
 dust_df = dust.read_dust_data_into_df(dust_path)
 ds_dust = wldas_proc.filter_by_dust_points(ds, dust_df)
 
-#--- Reduce resolution for faster plotting
+#--- Plot the average soil moisture
+#------ Reduce resolution for faster plotting
 ds_low_res = ds.isel(lat=slice(0, None, 10), lon=slice(0, None, 10))
 ds_dust_low_res = ds_dust.isel(lat=slice(0, None, 10), lon=slice(0, None, 10))
 
-
-#--- Plot the average soil moisture
 # wldas_plot.plot_map_avg_moisture(ds_low_res, 
 #                                  fig_title="Average soil moisture", 
 #                                  location="American Southwest",
@@ -47,7 +46,9 @@ ds_dust_low_res = ds_dust.isel(lat=slice(0, None, 10), lon=slice(0, None, 10))
 #                                  fig_dir="figures", 
 #                                  fig_name="ex_average_soil_moisture_dust")
 
-
+#--- Plot histogram comparison between dust and all moisture measurements
+wldas_plot.hist_comparison_plot(ds, ds_dust)
+wldas_plot.hist_comparison_stats(ds, ds_dust)
 
 #=======================
 # Methods below are being improved
