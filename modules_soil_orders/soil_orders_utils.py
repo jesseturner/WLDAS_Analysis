@@ -446,3 +446,51 @@ def _get_usda_soil_type_gridcode():
     }
 
     return gridcode_to_order
+
+def plot_soil_order_frequency(filepath, dust_df):
+    """
+    Create a bar chart of the frequency of points in each soil order.
+    """
+    import rioxarray as rxr
+
+    soil_da = (
+        rxr.open_rasterio(filepath)
+        .squeeze("band", drop=True)  # remove band dimension
+    )
+
+    lons = soil_da['x'].values
+    lats = soil_da['y'].values
+
+    # Create 2D meshgrid for easier indexing (optional)
+    soil_values = soil_da.values
+
+    # Map each point to a raster cell
+    soil_codes_at_points = []
+
+    for idx, row in dust_df.iterrows():
+        lat = row['latitude']
+        lon = row['longitude']
+
+        x_idx = np.abs(lons - lon).argmin()
+        y_idx = np.abs(lats - lat).argmin()
+
+        code = soil_values[y_idx, x_idx]
+        soil_codes_at_points.append(code)
+
+    # Convert GRIDCODE -> soil order name
+    gridcode_to_order = _get_usda_soil_type_gridcode()
+    soil_orders_at_points = [gridcode_to_order.get(int(code), "Unknown") for code in soil_codes_at_points]
+
+    # Count frequency of each soil order
+    counts = pd.Series(soil_orders_at_points).value_counts().sort_values(ascending=False)
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    counts.plot(kind='bar', ax=ax, color="black")
+    ax.set_ylabel("Number of Points")
+    ax.set_xlabel("Soil Order")
+    ax.set_title("Frequency of Dust Events in Each Soil Order")
+    plt.xticks(rotation=45, ha='right')
+    plt.tight_layout()
+    _plot_save(fig, plot_dir="figures", plot_name="usda_soil_types_bar")
+
+    return
