@@ -297,6 +297,7 @@ def open_usda_soil_types_file(filepath, location_name):
     Open the USDA .tif file
     '''
     import rioxarray as rxr
+    from matplotlib.patches import Patch
 
     min_lat, max_lat, min_lon, max_lon = _get_coords_for_region(location_name)
 
@@ -311,14 +312,28 @@ def open_usda_soil_types_file(filepath, location_name):
         )
     )
 
+
+    gridcode_to_order = _get_usda_soil_type_gridcode()
+    soil_order_names = np.vectorize(gridcode_to_order.get)(soil.values)
+
+    unique_orders = np.unique(soil_order_names[~pd.isna(soil_order_names)])
+    order_to_index = {name: i for i, name in enumerate(unique_orders)}
+    soil_order_index = np.vectorize(order_to_index.get)(soil_order_names)
+    cmap = plt.get_cmap("tab20", len(unique_orders))
+
+    legend_elements = [
+        Patch(facecolor=cmap(i), label=name)
+        for i, name in enumerate(unique_orders)
+    ]
+
+
     fig, ax = plt.subplots(figsize=(16, 12), subplot_kw={"projection": ccrs.PlateCarree()})
 
     soil.plot(
         ax=ax,
-        cmap="tab20",
-        add_colorbar=True,
-        cbar_kwargs={"label": "Soil Suborder Code"},
-        transform=ccrs.PlateCarree()  # crucial!
+        cmap=cmap,
+        add_colorbar=False,
+        transform=ccrs.PlateCarree()
     )
 
     ax.add_feature(cfeature.STATES, edgecolor="black", linewidth=0.8)
@@ -327,7 +342,93 @@ def open_usda_soil_types_file(filepath, location_name):
     ax.set_extent([min_lon, max_lon, min_lat, max_lat], crs=ccrs.PlateCarree())
 
     ax.set_title("Soil Suborders with State Boundaries")
+    ax.legend(
+        handles=legend_elements,
+        title="Soil Order",
+        bbox_to_anchor=(1.05, 1),
+        loc="upper left"
+    )
 
     _plot_save(fig, plot_dir="figures", plot_name="usda_soil_types")
 
     return
+
+def _get_usda_soil_type_gridcode():
+    # Mapping GRIDCODE → SOIL_ORDER
+    gridcode_to_order = {
+        0: "Water",
+        1: "Shifting Sands",
+        2: "Rocky Land",
+        3: "Ice/Glacier",
+        4: "Salt flats",
+        5: "Gelisols",
+        6: "Gelisols",
+        7: "Gelisols",
+        10: "Histosols",
+        12: "Histosols",
+        13: "Histosols",
+        14: "Histosols",
+        15: "Spodosols",
+        16: "Spodosols",
+        17: "Spodosols",
+        18: "Spodosols",
+        19: "Spodosols",
+        21: "Andisols",
+        22: "Andisols",
+        23: "Andisols",
+        24: "Andisols",
+        25: "Andisols",
+        26: "Andisols",
+        27: "Andisols",
+        30: "Oxisols",
+        31: "Oxisols",
+        32: "Oxisols",
+        33: "Oxisols",
+        34: "Oxisols",
+        41: "Vertisols",
+        42: "Vertisols",
+        43: "Vertisols",
+        44: "Vertisols",
+        45: "Vertisols",
+        50: "Aridisols",
+        51: "Aridisols",
+        54: "Aridisols",
+        55: "Aridisols",
+        56: "Aridisols",
+        57: "Aridisols",
+        60: "Ultisols",
+        61: "Ultisols",
+        62: "Ultisols",
+        63: "Ultisols",
+        64: "Ultisols",
+        70: "Mollisols",
+        71: "Mollisols",
+        72: "Mollisols",
+        73: "Mollisols",
+        74: "Mollisols",
+        75: "Mollisols",
+        76: "Mollisols",
+        77: "Mollisols",
+        80: "Alfisols",
+        81: "Alfisols",
+        82: "Alfisols",
+        83: "Alfisols",
+        84: "Alfisols",
+        90: "Inceptisols",
+        91: "Inceptisols",
+        92: "Inceptisols",
+        93: "Inceptisols",
+        94: "Inceptisols",
+        95: "Inceptisols",
+        101: "Entisols",
+        102: "Entisols",
+        103: "Entisols",
+        104: "Entisols",
+        200: "No data",
+        201: "Urban, mining",
+        202: "Human disturbed",
+        204: "Fishpond",
+        205: "Island",
+    }
+
+    return gridcode_to_order
