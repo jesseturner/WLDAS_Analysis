@@ -292,7 +292,7 @@ def _get_coords_for_region(location_name):
 
     return lat_min, lat_max, lon_min, lon_max
 
-def open_usda_soil_types_file(filepath, location_name):
+def plot_usda_soil_types(filepath, location_name, dust_df):
     '''
     Open the USDA .tif file
     '''
@@ -336,12 +336,26 @@ def open_usda_soil_types_file(filepath, location_name):
         transform=ccrs.PlateCarree()
     )
 
+    #--- Plot dust points
+    ax.scatter(
+        dust_df["longitude"],
+        dust_df["latitude"],
+        transform=ccrs.PlateCarree(),
+        s=12,
+        marker="o",
+        facecolors='white',
+        edgecolors='black',
+        linewidth=1, 
+        alpha=0.5,
+        zorder=2
+        )
+
     ax.add_feature(cfeature.STATES, edgecolor="black", linewidth=0.8)
     ax.add_feature(cfeature.COASTLINE, edgecolor="black", linewidth=0.8)
     ax.add_feature(cfeature.BORDERS, edgecolor="black", linewidth=0.8)
     ax.set_extent([min_lon, max_lon, min_lat, max_lat], crs=ccrs.PlateCarree())
-
-    ax.set_title("Soil Suborders with State Boundaries")
+    
+    ax.set_title("USDA Soil Orders with Dust Origins")
     ax.legend(
         handles=legend_elements,
         title="Soil Order",

@@ -42,4 +42,4 @@ dust_df = dust.read_dust_data_into_df(dust_path)
 #--- Open soil types USDA file
 filepath = "data/raw/soil_types_usda/global-soil-suborders-2022.tif"
 file_dbf = "data/raw/soil_types_usda/global-soil-suborders-2022.tif.vat.dbf"
-soil_orders.open_usda_soil_types_file(filepath, location_name="American Southwest")
+soil_orders.plot_usda_soil_types(filepath, location_name="American Southwest", dust_df=dust_df)
