@@ -3,9 +3,9 @@ from modules_line_dust import line_dust_utils as dust
 import os
 
 #--- Open soil orders file as GeoDataframe
-data_dir = "data/raw/wrb_soil_orders"
-wrb2014_file_dir = os.path.join(data_dir, "WRB2014_soil_map")
-gdf = soil_orders.open_wrb2014_file(wrb2014_file_dir)
+# data_dir = "data/raw/wrb_soil_orders"
+# wrb2014_file_dir = os.path.join(data_dir, "WRB2014_soil_map")
+# gdf = soil_orders.open_wrb2014_file(wrb2014_file_dir)
 
 #--- Get Line dust dataset
 dust_path = "data/raw/line_dust/dust_dataset_final_20241226.txt"
@@ -33,8 +33,12 @@ dust_df = dust.read_dust_data_into_df(dust_path)
 # soil_orders.create_legend_png(counts_df_total, plot_dir, "soil_orders/wrb2014_counts_legend")
 
 #--- Plot map of soil order
-soil_orders.plot_map_for_sel_order(gdf, order_symbol_list=["CL", "RG", "FL"], 
-                                   location="American Southwest",
-                                   dust_df=dust_df,
-                                   plot_title="Map of Calcisols", 
-                                   plot_dir="figures", plot_name="map_calcisols")
+# soil_orders.plot_map_for_sel_order(gdf, order_symbol_list=["CL", "RG", "FL"], 
+#                                    location="American Southwest",
+#                                    dust_df=dust_df,
+#                                    plot_title="Map of Calcisols", 
+#                                    plot_dir="figures", plot_name="map_calcisols")
+
+#--- Open soil types USDA file
+filepath = "data/raw/soil_types_usda/global-soil-suborders-2022.tif"
+soil_orders.open_usda_soil_types_file(filepath, location_name="American Southwest")

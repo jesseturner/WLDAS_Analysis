@@ -3,6 +3,7 @@ import os, glob
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import xarray as xr
 from shapely.geometry import Point
 import geopandas as gpd
 import cartopy.crs as ccrs
@@ -290,3 +291,43 @@ def _get_coords_for_region(location_name):
     lon_min, lon_max = min(lons), max(lons)
 
     return lat_min, lat_max, lon_min, lon_max
+
+def open_usda_soil_types_file(filepath, location_name):
+    '''
+    Open the USDA .tif file
+    '''
+    import rioxarray as rxr
+
+    min_lat, max_lat, min_lon, max_lon = _get_coords_for_region(location_name)
+
+    soil = (
+        rxr.open_rasterio(filepath)
+        .squeeze("band", drop=True)  # remove band dimension
+        .rio.clip_box(
+            minx=min_lon,
+            miny=min_lat,
+            maxx=max_lon,
+            maxy=max_lat,
+        )
+    )
+
+    fig, ax = plt.subplots(figsize=(16, 12), subplot_kw={"projection": ccrs.PlateCarree()})
+
+    soil.plot(
+        ax=ax,
+        cmap="tab20",
+        add_colorbar=True,
+        cbar_kwargs={"label": "Soil Suborder Code"},
+        transform=ccrs.PlateCarree()  # crucial!
+    )
+
+    ax.add_feature(cfeature.STATES, edgecolor="black", linewidth=0.8)
+    ax.add_feature(cfeature.COASTLINE, edgecolor="black", linewidth=0.8)
+    ax.add_feature(cfeature.BORDERS, edgecolor="black", linewidth=0.8)
+    ax.set_extent([min_lon, max_lon, min_lat, max_lat], crs=ccrs.PlateCarree())
+
+    ax.set_title("Soil Suborders with State Boundaries")
+
+    _plot_save(fig, plot_dir="figures", plot_name="usda_soil_types")
+
+    return
