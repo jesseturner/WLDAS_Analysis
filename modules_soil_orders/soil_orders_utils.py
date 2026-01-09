@@ -292,18 +292,23 @@ def _get_coords_for_region(location_name):
 
     return lat_min, lat_max, lon_min, lon_max
 
-def plot_usda_soil_types(filepath, location_name, dust_df):
+def usda_soil_types_figure(usda_filepath, dust_df, location_name):
     '''
-    Open the USDA .tif file
+    Creates a map of USDA soil types with dust origins overlaid. 
+    Creates a side-by-side bar chart comparing proportions of soil types. 
+    
+    :param usda_filepath: USDA soil types .tif file
+    :param dust_df: from dust.read_dust_data_into_df()
+    :param location_name: Like "American Southwest", for _get_coords_for_region()
     '''
+    
     import rioxarray as rxr
-    from matplotlib.patches import Patch
 
     min_lat, max_lat, min_lon, max_lon = _get_coords_for_region(location_name)
 
-    soil = (
-        rxr.open_rasterio(filepath)
-        .squeeze("band", drop=True)  # remove band dimension
+    soil_da = (
+        rxr.open_rasterio(usda_filepath)
+        .squeeze("band", drop=True)
         .rio.clip_box(
             minx=min_lon,
             miny=min_lat,
@@ -312,24 +317,30 @@ def plot_usda_soil_types(filepath, location_name, dust_df):
         )
     )
 
-
+    #--- Get colormap associated with soil order names
     gridcode_to_order = _get_usda_soil_type_gridcode()
-    soil_order_names = np.vectorize(gridcode_to_order.get)(soil.values)
-
+    soil_order_names = np.vectorize(gridcode_to_order.get)(soil_da.values)
     unique_orders = np.unique(soil_order_names[~pd.isna(soil_order_names)])
     order_to_index = {name: i for i, name in enumerate(unique_orders)}
-    soil_order_index = np.vectorize(order_to_index.get)(soil_order_names)
     cmap = plt.get_cmap("tab20", len(unique_orders))
+
+    _plot_usda_soil_types_map(soil_da, dust_df, location_name, order_to_index, cmap)
+    _plot_usda_soil_types_bar(soil_da, dust_df, order_to_index, cmap)
+
+    return
+    
+def _plot_usda_soil_types_map(soil_da, dust_df, location_name, order_to_index, cmap):
+    from matplotlib.patches import Patch
 
     legend_elements = [
         Patch(facecolor=cmap(i), label=name)
-        for i, name in enumerate(unique_orders)
+        for i, name in enumerate(order_to_index)
     ]
 
 
     fig, ax = plt.subplots(figsize=(16, 12), subplot_kw={"projection": ccrs.PlateCarree()})
 
-    soil.plot(
+    soil_da.plot(
         ax=ax,
         cmap=cmap,
         add_colorbar=False,
@@ -353,6 +364,7 @@ def plot_usda_soil_types(filepath, location_name, dust_df):
     ax.add_feature(cfeature.STATES, edgecolor="black", linewidth=0.8)
     ax.add_feature(cfeature.COASTLINE, edgecolor="black", linewidth=0.8)
     ax.add_feature(cfeature.BORDERS, edgecolor="black", linewidth=0.8)
+    min_lat, max_lat, min_lon, max_lon = _get_coords_for_region(location_name)
     ax.set_extent([min_lon, max_lon, min_lat, max_lat], crs=ccrs.PlateCarree())
     
     ax.set_title("USDA Soil Orders with Dust Origins")
@@ -364,6 +376,106 @@ def plot_usda_soil_types(filepath, location_name, dust_df):
     )
 
     _plot_save(fig, plot_dir="figures", plot_name="usda_soil_types")
+    
+    return
+
+def _plot_usda_soil_types_bar(soil_da, dust_df, order_to_index, cmap):
+    """
+    Create a side-by-side bar chart comparing:
+    - frequency of soil orders at dust points
+    - frequency of soil orders in the full soil raster
+    """
+    from matplotlib.patches import Patch
+
+
+    lons = soil_da["x"].values
+    lats = soil_da["y"].values
+    soil_values = soil_da.values
+
+    soil_codes_at_points = []
+
+    for _, row in dust_df.iterrows():
+        lat = row["latitude"]
+        lon = row["longitude"]
+
+        x_idx = np.abs(lons - lon).argmin()
+        y_idx = np.abs(lats - lat).argmin()
+
+        soil_codes_at_points.append(soil_values[y_idx, x_idx])
+
+    gridcode_to_order = _get_usda_soil_type_gridcode()
+    soil_orders_at_points = [
+        gridcode_to_order.get(int(code), "Unknown")
+        for code in soil_codes_at_points
+        if not np.isnan(code)
+    ]
+
+    point_counts = (
+        pd.Series(soil_orders_at_points)
+        .value_counts()
+    )
+
+    flat_codes = soil_values.flatten()
+    flat_codes = flat_codes[~np.isnan(flat_codes)]
+
+    soil_orders_full = [
+        gridcode_to_order.get(int(code), "Unknown")
+        for code in flat_codes
+    ]
+
+    full_counts = (
+        pd.Series(soil_orders_full)
+        .value_counts()
+    )
+
+    counts_df = pd.DataFrame({
+        "Dust points": point_counts,
+        "Full domain": full_counts
+    }).fillna(0)
+    counts_df = counts_df.drop(index="Unknown", errors="ignore")
+
+    counts_df = counts_df.div(counts_df.sum())
+    counts_df = counts_df.sort_values("Dust points", ascending=False)
+
+    fig, ax = plt.subplots(figsize=(11, 6))
+
+    x = np.arange(len(counts_df))
+    width = 0.4
+
+    for i, soil_order in enumerate(counts_df.index):
+        color = cmap(order_to_index[soil_order])
+
+        ax.bar(
+            x[i] - width / 2,
+            counts_df.loc[soil_order, "Dust points"],
+            width,
+            color=color,
+            edgecolor="black",
+            linewidth=1
+        )
+
+        ax.bar(
+            x[i] + width / 2,
+            counts_df.loc[soil_order, "Full domain"],
+            width,
+            color=color,
+            alpha=0.5
+        )
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(counts_df.index, rotation=45, ha="right")
+    ax.set_ylabel("Fraction of observations")
+    ax.set_xlabel("Soil Order")
+    ax.set_title("Soil Order Frequency: Dust Points vs Full Domain")
+
+    legend_elements = [
+        Patch(facecolor="black", label="Dust points"),
+        Patch(facecolor="black", alpha=0.5, label="Full domain")
+    ]
+    ax.legend(handles=legend_elements, title="Dataset")
+
+    plt.tight_layout()
+    _plot_save(fig, plot_dir="figures", plot_name="usda_soil_types_bar")
 
     return
 
@@ -446,51 +558,3 @@ def _get_usda_soil_type_gridcode():
     }
 
     return gridcode_to_order
-
-def plot_soil_order_frequency(filepath, dust_df):
-    """
-    Create a bar chart of the frequency of points in each soil order.
-    """
-    import rioxarray as rxr
-
-    soil_da = (
-        rxr.open_rasterio(filepath)
-        .squeeze("band", drop=True)  # remove band dimension
-    )
-
-    lons = soil_da['x'].values
-    lats = soil_da['y'].values
-
-    # Create 2D meshgrid for easier indexing (optional)
-    soil_values = soil_da.values
-
-    # Map each point to a raster cell
-    soil_codes_at_points = []
-
-    for idx, row in dust_df.iterrows():
-        lat = row['latitude']
-        lon = row['longitude']
-
-        x_idx = np.abs(lons - lon).argmin()
-        y_idx = np.abs(lats - lat).argmin()
-
-        code = soil_values[y_idx, x_idx]
-        soil_codes_at_points.append(code)
-
-    # Convert GRIDCODE -> soil order name
-    gridcode_to_order = _get_usda_soil_type_gridcode()
-    soil_orders_at_points = [gridcode_to_order.get(int(code), "Unknown") for code in soil_codes_at_points]
-
-    # Count frequency of each soil order
-    counts = pd.Series(soil_orders_at_points).value_counts().sort_values(ascending=False)
-
-    fig, ax = plt.subplots(figsize=(10, 6))
-    counts.plot(kind='bar', ax=ax, color="black")
-    ax.set_ylabel("Number of Points")
-    ax.set_xlabel("Soil Order")
-    ax.set_title("Frequency of Dust Events in Each Soil Order")
-    plt.xticks(rotation=45, ha='right')
-    plt.tight_layout()
-    _plot_save(fig, plot_dir="figures", plot_name="usda_soil_types_bar")
-
-    return

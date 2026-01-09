@@ -40,7 +40,5 @@ dust_df = dust.read_dust_data_into_df(dust_path)
 #                                    plot_dir="figures", plot_name="map_calcisols")
 
 #--- Open soil types USDA file
-filepath = "data/raw/soil_types_usda/global-soil-suborders-2022.tif"
-file_dbf = "data/raw/soil_types_usda/global-soil-suborders-2022.tif.vat.dbf"
-soil_orders.plot_usda_soil_types(filepath, location_name="American Southwest", dust_df=dust_df)
-soil_orders.plot_soil_order_frequency(filepath, dust_df)
+usda_filepath = "data/raw/soil_types_usda/global-soil-suborders-2022.tif"
+soil_orders.usda_soil_types_figure(usda_filepath, dust_df, location_name="American Southwest")
