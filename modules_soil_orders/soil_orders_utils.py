@@ -318,9 +318,10 @@ def usda_soil_types_figure(usda_filepath, dust_df, location_name):
     )
 
     #--- Get colormap associated with soil order names
-    gridcode_to_order = _get_usda_soil_type_gridcode()
-    soil_order_names = np.vectorize(gridcode_to_order.get)(soil_da.values)
-    unique_orders = np.unique(soil_order_names[~pd.isna(soil_order_names)])
+    #------ Colormaps not synced up due to spatial plot not following
+    gridcode_to_order = _get_usda_soil_type_gridcode() 
+    soil_order_names = np.vectorize(gridcode_to_order.get)(soil_da.values) 
+    unique_orders = np.unique(soil_order_names[~pd.isna(soil_order_names)]) 
     order_to_index = {name: i for i, name in enumerate(unique_orders)}
     cmap = plt.get_cmap("tab20", len(unique_orders))
 
@@ -331,11 +332,6 @@ def usda_soil_types_figure(usda_filepath, dust_df, location_name):
     
 def _plot_usda_soil_types_map(soil_da, dust_df, location_name, order_to_index, cmap):
     from matplotlib.patches import Patch
-
-    legend_elements = [
-        Patch(facecolor=cmap(i), label=name)
-        for i, name in enumerate(order_to_index)
-    ]
 
 
     fig, ax = plt.subplots(figsize=(16, 12), subplot_kw={"projection": ccrs.PlateCarree()})
@@ -368,6 +364,11 @@ def _plot_usda_soil_types_map(soil_da, dust_df, location_name, order_to_index, c
     ax.set_extent([min_lon, max_lon, min_lat, max_lat], crs=ccrs.PlateCarree())
     
     ax.set_title("USDA Soil Orders with Dust Origins")
+
+    legend_elements = [
+        Patch(facecolor=cmap(i), label=name)
+        for i, name in enumerate(order_to_index)
+    ]
     ax.legend(
         handles=legend_elements,
         title="Soil Order",
