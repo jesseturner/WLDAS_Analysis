@@ -340,7 +340,7 @@ def usda_soil_types_figure(usda_filepath, dust_df, location_name):
         "Shifting Sands": "#a8a6a4",
         "Water": "#a3d2f3", 
         "Ice/Glacier": "#aec7e8", 
-        "No data": "#000000", 
+        "No data": "#ffffff", 
         "Urban, mining": "#7f7f7f", 
         "Human disturbed": "#000000",
         "Fishpond": "#1f77b4", 
