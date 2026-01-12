@@ -303,6 +303,7 @@ def usda_soil_types_figure(usda_filepath, dust_df, location_name):
     '''
     
     import rioxarray as rxr
+    import matplotlib.colors as mcolors
 
     min_lat, max_lat, min_lon, max_lon = _get_coords_for_region(location_name)
 
@@ -320,30 +321,69 @@ def usda_soil_types_figure(usda_filepath, dust_df, location_name):
     #--- Get colormap associated with soil order names
     #------ Colormaps not synced up due to spatial plot not following
     gridcode_to_order = _get_usda_soil_type_gridcode() 
-    soil_order_names = np.vectorize(gridcode_to_order.get)(soil_da.values) 
-    unique_orders = np.unique(soil_order_names[~pd.isna(soil_order_names)]) 
-    order_to_index = {name: i for i, name in enumerate(unique_orders)}
-    cmap = plt.get_cmap("tab20", len(unique_orders))
+    # soil_order_names = np.vectorize(gridcode_to_order.get)(soil_da.values) 
+    # unique_orders = np.unique(soil_order_names[~pd.isna(soil_order_names)]) 
+    # order_to_index = {name: i for i, name in enumerate(unique_orders)}
+    # cmap = plt.get_cmap("tab20", len(unique_orders))
 
-    _plot_usda_soil_types_map(soil_da, dust_df, location_name, order_to_index, cmap)
+    category_colors = {
+        "Alfisols": "#06dd0a",
+        "Andisols": "#f603d6", 
+        "Aridisols": "#f1af4c",
+        "Entisols": "#dc5908", 
+        "Gelisols": "#730ef8",
+        "Histosols": "#61310d", 
+        "Inceptisols": "#cada9c",
+        "Mollisols": "#046a2b",
+        "Oxisols": "#ff0e0e", 
+        "Spodosols": "#f084e0", 
+        "Ultisols": "#f9ec3a",
+        "Vertisols": "#1411f5",
+        "Rocky Land": "#6b6969", 
+        "Salt flats": "#e0e0e0", 
+        "Shifting Sands": "#a8a6a4",
+        "Water": "#a3d2f3", 
+        "Ice/Glacier": "#aec7e8", 
+        "No data": "#000000",        # black
+        "Urban, mining": "#7f7f7f",  # grey
+        "Human disturbed": "#000000",
+        "Fishpond": "#1f77b4",       # blue
+        "Island": "#aec7e8",         # light blue
+    }
+
+    unique_orders = list(dict.fromkeys(gridcode_to_order.values())) 
+    order_to_index = {order: i for i, order in enumerate(unique_orders)}
+    colors = [category_colors[o] for o in unique_orders]
+    cmap = mcolors.ListedColormap(colors)
+
+    default_order = "No data"
+    flat_values = soil_da.values.ravel()
+    flat_indices = np.array([
+        order_to_index.get(gridcode_to_order.get(int(code), default_order), order_to_index[default_order])
+        for code in flat_values
+    ])
+    soil_indices = soil_da.copy()
+    soil_indices.values = flat_indices.reshape(soil_da.shape)
+    
+
+    _plot_usda_soil_types_map(soil_da, dust_df, location_name, order_to_index, cmap, colors)
     _plot_usda_soil_types_bar(soil_da, dust_df, order_to_index, cmap)
 
     return
     
-def _plot_usda_soil_types_map(soil_da, dust_df, location_name, order_to_index, cmap):
+def _plot_usda_soil_types_map(soil_indices, dust_df, location_name, order_to_index, cmap, colors):
     from matplotlib.patches import Patch
-
 
     fig, ax = plt.subplots(figsize=(16, 12), subplot_kw={"projection": ccrs.PlateCarree()})
 
-    soil_da.plot(
+    soil_indices.plot(
         ax=ax,
         cmap=cmap,
         add_colorbar=False,
         transform=ccrs.PlateCarree()
     )
 
-    #--- Plot dust points
+    # Plot dust points
     ax.scatter(
         dust_df["longitude"],
         dust_df["latitude"],
@@ -355,7 +395,7 @@ def _plot_usda_soil_types_map(soil_da, dust_df, location_name, order_to_index, c
         linewidth=1, 
         alpha=0.5,
         zorder=2
-        )
+    )
 
     ax.add_feature(cfeature.STATES, edgecolor="black", linewidth=0.8)
     ax.add_feature(cfeature.COASTLINE, edgecolor="black", linewidth=0.8)
@@ -366,7 +406,7 @@ def _plot_usda_soil_types_map(soil_da, dust_df, location_name, order_to_index, c
     ax.set_title("USDA Soil Orders with Dust Origins")
 
     legend_elements = [
-        Patch(facecolor=cmap(i), label=name)
+        Patch(facecolor=colors[i], label=name)
         for i, name in enumerate(order_to_index)
     ]
     ax.legend(
@@ -377,7 +417,6 @@ def _plot_usda_soil_types_map(soil_da, dust_df, location_name, order_to_index, c
     )
 
     _plot_save(fig, plot_dir="figures", plot_name="usda_soil_types")
-    
     return
 
 def _plot_usda_soil_types_bar(soil_da, dust_df, order_to_index, cmap):
