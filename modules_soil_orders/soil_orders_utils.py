@@ -363,12 +363,12 @@ def usda_soil_types_figure(usda_filepath, dust_df, location_name):
     soil_indices = soil_da.copy()
     soil_indices.values = flat_indices.reshape(soil_da.shape)
 
-    _plot_usda_soil_types_map(soil_indices, dust_df, location_name, order_to_index, cmap, norm, colors)
+    _plot_usda_soil_types_map(soil_indices, dust_df, location_name, unique_orders, cmap, norm, colors)
     _plot_usda_soil_types_bar(soil_da, dust_df, order_to_index, cmap)
 
     return
     
-def _plot_usda_soil_types_map(soil_indices, dust_df, location_name, order_to_index, cmap, norm, colors):
+def _plot_usda_soil_types_map(soil_indices, dust_df, location_name, unique_orders, cmap, norm, colors):
     from matplotlib.patches import Patch
 
     fig, ax = plt.subplots(figsize=(16, 12), subplot_kw={"projection": ccrs.PlateCarree()})
@@ -403,9 +403,11 @@ def _plot_usda_soil_types_map(soil_indices, dust_df, location_name, order_to_ind
     
     ax.set_title("USDA Soil Orders with Dust Origins")
 
+    unique_indices = np.unique(soil_indices.values)
     legend_elements = [
         Patch(facecolor=colors[i], label=name)
-        for i, name in enumerate(order_to_index)
+        for i, name in enumerate(unique_orders)
+        if i in unique_indices
     ]
     ax.legend(
         handles=legend_elements,
@@ -413,6 +415,17 @@ def _plot_usda_soil_types_map(soil_indices, dust_df, location_name, order_to_ind
         bbox_to_anchor=(1.05, 1),
         loc="upper left"
     )
+
+    # legend_elements = [
+    #     Patch(facecolor=colors[i], label=name)
+    #     for i, name in enumerate(order_to_index)
+    # ]
+    # ax.legend(
+    #     handles=legend_elements,
+    #     title="Soil Order",
+    #     bbox_to_anchor=(1.05, 1),
+    #     loc="upper left"
+    # )
 
     _plot_save(fig, plot_dir="figures", plot_name="usda_soil_types")
     return
