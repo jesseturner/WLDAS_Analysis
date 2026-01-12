@@ -321,10 +321,6 @@ def usda_soil_types_figure(usda_filepath, dust_df, location_name):
     #--- Get colormap associated with soil order names
     #------ Colormaps not synced up due to spatial plot not following
     gridcode_to_order = _get_usda_soil_type_gridcode() 
-    # soil_order_names = np.vectorize(gridcode_to_order.get)(soil_da.values) 
-    # unique_orders = np.unique(soil_order_names[~pd.isna(soil_order_names)]) 
-    # order_to_index = {name: i for i, name in enumerate(unique_orders)}
-    # cmap = plt.get_cmap("tab20", len(unique_orders))
 
     category_colors = {
         "Alfisols": "#06dd0a",
@@ -344,17 +340,19 @@ def usda_soil_types_figure(usda_filepath, dust_df, location_name):
         "Shifting Sands": "#a8a6a4",
         "Water": "#a3d2f3", 
         "Ice/Glacier": "#aec7e8", 
-        "No data": "#000000",        # black
-        "Urban, mining": "#7f7f7f",  # grey
+        "No data": "#000000", 
+        "Urban, mining": "#7f7f7f", 
         "Human disturbed": "#000000",
-        "Fishpond": "#1f77b4",       # blue
-        "Island": "#aec7e8",         # light blue
+        "Fishpond": "#1f77b4", 
+        "Island": "#aec7e8",    
     }
 
-    unique_orders = list(dict.fromkeys(gridcode_to_order.values())) 
+    unique_orders = list(dict.fromkeys(gridcode_to_order.values()))
     order_to_index = {order: i for i, order in enumerate(unique_orders)}
     colors = [category_colors[o] for o in unique_orders]
     cmap = mcolors.ListedColormap(colors)
+    n_categories = len(unique_orders)
+    norm = mcolors.BoundaryNorm(boundaries=np.arange(-0.5, n_categories+0.5, 1), ncolors=n_categories)
 
     default_order = "No data"
     flat_values = soil_da.values.ravel()
@@ -364,14 +362,13 @@ def usda_soil_types_figure(usda_filepath, dust_df, location_name):
     ])
     soil_indices = soil_da.copy()
     soil_indices.values = flat_indices.reshape(soil_da.shape)
-    
 
-    _plot_usda_soil_types_map(soil_da, dust_df, location_name, order_to_index, cmap, colors)
+    _plot_usda_soil_types_map(soil_indices, dust_df, location_name, order_to_index, cmap, norm, colors)
     _plot_usda_soil_types_bar(soil_da, dust_df, order_to_index, cmap)
 
     return
     
-def _plot_usda_soil_types_map(soil_indices, dust_df, location_name, order_to_index, cmap, colors):
+def _plot_usda_soil_types_map(soil_indices, dust_df, location_name, order_to_index, cmap, norm, colors):
     from matplotlib.patches import Patch
 
     fig, ax = plt.subplots(figsize=(16, 12), subplot_kw={"projection": ccrs.PlateCarree()})
@@ -379,6 +376,7 @@ def _plot_usda_soil_types_map(soil_indices, dust_df, location_name, order_to_ind
     soil_indices.plot(
         ax=ax,
         cmap=cmap,
+        norm=norm,
         add_colorbar=False,
         transform=ccrs.PlateCarree()
     )
@@ -427,63 +425,53 @@ def _plot_usda_soil_types_bar(soil_da, dust_df, order_to_index, cmap):
     """
     from matplotlib.patches import Patch
 
-
     lons = soil_da["x"].values
     lats = soil_da["y"].values
     soil_values = soil_da.values
 
-    soil_codes_at_points = []
-
-    for _, row in dust_df.iterrows():
-        lat = row["latitude"]
-        lon = row["longitude"]
-
-        x_idx = np.abs(lons - lon).argmin()
-        y_idx = np.abs(lats - lat).argmin()
-
-        soil_codes_at_points.append(soil_values[y_idx, x_idx])
-
     gridcode_to_order = _get_usda_soil_type_gridcode()
+
+    dust_lons = dust_df["longitude"].values
+    dust_lats = dust_df["latitude"].values
+
+    x_idx = np.abs(lons[None, :] - dust_lons[:, None]).argmin(axis=1)
+    y_idx = np.abs(lats[None, :] - dust_lats[:, None]).argmin(axis=1)
+
+    soil_codes_at_points = soil_values[y_idx, x_idx]
+
     soil_orders_at_points = [
         gridcode_to_order.get(int(code), "Unknown")
         for code in soil_codes_at_points
         if not np.isnan(code)
     ]
 
-    point_counts = (
-        pd.Series(soil_orders_at_points)
-        .value_counts()
-    )
+    point_counts = pd.Series(soil_orders_at_points).value_counts()
+    print(point_counts)
 
     flat_codes = soil_values.flatten()
     flat_codes = flat_codes[~np.isnan(flat_codes)]
 
-    soil_orders_full = [
-        gridcode_to_order.get(int(code), "Unknown")
-        for code in flat_codes
-    ]
-
-    full_counts = (
-        pd.Series(soil_orders_full)
-        .value_counts()
-    )
+    soil_orders_full = [gridcode_to_order.get(int(code), "Unknown") for code in flat_codes]
+    full_counts = pd.Series(soil_orders_full).value_counts()
 
     counts_df = pd.DataFrame({
         "Dust points": point_counts,
         "Full domain": full_counts
     }).fillna(0)
-    counts_df = counts_df.drop(index="Unknown", errors="ignore")
 
+    counts_df = counts_df.drop(index="Unknown", errors="ignore")
     counts_df = counts_df.div(counts_df.sum())
     counts_df = counts_df.sort_values("Dust points", ascending=False)
 
     fig, ax = plt.subplots(figsize=(11, 6))
 
     x = np.arange(len(counts_df))
-    width = 0.4
+    width = 0.35
 
     for i, soil_order in enumerate(counts_df.index):
-        color = cmap(order_to_index[soil_order])
+        idx = order_to_index.get(soil_order, order_to_index["No data"])
+        
+        color = cmap(idx)
 
         ax.bar(
             x[i] - width / 2,
