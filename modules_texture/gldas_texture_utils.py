@@ -234,6 +234,7 @@ def gldas_soil_textures_figure(texture_ds, dust_df, location_name):
     cmap_colors = cmap(np.linspace(0, 1, len(texture_categories)))    
 
     _plot_gldas_soil_texture_map(texture_ds, dust_df, soil_cmap, texture_colors, location_name, texture_categories)
+    _plot_gldas_soil_texture_bar(texture_ds, dust_df, texture_colors, texture_categories, location_name)
 
     return
 
@@ -291,4 +292,69 @@ def _plot_gldas_soil_texture_map(texture_ds, dust_df, soil_cmap, texture_colors,
 
     _plot_save(fig, fig_dir="figures", fig_name="gldas_texture_categories")
     
+    return
+
+def _plot_gldas_soil_texture_bar(texture_ds, dust_df, texture_colors, texture_categories, location_name):
+    """
+    Create a side-by-side bar chart comparing:
+    - frequency of soil textures at dust points
+    - frequency of soil textures in the full soil raster
+    """
+    from matplotlib.patches import Patch
+
+    # Extract the soil texture DataArray
+    texture_da = texture_ds.GLDAS_soiltex
+
+    # Flatten the raster to 1D for counting
+    texture_flat = texture_da.values.flatten()
+
+    # Count full domain occurrences
+    full_counts = {k: np.sum(texture_flat == k) for k in texture_categories.keys()}
+    total_full = sum(full_counts.values())
+    full_fraction = {k: v / total_full for k, v in full_counts.items()}
+
+    # Subset raster at dust point locations
+    # Round coordinates to nearest grid point
+    dust_textures = []
+    for lon, lat in zip(dust_df["longitude"], dust_df["latitude"]):
+        # Select nearest pixel
+        val = texture_da.sel(
+            lon=lon, lat=lat, method="nearest"
+        ).values
+        dust_textures.append(val)
+
+    dust_counts = {k: dust_textures.count(k) for k in texture_categories.keys()}
+    total_dust = sum(dust_counts.values())
+    dust_fraction = {k: v / total_dust for k, v in dust_counts.items()}
+
+    # Prepare for plotting
+    categories = list(texture_categories.keys())
+    labels = [texture_categories[k] for k in categories]
+    x = np.arange(len(categories))
+    width = 0.4
+
+    fig, ax = plt.subplots(figsize=(16, 8))
+
+    # Plot bars
+    for i, k in enumerate(categories):
+        color = texture_colors[i]
+        ax.bar(x[i] - width / 2, dust_fraction[k], width, color=color, edgecolor="black", label="Dust points" if i == 0 else "")
+        ax.bar(x[i] + width / 2, full_fraction[k], width, color=color, alpha=0.5, label="Full domain" if i == 0 else "")
+
+    # Labels and ticks
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels, rotation=45, ha="right")
+    ax.set_ylabel("Fraction of observations")
+    ax.set_xlabel("Soil Texture")
+    ax.set_title(f"Soil Texture Frequency in {location_name}: Dust Points vs Full Domain")
+
+    # Legend
+    legend_elements = [
+        Patch(facecolor="gray", edgecolor="black", label="Dust points"),
+        Patch(facecolor="gray", edgecolor="black", alpha=0.5, label="Full domain")
+    ]
+    ax.legend(handles=legend_elements, title="Dataset")
+
+    _plot_save(fig, fig_dir="figures", fig_name="gldas_texture_categories_bar")
+
     return
