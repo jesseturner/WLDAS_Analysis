@@ -1,18 +1,18 @@
 from modules_texture import gldas_texture_utils as gldas
 from modules_line_dust import line_dust_utils as dust
 
-#--- Open GLDAS soil textures (percentages)
-gldas_path = "data/raw/gldas_soil_texture/GLDASp4_soilfraction_025d.nc4"
-location_name = "American Southwest"
-texture_ds = gldas.open_gldas_file(gldas_path)
-texture_ds = gldas.filter_to_region(texture_ds, location_name)
+#--- Open GLDAS soil textures (soil fraction)
+# gldas_path = "data/raw/gldas_soil_texture/GLDASp4_soilfraction_025d.nc4"
+# location_name = "American Southwest"
+# texture_ds = gldas.open_gldas_file(gldas_path)
+# texture_ds = gldas.filter_to_region(texture_ds, location_name)
 # print(texture_ds)
 
-#--- Get average soil texture for whole region and time
+#--- Get average soil texture fraction for whole region and time
 # texture_average_df = gldas.get_texture_averages_for_region(texture_ds)
 # print(texture_average_df)
 
-#--- Plot soil texture for each dust event
+#--- Plot soil texture fraction for each dust event
 # dust_path = "data/raw/line_dust/dust_dataset_final_20241226.txt"
 # dust_df = dust.read_dust_data_into_df(dust_path)
 # dust_region_df = dust.filter_to_region(dust_df, location_name=location_name)
@@ -23,7 +23,7 @@ texture_ds = gldas.filter_to_region(texture_ds, location_name)
 #     fig_name=f"ternary_{location_name.lower().replace(" ", "_")}_dust_producing", 
 #     fig_title=f"Distribution of dust-producing points: {location_name}")
 
-#--- Plot soil texture for full region
+#--- Plot soil texture fraction  for full region
 # texture_fractions_df_all = gldas.get_texture_all(texture_ds)
 # print(texture_fractions_df_all)
 
@@ -31,12 +31,26 @@ texture_ds = gldas.filter_to_region(texture_ds, location_name)
 #     fig_name=f"ternary_{location_name.lower().replace(" ", "_")}_all", 
 #     fig_title=f"Distribution of all points: {location_name}")
 
-#--- Plot histograms of texture percentages
+#--- Plot histograms of texture fraction percentages
+# dust_path = "data/raw/line_dust/dust_dataset_final_20241226.txt"
+# dust_df = dust.read_dust_data_into_df(dust_path)
+# dust_region_df = dust.filter_to_region(dust_df, location_name=location_name)
+# texture_fractions_df_dust = gldas.get_texture_for_dust_events(texture_ds, dust_df)
+# texture_fractions_df_all = gldas.get_texture_all(texture_ds)
+
+# gldas.plot_three_histograms(texture_fractions_df_all, texture_fractions_df_dust, 
+#                             fig_dir="figures", fig_name="texture_histograms")
+
+#--- Open GLDAS soil textures
+gldas_path = "data/raw/gldas_soil_texture/GLDASp5_soiltexture_025d.nc4"
+location_name = "American Southwest"
+texture_ds = gldas.open_gldas_file(gldas_path)
+texture_ds = gldas.filter_to_region(texture_ds, location_name)
+print(texture_ds)
+
+#--- Make GLDAS soil textures figures
 dust_path = "data/raw/line_dust/dust_dataset_final_20241226.txt"
 dust_df = dust.read_dust_data_into_df(dust_path)
-dust_region_df = dust.filter_to_region(dust_df, location_name=location_name)
-texture_fractions_df_dust = gldas.get_texture_for_dust_events(texture_ds, dust_df)
-texture_fractions_df_all = gldas.get_texture_all(texture_ds)
+dust_df = dust.filter_to_region(dust_df, location_name="American Southwest")
 
-gldas.plot_three_histograms(texture_fractions_df_all, texture_fractions_df_dust, 
-                            fig_dir="figures", fig_name="texture_histograms")
+gldas.gldas_soil_textures_figure(texture_ds, dust_df, location_name="American Southwest")

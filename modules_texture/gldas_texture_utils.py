@@ -4,6 +4,8 @@ import os
 import pandas as pd
 import plotly.express as px
 import numpy as np
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
 
 def open_gldas_file(gldas_path):
     ds = xr.open_dataset(gldas_path)
@@ -183,4 +185,110 @@ def plot_three_histograms(texture_fractions_df_all, texture_fractions_df_dust, f
     _plot_save(fig, fig_dir, fig_name)
 
 
+    return
+
+def gldas_soil_textures_figure(texture_ds, dust_df, location_name):
+    from matplotlib.colors import ListedColormap
+
+    texture_categories = {
+        1: "Sand",
+        2: "Loamy Sand",
+        3: "Sandy Loam",
+        4: "Silt Loam",
+        5: "Silt",
+        6: "Loam",
+        7: "Sandy Clay Loam",
+        8: "Silty Clay Loam",
+        9: "Clay Loam", 
+        10: "Sandy Clay",
+        11: "Silty Clay",
+        12: "Clay", 
+        13: "Organic Matter",
+        14: "Water", 
+        15: "Bedrock",
+        16: "Other",
+    }
+
+    texture_colors = [
+        "#f4e7b0",  # Sand
+        "#e6d591",  # Loamy Sand
+        "#d9c070",  # Sandy Loam
+        "#c0b080",  # Silt Loam
+        "#b0a070",  # Silt
+        "#a67c52",  # Loam
+        "#b77c4d",  # Sandy Clay Loam
+        "#9c6644",  # Silty Clay Loam
+        "#805533",  # Clay Loam
+        "#8c3f2f",  # Sandy Clay
+        "#6e2f23",  # Silty Clay
+        "#4f1f18",  # Clay
+        "#1a1a1a",  # Organic Matter
+        "#3399ff",  # Water
+        "#808080",  # Bedrock
+        "#ffffff",  # Other
+    ]
+
+    soil_cmap = ListedColormap(texture_colors, name="soil_textures")
+    
+    cmap = plt.get_cmap("tab20")
+    cmap_colors = cmap(np.linspace(0, 1, len(texture_categories)))    
+
+    _plot_gldas_soil_texture_map(texture_ds, dust_df, soil_cmap, texture_colors, location_name, texture_categories)
+
+    return
+
+def _plot_gldas_soil_texture_map(texture_ds, dust_df, soil_cmap, texture_colors, location_name, texture_categories):
+    from matplotlib.patches import Patch
+
+    fig, ax = plt.subplots(figsize=(16, 12), subplot_kw={"projection": ccrs.PlateCarree()})
+
+    texture_da = texture_ds.GLDAS_soiltex
+
+    texture_da.plot(
+        ax=ax,
+        cmap=soil_cmap,
+        add_colorbar=False,
+        transform=ccrs.PlateCarree()
+    )
+
+    #--- Plot dust points
+    ax.scatter(
+        dust_df["longitude"],
+        dust_df["latitude"],
+        transform=ccrs.PlateCarree(),
+        s=12,
+        marker="o",
+        facecolors='white',
+        edgecolors='black',
+        linewidth=1, 
+        alpha=0.5,
+        zorder=2
+        )
+
+    ax.add_feature(cfeature.STATES, edgecolor="black", linewidth=0.8)
+    ax.add_feature(cfeature.COASTLINE, edgecolor="black", linewidth=0.8)
+    ax.add_feature(cfeature.BORDERS, edgecolor="black", linewidth=0.8)
+    min_lat, max_lat, min_lon, max_lon = _get_coords_for_region(location_name)
+    ax.set_extent([min_lon, max_lon, min_lat, max_lat], crs=ccrs.PlateCarree())
+    
+    ax.set_title("Soil Textures with Dust Origins")
+    legend_handles = [
+        Patch(facecolor=color, edgecolor="black", label=label)
+        for label, color in zip(texture_categories.values(), texture_colors)
+    ]
+
+    dust_handle = Patch(
+        facecolor="white",
+        edgecolor="black",
+        label="Dust Origin"
+    )
+    ax.legend(
+        handles=legend_handles + [dust_handle],
+        title="Soil Texture",
+        loc="lower left",
+        frameon=True
+    )
+
+    _plot_save(fig, fig_dir="figures", fig_name="gldas_texture_categories")
+    
     return
