@@ -452,11 +452,16 @@ def _plot_usda_soil_types_bar(soil_da, dust_df, order_to_index, cmap):
 
     soil_codes_at_points = soil_values[y_idx, x_idx]
 
-    soil_orders_at_points = [
-        gridcode_to_order.get(int(code), "Unknown")
-        for code in soil_codes_at_points
-        if not np.isnan(code)
-    ]
+    soil_orders_at_points = []
+    for code in soil_codes_at_points:
+        if np.isnan(code):
+            continue
+        code = int(code)
+        if code not in gridcode_to_order:
+            print(f"Unknown soil code: {code}")
+            soil_orders_at_points.append("Unknown")
+        else:
+            soil_orders_at_points.append(gridcode_to_order[code])
 
     point_counts = pd.Series(soil_orders_at_points).value_counts()
     print(point_counts)
@@ -587,6 +592,8 @@ def _get_usda_soil_type_gridcode():
         93: "Inceptisols",
         94: "Inceptisols",
         95: "Inceptisols",
+        98: "Entisols", #--- Check this
+        99: "Entisols", #--- Check this
         101: "Entisols",
         102: "Entisols",
         103: "Entisols",
@@ -595,7 +602,7 @@ def _get_usda_soil_type_gridcode():
         201: "Urban, mining",
         202: "Human disturbed",
         204: "Fishpond",
-        205: "Island",
+        205: "Island"
     }
 
     return gridcode_to_order
