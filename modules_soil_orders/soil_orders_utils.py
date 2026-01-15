@@ -464,7 +464,6 @@ def _plot_usda_soil_types_bar(soil_da, dust_df, order_to_index, cmap):
             soil_orders_at_points.append(gridcode_to_order[code])
 
     point_counts = pd.Series(soil_orders_at_points).value_counts()
-    print(point_counts)
 
     flat_codes = soil_values.flatten()
     flat_codes = flat_codes[~np.isnan(flat_codes)]
@@ -477,7 +476,9 @@ def _plot_usda_soil_types_bar(soil_da, dust_df, order_to_index, cmap):
         "Full domain": full_counts
     }).fillna(0)
 
+    print(point_counts)
     counts_df = counts_df.drop(index="Unknown", errors="ignore")
+    counts_df = counts_df.drop(index="No data", errors="ignore")
     counts_df = counts_df.div(counts_df.sum())
     counts_df = counts_df.sort_values("Dust points", ascending=False)
 
