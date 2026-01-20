@@ -49,25 +49,25 @@ cec_clip = cec_da.rio.clip_box(minx=minx, miny=miny, maxx=maxx, maxy=maxy)
 # Land cover class definitions
 # --------------------------------------------------
 class_colors = {
-    1: {"name": "Temp/Sub-polar Needleleaf Forest", "codes": [20134], "color": "#1b5e20"},
-    2: {"name": "Sub-polar Taiga Needleleaf Forest", "codes": [20229], "color": "#2e7d32"},
-    3: {"name": "Tropical Broadleaf Evergreen Forest", "codes": [20090], "color": "#388e3c"},
-    4: {"name": "Tropical Broadleaf Deciduous Forest", "codes": [20132], "color": "#66bb6a"},
-    5: {"name": "Temp/Sub-polar Broadleaf Deciduous Forest", "codes": [20227], "color": "#81c784"},
-    6: {"name": "Mixed Forest", "codes": [20092, 20090, 20134, 20132, 20229, 20227], "color": "#4caf50"},
-    7: {"name": "Tropical/Sub-tropical Shrubland", "codes": [21450, 13476], "color": "#a1887f"},
-    8: {"name": "Temp/Sub-polar Shrubland", "codes": [21450, 12050], "color": "#8d6e63"},
-    9: {"name": "Tropical/Sub-tropical Grassland", "codes": [21669], "color": "#dce775"},
-    10: {"name": "Temp/Sub-polar Grassland", "codes": [21537, 12212], "color": "#c0ca33"},
-    11: {"name": "Sub-polar Shrub–Lichen–Moss", "codes": [20022, 21454, 21439], "color": "#b0bec5"},
-    12: {"name": "Sub-polar Grass–Lichen–Moss", "codes": [21454, 20022, 21439], "color": "#90a4ae"},
-    13: {"name": "Sub-polar Barren–Lichen–Moss", "codes": [21468, 21454, 20022], "color": "#78909c"},
-    14: {"name": "Wetland", "codes": [42349, 41809], "color": "#26c6da"},
-    15: {"name": "Cropland", "codes": [10037, 10025, 21441, 21453], "color": "#ffeb3b"},
-    16: {"name": "Barren Lands", "codes": [6001, 6004], "color": "#bcaaa4"},
-    17: {"name": "Urban and Built-up", "codes": [5003], "color": "#e53935"},
-    18: {"name": "Water", "codes": [8001, 7001], "color": "#1e88e5"},
-    19: {"name": "Snow and Ice", "codes": [8005, 8008], "color": "#e0f7fa"}
+    1: {"name": "Temp/Sub-polar Needleleaf Forest", "codes": [1], "color": "#1b5e20"},
+    2: {"name": "Sub-polar Taiga Needleleaf Forest", "codes": [2], "color": "#2e7d32"},
+    3: {"name": "Tropical Broadleaf Evergreen Forest", "codes": [3], "color": "#388e3c"},
+    4: {"name": "Tropical Broadleaf Deciduous Forest", "codes": [4], "color": "#66bb6a"},
+    5: {"name": "Temp/Sub-polar Broadleaf Deciduous Forest", "codes": [5], "color": "#81c784"},
+    6: {"name": "Mixed Forest", "codes": [6], "color": "#4caf50"},
+    7: {"name": "Tropical/Sub-tropical Shrubland", "codes": [7], "color": "#a1887f"},
+    8: {"name": "Temp/Sub-polar Shrubland", "codes": [8], "color": "#8d6e63"},
+    9: {"name": "Tropical/Sub-tropical Grassland", "codes": [9], "color": "#dce775"},
+    10: {"name": "Temp/Sub-polar Grassland", "codes": [10], "color": "#c0ca33"},
+    11: {"name": "Sub-polar Shrub–Lichen–Moss", "codes": [11], "color": "#b0bec5"},
+    12: {"name": "Sub-polar Grass–Lichen–Moss", "codes": [12], "color": "#90a4ae"},
+    13: {"name": "Sub-polar Barren–Lichen–Moss", "codes": [13], "color": "#78909c"},
+    14: {"name": "Wetland", "codes": [14], "color": "#26c6da"},
+    15: {"name": "Cropland", "codes": [15], "color": "#ffeb3b"},
+    16: {"name": "Barren Lands", "codes": [16], "color": "#bcaaa4"},
+    17: {"name": "Urban and Built-up", "codes": [17], "color": "#e53935"},
+    18: {"name": "Water", "codes": [18], "color": "#1e88e5"},
+    19: {"name": "Snow and Ice", "codes": [19], "color": "#e0f7fa"}
 }
 
 
@@ -89,6 +89,7 @@ for class_id in sorted(class_colors.keys()):
 # --------------------------------------------------
 # Reproject to EPSG:4326 using nearest neighbor
 # --------------------------------------------------
+print(np.min(cec_clip), np.max(cec_clip))
 print("Reprojecting to lat/lon...")
 cec_ll = cec_clip.rio.reproject(
     "EPSG:4326",
@@ -113,18 +114,21 @@ cec_class = reclassify_codes(cec_ll, code_to_class)
 # --------------------------------------------------
 # Mode coarsening
 # --------------------------------------------------
-print("Coarsening (mode)...")
-def mode_coarsen(da, x=18, y=18):
-    def _mode(arr):
-        arr = arr[~np.isnan(arr)].astype(int)
-        if arr.size == 0:
-            return np.nan
-        return np.bincount(arr).argmax()
+# print("Coarsening (mode)...")
+# import scipy.stats as stats
 
-    return da.coarsen(x=x, y=y, boundary="trim").reduce(_mode)
+# def mode_coarsen(da, x=18, y=18):
+#     def _mode(arr, axis=None):
+#         arr = arr[~np.isnan(arr)].astype(int)
+#         if arr.size == 0:
+#             return np.nan
+#         return np.bincount(arr).argmax()
 
-cec_plot = mode_coarsen(cec_class, x=18, y=18)
+#     return da.coarsen(x=x, y=y, boundary="trim").reduce(_mode)
 
+# cec_plot = mode_coarsen(cec_class, x=18, y=18)
+cec_plot = cec_class
+print(cec_plot)
 
 # --------------------------------------------------
 # Plot
