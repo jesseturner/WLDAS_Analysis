@@ -37,3 +37,7 @@ WLDAS does not seem to have this same dataset, not sure why.
 ### Soil types USDA 
 
 Data source: https://nrcs.app.box.com/s/2ag3jwmwk3a1ybtrwd2w4koqflgkd5xz/folder/266083012079?page=2
+
+### CEC land cover
+
+Data source: https://www.cec.org/north-american-environmental-atlas/land-cover-30m-2020/

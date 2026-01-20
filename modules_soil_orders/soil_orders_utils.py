@@ -416,17 +416,6 @@ def _plot_usda_soil_types_map(soil_indices, dust_df, location_name, unique_order
         loc="upper left"
     )
 
-    # legend_elements = [
-    #     Patch(facecolor=colors[i], label=name)
-    #     for i, name in enumerate(order_to_index)
-    # ]
-    # ax.legend(
-    #     handles=legend_elements,
-    #     title="Soil Order",
-    #     bbox_to_anchor=(1.05, 1),
-    #     loc="upper left"
-    # )
-
     _plot_save(fig, plot_dir="figures", plot_name="usda_soil_types")
     return
 
