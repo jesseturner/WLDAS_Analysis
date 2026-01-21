@@ -9,6 +9,7 @@ import cartopy.feature as cfeature
 import rasterio
 from pyproj import CRS, Transformer
 import os
+import pandas as pd
 
 from modules_soil_orders import soil_orders_utils as soil_orders
 from modules_line_dust import line_dust_utils as dust
@@ -151,3 +152,87 @@ ax.legend(
 
 plt.tight_layout()
 soil_orders._plot_save(fig, plot_dir="figures", plot_name="cec_land_cover")
+
+# --------------------------------------------------
+# Sample land cover at dust point locations
+# --------------------------------------------------
+print("Plotting bar chart...")
+dust_da = xr.DataArray(
+    dust_df[["latitude", "longitude"]].values,
+    dims=("points", "coords"),
+    coords={"coords": ["y", "x"]},
+)
+
+dust_lc = cec.sel(
+    x=dust_da.sel(coords="x"),
+    y=dust_da.sel(coords="y"),
+    method="nearest"
+)
+
+dust_codes = dust_lc.values.astype("float")
+dust_codes = dust_codes[~np.isnan(dust_codes)].astype(int)
+
+# --------------------------------------------------
+# Frequency counts
+# --------------------------------------------------
+full_codes = cec.values.flatten()
+full_codes = full_codes[~np.isnan(full_codes)].astype(int)
+
+dust_counts = pd.Series(dust_codes).value_counts()
+full_counts = pd.Series(full_codes).value_counts()
+
+counts_df = pd.DataFrame({
+    "Dust points": dust_counts,
+    "Full domain": full_counts
+}).fillna(0)
+
+# Normalize to fractions
+counts_df = counts_df.div(counts_df.sum())
+
+# Map code → name
+counts_df.index = counts_df.index.map(lambda c: classes[c][0])
+
+# Sort by dust contribution
+counts_df = counts_df.sort_values("Dust points", ascending=False)
+
+# --------------------------------------------------
+# Bar chart
+# --------------------------------------------------
+fig_bar, ax_bar = plt.subplots(figsize=(12, 6))
+
+x = np.arange(len(counts_df))
+width = 0.35
+
+for i, lc_name in enumerate(counts_df.index):
+    # recover class code
+    lc_code = [k for k, v in classes.items() if v[0] == lc_name][0]
+    color = cmap(codes.tolist().index(lc_code))
+
+    ax_bar.bar(
+        x[i] - width / 2,
+        counts_df.loc[lc_name, "Dust points"],
+        width,
+        color=color,
+        edgecolor="black",
+        linewidth=1,
+        label="Dust points" if i == 0 else ""
+    )
+
+    ax_bar.bar(
+        x[i] + width / 2,
+        counts_df.loc[lc_name, "Full domain"],
+        width,
+        color=color,
+        alpha=0.5,
+        label="Full domain" if i == 0 else ""
+    )
+
+ax_bar.set_xticks(x)
+ax_bar.set_xticklabels(counts_df.index, rotation=45, ha="right")
+ax_bar.set_ylabel("Fraction of total")
+ax_bar.set_title("Land Cover Distribution: Dust Points vs Full Domain")
+
+ax_bar.legend()
+plt.tight_layout()
+
+soil_orders._plot_save(fig_bar, plot_dir="figures", plot_name="cec_land_cover_bar_chart")
