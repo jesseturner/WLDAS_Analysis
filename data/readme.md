@@ -41,3 +41,12 @@ Data source: https://nrcs.app.box.com/s/2ag3jwmwk3a1ybtrwd2w4koqflgkd5xz/folder/
 ### CEC land cover
 
 Data source: https://www.cec.org/north-american-environmental-atlas/land-cover-30m-2020/
+
+### NARR wind field
+
+Data source: https://psl.noaa.gov/data/gridded/data.narr.html
+* v-wind and u-wind
+* 3-hourly data at 10 m
+* ~550 MB per year file, total 11 GB
+
+Currently stored at `/mnt/data2/jturner/narr`.
