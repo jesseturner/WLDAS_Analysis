@@ -8,10 +8,11 @@ from modules_soil_orders import soil_orders_utils as soil_orders
 from modules_line_dust import line_dust_utils as dust
 
 #--- Data from NARR
+#------ Just 2001 so far!
 print("Opening data from NARR...")
 
-ds_uwnd = xr.open_dataset("/mnt/data2/jturner/narr/uwnd.10m.2000.nc")
-ds_vwnd = xr.open_dataset("/mnt/data2/jturner/narr/vwnd.10m.2000.nc")
+ds_uwnd = xr.open_dataset("/mnt/data2/jturner/narr/uwnd.10m.2001.nc")
+ds_vwnd = xr.open_dataset("/mnt/data2/jturner/narr/vwnd.10m.2001.nc")
 
 #--- Creating or loading wind speed data
 
@@ -28,6 +29,20 @@ else:
         attrs=ds.attrs)
     ds_ws = ds_ws.chunk({"time": 24})
     ds_ws.to_netcdf(cache_path)
+
+#--- Cropping to American Southwest
+print("Cropping to American Southwest...")
+min_lat, max_lat, min_lon, max_lon = soil_orders._get_coords_for_region(
+    "American Southwest")
+
+lat = ds_ws["lat"]
+lon = ds_ws["lon"]
+
+mask = (
+    (lat >= min_lat) & (lat <= max_lat) &
+    (lon >= min_lon) & (lon <= max_lon))
+
+ds_ws = ds_ws.where(mask, drop=True)
 
 #--- Total wind field climatology
 
@@ -64,6 +79,12 @@ dust_df["datetime"] = (
     dust_df["datetime"]
     .dt.tz_convert(None)
 )
+
+#--- Temporary time filter to 2001
+print("Temporarily filtering to 2001 only...")
+dust_df = dust_df[
+    dust_df["datetime"].dt.year == 2001
+].copy()
 
 #--- Spatial matching of wind grid (Lambert Conformal)
 print("Spatial matching of wind grid...")
@@ -155,7 +176,7 @@ ax_bar.set_xticks(x)
 ax_bar.set_xticklabels(counts_df.index, rotation=45, ha="right")
 ax_bar.set_ylabel("Fraction of total")
 ax_bar.set_xlabel("Wind speed (m/s)")
-ax_bar.set_title("Wind Speed Distribution: Dust Events vs Full Domain")
+ax_bar.set_title("NARR Wind Speed Distribution: Dust Events vs Full Domain")
 
 ax_bar.legend()
 plt.tight_layout()
