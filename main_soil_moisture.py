@@ -2,7 +2,6 @@ from modules_soil_moisture import utils_downloading as wldas_dl
 from modules_soil_moisture import utils_processing as wldas_proc
 from modules_soil_moisture import utils_plotting as wldas_plot
 from modules_line_dust import line_dust_utils as dust
-from modules_timing import timing_functions as time
 
 
 #--- Downloading WLDAS
@@ -12,9 +11,6 @@ from modules_timing import timing_functions as time
 
 from pathlib import Path
 import random
-
-time.time_all_functions(wldas_proc)
-time.time_all_functions(wldas_plot)
 
 #--- Sample the WLDAS data
 wldas_path = "/mnt/data2/jturner/wldas_data"
