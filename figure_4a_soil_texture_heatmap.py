@@ -160,9 +160,10 @@ fig, axes = plt.subplots(
     constrained_layout=True)
 
 textures_ref = sorted(combo_counts["texture_name"].dropna().unique())
+textures_ref = [t for t in textures_ref if t != 'Other'] + ['Other'] # move 'Other' to end
 soils_ref = sorted(combo_counts["soil_name"].dropna().unique())
 im1 = plot_soil_texture_matrix(combo_counts, axes[0], textures_ref, soils_ref, "Dust events")
 im2 = plot_soil_texture_matrix(combo_counts_total, axes[1], textures_ref, soils_ref, "Full domain")
 
 
-plt.savefig(os.path.join("figures", "soil_texture_combo"), bbox_inches='tight', dpi=300)
+plt.savefig(os.path.join("figures", "soil_texture_heatmap"), bbox_inches='tight', dpi=300)
