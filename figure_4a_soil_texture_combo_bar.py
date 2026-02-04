@@ -2,7 +2,6 @@ import rioxarray as rxr
 import xarray as xr
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 
 from modules_line_dust import line_dust_utils as dust
 from modules_texture import gldas_texture_utils as gldas
