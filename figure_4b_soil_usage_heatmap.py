@@ -3,10 +3,12 @@ from pyproj import CRS, Transformer
 import rasterio
 import os
 import xarray as xr
+import numpy as np
+import matplotlib.pyplot as plt
+import textwrap
 
 from modules_line_dust import line_dust_utils as dust
 from modules_soil_orders import soil_orders_utils as orders
-from modules_texture import gldas_texture_utils as gldas
 
 location_name = "American Southwest"
 
@@ -91,11 +93,9 @@ combo_counts = (
     .reset_index(name="count")
     .sort_values("count", ascending=False)
 )
-top15 = combo_counts.head(15).copy()
 
 #--- Count combinations total
 usage_df = usage.to_dataframe(name="usage").reset_index()
-print(usage_df)
 
 soil_at_usage = soil_da.sel(
     x=xr.DataArray(usage_df["x"].values, dims="points"),
@@ -113,9 +113,100 @@ combo_counts_total = (
     .reset_index(name="count")
     .sort_values("count", ascending=False)
 )
-top15_total = combo_counts_total.head(15).copy()
 
 #--- Map to category names
-soil_order_dict = orders.get_soil_order_dict() 
-soil_order_colors = orders.get_category_colors()
-#---CONTINUE HERE
+soil_order_dict = orders.get_soil_order_dict()
+land_cover_dict = {
+    1: "Temp/Sub-polar Needleleaf Forest",
+    2: "Sub-polar Taiga Needleleaf Forest",
+    3: "Tropical Broadleaf Evergreen Forest",
+    4: "Tropical Broadleaf Deciduous Forest",
+    5: "Temp/Sub-polar Broadleaf Deciduous Forest",
+    6: "Mixed Forest",
+    7: "Tropical/Sub-tropical Shrubland",
+    8: "Temp/Sub-polar Shrubland",
+    9: "Tropical/Sub-tropical Grassland",
+    10: "Temp/Sub-polar Grassland",
+    11: "Sub-polar Shrub-Lichen-Moss",
+    12: "Sub-polar Grass-Lichen-Moss",
+    13: "Sub-polar Barren-Lichen-Moss",
+    14: "Wetland",
+    15: "Cropland",
+    16: "Barren Lands",
+    17: "Urban and Built-up",
+    18: "Water",
+    19: "Snow and Ice",
+} 
+
+combo_counts["usage_name"] = combo_counts["usage"].map(land_cover_dict)
+combo_counts["soil_name"] = combo_counts["soil"].map(soil_order_dict)
+combo_counts_total["usage_name"] = combo_counts_total["usage"].map(land_cover_dict)
+combo_counts_total["soil_name"] = combo_counts_total["soil"].map(soil_order_dict)
+
+#--- Plot heatmap
+def plot_soil_texture_matrix(df, ax, textures, soils, title):
+    matrix = df.pivot_table(
+        index="soil_name",
+        columns="usage_name",
+        values="count",
+        aggfunc="sum",
+        fill_value=0
+    )
+
+    matrix = matrix.reindex(
+        index=soils,
+        columns=textures,
+        fill_value=0
+    )
+
+    total = matrix.values.sum()
+    matrix = matrix / total
+
+    vmax = np.max(matrix.values)
+
+    im = ax.imshow(
+        matrix.values,
+        vmin=0,
+        vmax=vmax,
+        cmap="binary"
+    )
+
+    ax.set_xticks(np.arange(matrix.shape[1]))
+    ax.set_yticks(np.arange(matrix.shape[0]))
+
+    wrapped_labels = [textwrap.fill(label, width=24) for label in matrix.columns]
+    ax.set_xticklabels(wrapped_labels, rotation=60, ha="right", size=12)
+    ax.set_yticklabels(matrix.index, size=15)
+    ax.set_title(title, size=18)
+
+    # Cell labels (formatted as fraction or %)
+    norm = im.norm
+    for i in range(matrix.shape[0]):
+        for j in range(matrix.shape[1]):
+            val = matrix.values[i, j]
+            if val > 0:
+                text_color = "white" if norm(val) > 0.5 else "black"
+
+                ax.text(
+                    j, i, f"{(val*100):.2f}",   # percent formatting
+                    ha="center",
+                    va="center",
+                    fontsize=9,
+                    color=text_color
+                )
+
+    return im
+
+fig, axes = plt.subplots(
+    nrows=1,
+    ncols=2,
+    figsize=(15, 12),
+    sharey=True,
+    constrained_layout=True)
+
+usage_ref = sorted(combo_counts["usage_name"].dropna().unique())
+soils_ref = sorted(combo_counts["soil_name"].dropna().unique())
+im1 = plot_soil_texture_matrix(combo_counts, axes[0], usage_ref, soils_ref, "Dust events")
+im2 = plot_soil_texture_matrix(combo_counts_total, axes[1], usage_ref, soils_ref, "Full domain")
+
+plt.savefig(os.path.join("figures", "soil_usage_heatmap"), bbox_inches='tight', dpi=300)

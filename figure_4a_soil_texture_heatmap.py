@@ -129,10 +129,10 @@ def plot_soil_texture_matrix(df, ax, textures, soils, title):
 
     ax.set_xticks(np.arange(matrix.shape[1]))
     ax.set_yticks(np.arange(matrix.shape[0]))
-    ax.set_xticklabels(matrix.columns, rotation=45, ha="right")
-    ax.set_yticklabels(matrix.index)
+    ax.set_xticklabels(matrix.columns, rotation=45, ha="right", size=12)
+    ax.set_yticklabels(matrix.index, size=15)
 
-    ax.set_title(title)
+    ax.set_title(title, size=18)
 
     # Cell labels (formatted as fraction or %)
     norm = im.norm
