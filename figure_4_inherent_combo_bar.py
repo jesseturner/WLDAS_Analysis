@@ -146,8 +146,12 @@ combo_plot = combo_plot.sort_values(
 combo_plot = combo_plot.reset_index(drop=True)
 
 #--- Color bars by soil type
-bar_colors = combo_plot["soil_name_x"].map(
-    lambda s: soil_order_colors.get(s, "black")
+bar_colors = combo_plot.apply(
+    lambda row: soil_order_colors.get(
+        row["soil_name_x"] if row["soil_name_x"] != 0 else row["soil_name_y"],
+        "black"
+    ),
+    axis=1
 )
 
 #--- Plot bar chart
