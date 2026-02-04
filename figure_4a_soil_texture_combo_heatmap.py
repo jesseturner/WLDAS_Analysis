@@ -2,6 +2,7 @@ import rioxarray as rxr
 import xarray as xr
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 
 from modules_line_dust import line_dust_utils as dust
 from modules_texture import gldas_texture_utils as gldas
@@ -66,7 +67,6 @@ combo_counts = (
     .reset_index(name="count")
     .sort_values("count", ascending=False)
 )
-top15 = combo_counts.head(15).copy()
 
 #--- Count combinations total
 texture2d = texture_da.isel(time=0)
@@ -89,103 +89,80 @@ combo_counts_total = (
     .reset_index(name="count")
     .sort_values("count", ascending=False)
 )
-top15_total = combo_counts_total.head(15).copy()
 
 #--- Map to category names
 soil_order_dict = orders.get_soil_order_dict() 
-soil_order_colors = orders.get_category_colors()
 texture_dict = gldas.get_texture_dict()
 
-top15["texture_name"] = top15["texture"].map(texture_dict)
-top15["soil_name"] = top15["soil"].map(soil_order_dict)
+combo_counts["texture_name"] = combo_counts["texture"].map(texture_dict)
+combo_counts["soil_name"] = combo_counts["soil"].map(soil_order_dict)
+combo_counts_total["texture_name"] = combo_counts_total["texture"].map(texture_dict)
+combo_counts_total["soil_name"] = combo_counts_total["soil"].map(soil_order_dict)
 
-top15["texture_name"] = top15["texture_name"].fillna(
-    "Unknown texture (" + top15["texture"].astype(str) + ")"
-)
-top15["soil_name"] = top15["soil_name"].fillna(
-    "Unknown soil (" + top15["soil"].astype(str) + ")"
-)
+#--- Plot heatmap
+def plot_soil_texture_matrix(df, ax, textures, soils, title):
+    matrix = df.pivot_table(
+        index="soil_name",
+        columns="texture_name",
+        values="count",
+        aggfunc="sum",
+        fill_value=0
+    )
 
-top15_total["texture_name"] = top15_total["texture"].map(texture_dict)
-top15_total["soil_name"] = top15_total["soil"].map(soil_order_dict)
+    matrix = matrix.reindex(
+        index=soils,
+        columns=textures,
+        fill_value=0
+    )
 
-top15_total["texture_name"] = top15_total["texture_name"].fillna(
-    "Unknown texture (" + top15_total["texture"].astype(str) + ")"
-)
-top15_total["soil_name"] = top15_total["soil_name"].fillna(
-    "Unknown soil (" + top15_total["soil"].astype(str) + ")"
-)
+    total = matrix.values.sum()
+    matrix = matrix / total
 
-#--- Create plot labels
-top15["label"] = (
-    top15["soil_name"]
-    + " | "
-    + top15["texture_name"]
-)
+    vmax = np.max(matrix.values)
 
-top15_total["label"] = (
-    top15_total["soil_name"]
-    + " | "
-    + top15_total["texture_name"]
-)
+    im = ax.imshow(
+        matrix.values,
+        vmin=0,
+        vmax=vmax,
+        cmap="binary"
+    )
 
-#--- Create merged labeling
-count_dust = top15[["soil_name", "label", "count"]].rename(columns={"count": "dust_count"})
-count_total = top15_total[["soil_name", "label", "count"]].rename(columns={"count": "total_count"})
+    ax.set_xticks(np.arange(matrix.shape[1]))
+    ax.set_yticks(np.arange(matrix.shape[0]))
+    ax.set_xticklabels(matrix.columns, rotation=45, ha="right")
+    ax.set_yticklabels(matrix.index)
 
-combo_plot = (
-    count_dust
-    .merge(count_total, on="label", how="outer")
-    .fillna(0)
-)
-combo_plot = combo_plot.sort_values(
-    ["dust_count", "total_count"],
-    ascending=False
-)
-combo_plot = combo_plot.reset_index(drop=True)
+    ax.set_title(title)
 
-#--- Color bars by soil type
-bar_colors = combo_plot.apply(
-    lambda row: soil_order_colors.get(
-        row["soil_name_x"] if row["soil_name_x"] != 0 else row["soil_name_y"],
-        "black"
-    ),
-    axis=1
-)
+    # Cell labels (formatted as fraction or %)
+    norm = im.norm
+    for i in range(matrix.shape[0]):
+        for j in range(matrix.shape[1]):
+            val = matrix.values[i, j]
+            if val > 0:
+                text_color = "white" if norm(val) > 0.5 else "black"
 
-#--- Plot bar chart
-x = np.arange(len(combo_plot))
-width = 0.4
+                ax.text(
+                    j, i, f"{(val*100):.2f}",   # percent formatting
+                    ha="center",
+                    va="center",
+                    fontsize=9,
+                    color=text_color
+                )
 
-fig, ax = plt.subplots(figsize=(12, 6))
+    return im
 
-ax.bar(
-    x - width / 2,
-    combo_plot["dust_count"],
-    width,
-    color=bar_colors,
-    edgecolor="black",
-    linewidth=1,
-    label="Dust events"
-)
+fig, axes = plt.subplots(
+    nrows=1,
+    ncols=2,
+    figsize=(15, 6),
+    sharey=True,
+    constrained_layout=True)
 
-ax.bar(
-    x + width / 2,
-    combo_plot["total_count"],
-    width,
-    color=bar_colors,
-    alpha=0.5,
-    label="Full domain"
-)
-
-ax.set_xlabel("Soil | Texture Combination")
-ax.set_ylabel("Count")
-ax.set_title("Top Soil-Texture Combinations\n(Dust vs Total Domain)")
-ax.set_xticks(x)
-ax.set_xticklabels(combo_plot["label"], rotation=45, ha="right")
-ax.legend()
+textures_ref = sorted(combo_counts["texture_name"].dropna().unique())
+soils_ref = sorted(combo_counts["soil_name"].dropna().unique())
+im1 = plot_soil_texture_matrix(combo_counts, axes[0], textures_ref, soils_ref, "Dust events")
+im2 = plot_soil_texture_matrix(combo_counts_total, axes[1], textures_ref, soils_ref, "Full domain")
 
 
-plt.tight_layout()
-orders._plot_save(fig, plot_dir="figures", plot_name="soil_texture_combo")
-
+plt.savefig(os.path.join("figures", "soil_texture_combo"), bbox_inches='tight', dpi=300)

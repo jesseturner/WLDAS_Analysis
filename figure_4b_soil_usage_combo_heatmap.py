@@ -118,37 +118,4 @@ top15_total = combo_counts_total.head(15).copy()
 #--- Map to category names
 soil_order_dict = orders.get_soil_order_dict() 
 soil_order_colors = orders.get_category_colors()
-usage_dict = 
-
-top15["usage_name"] = top15["usage"].map(texture_dict)
-top15["soil_name"] = top15["soil"].map(soil_order_dict)
-
-top15["usage_name"] = top15["usage_name"].fillna(
-    "Unknown usage (" + top15["usage"].astype(str) + ")"
-)
-top15["soil_name"] = top15["soil_name"].fillna(
-    "Unknown soil (" + top15["soil"].astype(str) + ")"
-)
-
-top15_total["usage_name"] = top15_total["usage"].map(texture_dict)
-top15_total["soil_name"] = top15_total["soil"].map(soil_order_dict)
-
-top15_total["usage_name"] = top15_total["usage_name"].fillna(
-    "Unknown usage (" + top15_total["usage"].astype(str) + ")"
-)
-top15_total["soil_name"] = top15_total["soil_name"].fillna(
-    "Unknown soil (" + top15_total["soil"].astype(str) + ")"
-)
-
-#--- Create plot labels
-top15["label"] = (
-    top15["soil_name"]
-    + " | "
-    + top15["usage_name"]
-)
-
-top15_total["label"] = (
-    top15_total["soil_name"]
-    + " | "
-    + top15_total["usage_name"]
-)
+#---CONTINUE HERE
