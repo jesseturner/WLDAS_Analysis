@@ -3,9 +3,6 @@ import matplotlib.pyplot as plt
 import os
 import pandas as pd
 import plotly.express as px
-import numpy as np
-import cartopy.crs as ccrs
-import cartopy.feature as cfeature
 
 def open_gldas_file(gldas_path):
     ds = xr.open_dataset(gldas_path)
