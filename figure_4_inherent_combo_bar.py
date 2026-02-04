@@ -184,5 +184,5 @@ ax.legend()
 
 
 plt.tight_layout()
-orders._plot_save(fig, plot_dir="figures", plot_name="inherent_combo")
+orders._plot_save(fig, plot_dir="figures", plot_name="soil_texture_combo")
 
