@@ -291,9 +291,9 @@ def _get_coords_for_region(location_name):
 
     return lat_min, lat_max, lon_min, lon_max
 
-def _get_usda_soil_type_gridcode():
+def _get_soil_order_dict():
     # Mapping GRIDCODE → SOIL_ORDER
-    gridcode_to_order = {
+    soil_order_dict = {
         0: "Water",
         1: "Shifting Sands",
         2: "Rocky Land",
@@ -371,4 +371,4 @@ def _get_usda_soil_type_gridcode():
         205: "Island"
     }
 
-    return gridcode_to_order
+    return soil_order_dict

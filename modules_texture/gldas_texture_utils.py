@@ -183,3 +183,24 @@ def plot_three_histograms(texture_fractions_df_all, texture_fractions_df_dust, f
 
 
     return
+
+def get_texture_dict():
+    texture_dict = {
+        1: "Sand",
+        2: "Loamy Sand",
+        3: "Sandy Loam",
+        4: "Silt Loam",
+        5: "Silt",
+        6: "Loam",
+        7: "Sandy Clay Loam",
+        8: "Silty Clay Loam",
+        9: "Clay Loam", 
+        10: "Sandy Clay",
+        11: "Silty Clay",
+        12: "Clay", 
+        13: "Organic Matter",
+        14: "Water", 
+        15: "Bedrock",
+        16: "Other",
+    }
+    return texture_dict

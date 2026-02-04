@@ -32,7 +32,7 @@ soil_da = (
 
 #--- Get colormap associated with soil order names
 #------ Colormaps not synced up due to spatial plot not following
-gridcode_to_order = orders._get_usda_soil_type_gridcode() 
+soil_order_dict = orders._get_soil_order_dict() 
 
 category_colors = {
     "Alfisols": "#06dd0a",
@@ -59,7 +59,7 @@ category_colors = {
     "Island": "#aec7e8",    
 }
 
-unique_orders = list(dict.fromkeys(gridcode_to_order.values()))
+unique_orders = list(dict.fromkeys(soil_order_dict.values()))
 order_to_index = {order: i for i, order in enumerate(unique_orders)}
 colors = [category_colors[o] for o in unique_orders]
 cmap = mcolors.ListedColormap(colors)
@@ -69,7 +69,7 @@ norm = mcolors.BoundaryNorm(boundaries=np.arange(-0.5, n_categories+0.5, 1), nco
 default_order = "No data"
 flat_values = soil_da.values.ravel()
 flat_indices = np.array([
-    order_to_index.get(gridcode_to_order.get(int(code), default_order), order_to_index[default_order])
+    order_to_index.get(soil_order_dict.get(int(code), default_order), order_to_index[default_order])
     for code in flat_values
 ])
 soil_indices = soil_da.copy()
@@ -137,7 +137,7 @@ def _plot_usda_soil_types_bar(soil_da, dust_df, order_to_index, cmap):
     lats = soil_da["y"].values
     soil_values = soil_da.values
 
-    gridcode_to_order = orders._get_usda_soil_type_gridcode()
+    soil_order_dict = orders._get_soil_order_dict()
 
     dust_lons = dust_df["longitude"].values
     dust_lats = dust_df["latitude"].values
@@ -152,18 +152,18 @@ def _plot_usda_soil_types_bar(soil_da, dust_df, order_to_index, cmap):
         if np.isnan(code):
             continue
         code = int(code)
-        if code not in gridcode_to_order:
+        if code not in soil_order_dict:
             print(f"Unknown soil code: {code}")
             soil_orders_at_points.append("Unknown")
         else:
-            soil_orders_at_points.append(gridcode_to_order[code])
+            soil_orders_at_points.append(soil_order_dict[code])
 
     point_counts = pd.Series(soil_orders_at_points).value_counts()
 
     flat_codes = soil_values.flatten()
     flat_codes = flat_codes[~np.isnan(flat_codes)]
 
-    soil_orders_full = [gridcode_to_order.get(int(code), "Unknown") for code in flat_codes]
+    soil_orders_full = [soil_order_dict.get(int(code), "Unknown") for code in flat_codes]
     full_counts = pd.Series(soil_orders_full).value_counts()
 
     counts_df = pd.DataFrame({

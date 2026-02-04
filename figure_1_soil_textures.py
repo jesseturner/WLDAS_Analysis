@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
+from matplotlib.patches import Patch
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 
@@ -14,29 +15,11 @@ texture_ds = gldas.open_gldas_file(gldas_path)
 texture_ds = gldas.filter_to_region(texture_ds, location_name)
 print(texture_ds)
 
-#--- Make GLDAS soil textures figures
 dust_path = "data/raw/line_dust/dust_dataset_final_20241226.txt"
 dust_df = dust.read_dust_data_into_df(dust_path)
 dust_df = dust.filter_to_region(dust_df, location_name="American Southwest")
 
-texture_categories = {
-    1: "Sand",
-    2: "Loamy Sand",
-    3: "Sandy Loam",
-    4: "Silt Loam",
-    5: "Silt",
-    6: "Loam",
-    7: "Sandy Clay Loam",
-    8: "Silty Clay Loam",
-    9: "Clay Loam", 
-    10: "Sandy Clay",
-    11: "Silty Clay",
-    12: "Clay", 
-    13: "Organic Matter",
-    14: "Water", 
-    15: "Bedrock",
-    16: "Other",
-}
+texture_dict = gldas.get_texture_dict()
 
 texture_colors = [
     "#f4e7b0",  # Sand
@@ -60,9 +43,9 @@ texture_colors = [
 soil_cmap = ListedColormap(texture_colors, name="soil_textures")
 
 cmap = plt.get_cmap("tab20")
-cmap_colors = cmap(np.linspace(0, 1, len(texture_categories)))    
+cmap_colors = cmap(np.linspace(0, 1, len(texture_dict)))    
 
-def _plot_gldas_soil_texture_map(texture_ds, dust_df, soil_cmap, texture_colors, location_name, texture_categories):
+def _plot_gldas_soil_texture_map(texture_ds, dust_df, soil_cmap, texture_colors, location_name, texture_dict):
     from matplotlib.patches import Patch
 
     fig, ax = plt.subplots(figsize=(16, 12), subplot_kw={"projection": ccrs.PlateCarree()})
@@ -99,7 +82,7 @@ def _plot_gldas_soil_texture_map(texture_ds, dust_df, soil_cmap, texture_colors,
     ax.set_title("Soil Textures with Dust Origins")
     legend_handles = [
         Patch(facecolor=color, edgecolor="black", label=label)
-        for label, color in zip(texture_categories.values(), texture_colors)
+        for label, color in zip(texture_dict.values(), texture_colors)
     ]
 
     dust_handle = Patch(
@@ -118,13 +101,12 @@ def _plot_gldas_soil_texture_map(texture_ds, dust_df, soil_cmap, texture_colors,
     
     return
 
-def _plot_gldas_soil_texture_bar(texture_ds, dust_df, texture_colors, texture_categories, location_name):
+def _plot_gldas_soil_texture_bar(texture_ds, dust_df, texture_colors, texture_dict, location_name):
     """
     Create a side-by-side bar chart comparing:
     - frequency of soil textures at dust points
     - frequency of soil textures in the full soil raster
     """
-    from matplotlib.patches import Patch
 
     # Extract the soil texture DataArray
     texture_da = texture_ds.GLDAS_soiltex
@@ -133,7 +115,7 @@ def _plot_gldas_soil_texture_bar(texture_ds, dust_df, texture_colors, texture_ca
     texture_flat = texture_da.values.flatten()
 
     # Count full domain occurrences
-    full_counts = {k: np.sum(texture_flat == k) for k in texture_categories.keys()}
+    full_counts = {k: np.sum(texture_flat == k) for k in texture_dict.keys()}
     total_full = sum(full_counts.values())
     full_fraction = {k: v / total_full for k, v in full_counts.items()}
 
@@ -147,13 +129,13 @@ def _plot_gldas_soil_texture_bar(texture_ds, dust_df, texture_colors, texture_ca
         ).values
         dust_textures.append(val)
 
-    dust_counts = {k: dust_textures.count(k) for k in texture_categories.keys()}
+    dust_counts = {k: dust_textures.count(k) for k in texture_dict.keys()}
     total_dust = sum(dust_counts.values())
     dust_fraction = {k: v / total_dust for k, v in dust_counts.items()}
 
     # Prepare for plotting
-    categories = list(texture_categories.keys())
-    labels = [texture_categories[k] for k in categories]
+    categories = list(texture_dict.keys())
+    labels = [texture_dict[k] for k in categories]
     x = np.arange(len(categories))
     width = 0.4
 
@@ -183,5 +165,5 @@ def _plot_gldas_soil_texture_bar(texture_ds, dust_df, texture_colors, texture_ca
 
     return
 
-_plot_gldas_soil_texture_map(texture_ds, dust_df, soil_cmap, texture_colors, location_name, texture_categories)
-_plot_gldas_soil_texture_bar(texture_ds, dust_df, texture_colors, texture_categories, location_name)
+_plot_gldas_soil_texture_map(texture_ds, dust_df, soil_cmap, texture_colors, location_name, texture_dict)
+_plot_gldas_soil_texture_bar(texture_ds, dust_df, texture_colors, texture_dict, location_name)
