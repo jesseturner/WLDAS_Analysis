@@ -40,17 +40,3 @@ from modules_line_dust import line_dust_utils as dust
 
 # gldas.plot_three_histograms(texture_fractions_df_all, texture_fractions_df_dust, 
 #                             fig_dir="figures", fig_name="texture_histograms")
-
-#--- Open GLDAS soil textures
-gldas_path = "data/raw/gldas_soil_texture/GLDASp5_soiltexture_025d.nc4"
-location_name = "American Southwest"
-texture_ds = gldas.open_gldas_file(gldas_path)
-texture_ds = gldas.filter_to_region(texture_ds, location_name)
-print(texture_ds)
-
-#--- Make GLDAS soil textures figures
-dust_path = "data/raw/line_dust/dust_dataset_final_20241226.txt"
-dust_df = dust.read_dust_data_into_df(dust_path)
-dust_df = dust.filter_to_region(dust_df, location_name="American Southwest")
-
-gldas.gldas_soil_textures_figure(texture_ds, dust_df, location_name="American Southwest")
