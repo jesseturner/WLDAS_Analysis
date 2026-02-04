@@ -93,7 +93,8 @@ combo_counts_total = (
 top15_total = combo_counts_total.head(15).copy()
 
 #--- Map to category names
-soil_order_dict = orders._get_soil_order_dict()
+soil_order_dict = orders.get_soil_order_dict() 
+soil_order_colors = orders.get_category_colors()
 texture_dict = gldas.get_texture_dict()
 
 top15["texture_name"] = top15["texture"].map(texture_dict)
@@ -130,8 +131,8 @@ top15_total["label"] = (
 )
 
 #--- Create merged labeling
-count_dust = top15[["label", "count"]].rename(columns={"count": "dust_count"})
-count_total = top15_total[["label", "count"]].rename(columns={"count": "total_count"})
+count_dust = top15[["soil_name", "label", "count"]].rename(columns={"count": "dust_count"})
+count_total = top15_total[["soil_name", "label", "count"]].rename(columns={"count": "total_count"})
 
 combo_plot = (
     count_dust
@@ -144,6 +145,11 @@ combo_plot = combo_plot.sort_values(
 )
 combo_plot = combo_plot.reset_index(drop=True)
 
+#--- Color bars by soil type
+bar_colors = combo_plot["soil_name_x"].map(
+    lambda s: soil_order_colors.get(s, "black")
+)
+
 #--- Plot bar chart
 x = np.arange(len(combo_plot))
 width = 0.4
@@ -154,7 +160,7 @@ ax.bar(
     x - width / 2,
     combo_plot["dust_count"],
     width,
-    color="tab:orange",
+    color=bar_colors,
     edgecolor="black",
     linewidth=1,
     label="Dust events"
@@ -164,7 +170,7 @@ ax.bar(
     x + width / 2,
     combo_plot["total_count"],
     width,
-    color="tab:blue",
+    color=bar_colors,
     alpha=0.5,
     label="Full domain"
 )

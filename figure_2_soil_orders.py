@@ -32,32 +32,8 @@ soil_da = (
 
 #--- Get colormap associated with soil order names
 #------ Colormaps not synced up due to spatial plot not following
-soil_order_dict = orders._get_soil_order_dict() 
-
-category_colors = {
-    "Alfisols": "#06dd0a",
-    "Andisols": "#f603d6", 
-    "Aridisols": "#f1af4c",
-    "Entisols": "#dc5908", 
-    "Gelisols": "#730ef8",
-    "Histosols": "#61310d", 
-    "Inceptisols": "#cada9c",
-    "Mollisols": "#046a2b",
-    "Oxisols": "#ff0e0e", 
-    "Spodosols": "#f084e0", 
-    "Ultisols": "#f9ec3a",
-    "Vertisols": "#1411f5",
-    "Rocky Land": "#6b6969", 
-    "Salt flats": "#e0e0e0", 
-    "Shifting Sands": "#a8a6a4",
-    "Water": "#a3d2f3", 
-    "Ice/Glacier": "#aec7e8", 
-    "No data": "#ffffff", 
-    "Urban, mining": "#7f7f7f", 
-    "Human disturbed": "#000000",
-    "Fishpond": "#1f77b4", 
-    "Island": "#aec7e8",    
-}
+soil_order_dict = orders.get_soil_order_dict() 
+category_colors = orders.get_category_colors()
 
 unique_orders = list(dict.fromkeys(soil_order_dict.values()))
 order_to_index = {order: i for i, order in enumerate(unique_orders)}
