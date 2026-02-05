@@ -31,7 +31,7 @@ dust_counts_by_day = (
     .sort_values(ascending=False)
 )
 
-peak_dust_day = dust_counts_by_day.index[5]
+peak_dust_day = dust_counts_by_day.index[0]
 
 print("Plotting WLDAS scene with dust events...")
 
