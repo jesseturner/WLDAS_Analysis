@@ -133,8 +133,9 @@ ax.scatter(
 ax.set_title("Land Cover Categories with Dust Origins")
 
 ax.add_feature(cfeature.STATES, linewidth=0.8)
-ax.add_feature(cfeature.COASTLINE, linewidth=0.8)
+ax.add_feature(cfeature.COASTLINE, linewidth=0.8, zorder=4)
 ax.add_feature(cfeature.BORDERS, linewidth=0.8)
+ax.add_feature(cfeature.OCEAN, facecolor='white', zorder=3)
 ax.set_extent([min_lon, max_lon, min_lat, max_lat], crs=ccrs.PlateCarree())
 
 legend_handles = [
