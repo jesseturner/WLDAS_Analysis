@@ -9,19 +9,19 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Paths for cached datasets
-processed_ds_total_path = Path("data/processed/wldas_sample/wldas_total.nc")
-processed_ds_dust_path = Path("data/processed/wldas_sample/wldas_dust.nc")
+processed_wldas_total_path = Path("data/processed/wldas_sample/wldas_total.nc")
+processed_wldas_dust_path = Path("data/processed/wldas_sample/wldas_dust.nc")
 
 print("Checking for cached WLDAS datasets...")
-if processed_ds_total_path.exists():
-    print(f"Loading cached wldas_total from {processed_ds_total_path}")
-    wldas_total = xr.open_dataset(processed_ds_total_path)
+if processed_wldas_total_path.exists():
+    print(f"Loading cached wldas_total from {processed_wldas_total_path}")
+    wldas_total = xr.open_dataset(processed_wldas_total_path)
 else:
     wldas_total = None
 
-if processed_ds_dust_path.exists():
-    print(f"Loading cached wldas_dust from {processed_ds_dust_path}")
-    wldas_dust = xr.open_dataset(processed_ds_dust_path)
+if processed_wldas_dust_path.exists():
+    print(f"Loading cached wldas_dust from {processed_wldas_dust_path}")
+    wldas_dust = xr.open_dataset(processed_wldas_dust_path)
 else:
     wldas_dust = None
 
@@ -93,7 +93,7 @@ else:
 
 
 print("Saving processed files as NetCDFs...")
-processed_ds_total_path.parent.mkdir(parents=True, exist_ok=True)
+processed_wldas_total_path.parent.mkdir(parents=True, exist_ok=True)
 
 #--- Coarsen resolution for wldas_total
 COARSEN_LAT = 24
@@ -104,13 +104,13 @@ wldas_total = (
     .mean()
 )
 
-if not processed_ds_total_path.exists():
-    wldas_total.to_netcdf(processed_ds_total_path)
-    print(f"Saved wldas_total → {processed_ds_total_path}")
+if not processed_wldas_total_path.exists():
+    wldas_total.to_netcdf(processed_wldas_total_path)
+    print(f"Saved wldas_total → {processed_wldas_total_path}")
 
-if not processed_ds_dust_path.exists():
-    wldas_dust.to_netcdf(processed_ds_dust_path)
-    print(f"Saved wldas_dust → {processed_ds_dust_path}")
+if not processed_wldas_dust_path.exists():
+    wldas_dust.to_netcdf(processed_wldas_dust_path)
+    print(f"Saved wldas_dust → {processed_wldas_dust_path}")
 
 #--- Define bins
 bins = np.linspace(0, 0.5, 21)  # 0.0, 0.05, ..., 0.5
