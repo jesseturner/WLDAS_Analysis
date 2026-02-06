@@ -38,7 +38,7 @@ if wldas_total is None:
         for d in dust_df['Date (YYYYMMDD)'].astype(str)
     ]
 
-    num_wldas_files = 120
+    num_wldas_files = 600
     print(f"Only opening first {num_wldas_files} WLDAS files...")
     wldas_total = wldas_proc.open_wldas_files_as_xarray_ds(wldas_files[:num_wldas_files])
 else:
