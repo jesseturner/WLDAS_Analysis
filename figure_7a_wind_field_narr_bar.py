@@ -44,6 +44,12 @@ mask = (
 
 ds_ws = ds_ws.where(mask, drop=True)
 
+print("Cropping to land mask...")
+land_mask = xr.open_dataset("/mnt/data2/jturner/narr/land.nc")
+land_mask = land_mask.squeeze("time", drop=True)
+land_mask_bool = land_mask['land'].astype(bool)
+ds_ws = ds_ws.where(land_mask_bool)
+
 #--- Total wind field climatology
 print("Computing full-domain wind speeds...")
 all_winds = ds_ws["wind_speed"].compute().values.ravel()
