@@ -9,11 +9,11 @@ from modules_line_dust import line_dust_utils as dust
 from modules_soil_orders import soil_orders_utils as soil_orders
 
 #--- Data from NARR
-#------ Just 2001 so far!
+#------ Just 2001-2003 so far!
 print("Opening data from NARR...")
 
-ds_uwnd = xr.open_dataset("/mnt/data2/jturner/narr/uwnd.10m.2001.nc")
-ds_vwnd = xr.open_dataset("/mnt/data2/jturner/narr/vwnd.10m.2001.nc")
+ds_uwnd = xr.open_mfdataset("/mnt/data2/jturner/narr/uwnd.10m.20*.nc")
+ds_vwnd = xr.open_mfdataset("/mnt/data2/jturner/narr/vwnd.10m.20*.nc")
 
 #--- Open dust data, create datetime column
 print("Opening dust data, creating dust dataframe... ")
@@ -46,10 +46,10 @@ dust_df["datetime"] = (
     .dt.tz_convert(None)
 )
 
-#--- Temporary time filter to 2001
+#--- Temporary time filter to 2001-2003
 print("Temporarily filtering to 2001 only...")
 dust_df = dust_df[
-    dust_df["datetime"].dt.year == 2001
+    dust_df["datetime"].dt.year.isin([2001, 2002, 2003])
 ].copy()
 
 #--- Find datetime with most dust reports
@@ -63,7 +63,7 @@ dust_counts = (
 )
 
 #--- Set the target date from the list of most dust events
-target_time = dust_counts.index[0]
+target_time = dust_counts.index[5]
 print(f"Selected datetime: {target_time} ({dust_counts.iloc[0]} dust points)")
 
 dust_t = dust_df[dust_df["datetime"] == target_time]
@@ -87,7 +87,7 @@ min_lat, max_lat, min_lon, max_lon = soil_orders._get_coords_for_region(
 mask = (
     (lat >= min_lat) & (lat <= max_lat) &
     (lon >= min_lon) & (lon <= max_lon)
-)
+).compute()
 
 uwnd_t = uwnd_t.where(mask, drop=True)
 vwnd_t = vwnd_t.where(mask, drop=True)

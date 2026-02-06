@@ -8,7 +8,7 @@ from modules_soil_orders import soil_orders_utils as soil_orders
 from modules_line_dust import line_dust_utils as dust
 
 #--- Data from NARR
-#------ Just 2001 so far!
+#------ Just 2001-2003 so far!
 print("Opening data from NARR...")
 
 ds_uwnd = xr.open_mfdataset("/mnt/data2/jturner/narr/uwnd.10m.20*.nc")
