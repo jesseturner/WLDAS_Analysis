@@ -11,8 +11,8 @@ from modules_line_dust import line_dust_utils as dust
 #------ Just 2001 so far!
 print("Opening data from NARR...")
 
-ds_uwnd = xr.open_dataset("/mnt/data2/jturner/narr/uwnd.10m.2001.nc")
-ds_vwnd = xr.open_dataset("/mnt/data2/jturner/narr/vwnd.10m.2001.nc")
+ds_uwnd = xr.open_mfdataset("/mnt/data2/jturner/narr/uwnd.10m.20*.nc")
+ds_vwnd = xr.open_mfdataset("/mnt/data2/jturner/narr/vwnd.10m.20*.nc")
 
 #--- Creating or loading wind speed data
 
@@ -39,14 +39,18 @@ lon = ds_ws["lon"]
 
 mask = (
     (lat >= min_lat) & (lat <= max_lat) &
-    (lon >= min_lon) & (lon <= max_lon))
+    (lon >= min_lon) & (lon <= max_lon)
+).compute()
 
 ds_ws = ds_ws.where(mask, drop=True)
 
 #--- Total wind field climatology
-
-all_winds = ds_ws["wind_speed"].values.flatten()
+print("Computing full-domain wind speeds...")
+all_winds = ds_ws["wind_speed"].compute().values.ravel()
 all_winds = all_winds[~np.isnan(all_winds)]
+
+# all_winds = ds_ws["wind_speed"].values.flatten()
+# all_winds = all_winds[~np.isnan(all_winds)]
 
 #--- Open dust data, create datetime column
 print("Opening dust data, creating dust dataframe... ")
@@ -79,10 +83,9 @@ dust_df["datetime"] = (
     .dt.tz_convert(None)
 )
 
-#--- Temporary time filter to 2001
-print("Temporarily filtering to 2001 only...")
+print("Temporarily filtering to 2001-2003...")
 dust_df = dust_df[
-    dust_df["datetime"].dt.year == 2001
+    dust_df["datetime"].dt.year.isin([2001, 2002, 2003])
 ].copy()
 
 #--- Spatial matching of wind grid (Lambert Conformal)
@@ -111,11 +114,16 @@ for _, row in dust_df.iterrows():
     # ).isel(y=iy, x=ix)
     
     #--- Day-of time match 
+    # ws = ds_ws["wind_speed"].sel(
+    #     time=row["datetime"].floor("D")
+    # ).isel(y=iy, x=ix)
     ws = ds_ws["wind_speed"].sel(
-        time=row["datetime"].floor("D")
+        time=row["datetime"].floor("D"),
+        method="nearest"
     ).isel(y=iy, x=ix)
     
-    dust_winds.append(ws.item())
+    # dust_winds.append(ws.item())
+    dust_winds.append(ws.compute().item())
 
 dust_winds = np.array(dust_winds)
 dust_winds = dust_winds[~np.isnan(dust_winds)]
