@@ -62,14 +62,17 @@ dust_counts = (
     .sort_values(ascending=False)
 )
 
+#--- Set the target date from the list of most dust events
 target_time = dust_counts.index[0]
 print(f"Selected datetime: {target_time} ({dust_counts.iloc[0]} dust points)")
 
 dust_t = dust_df[dust_df["datetime"] == target_time]
 
 #--- Select wind at target time
-uwnd_t = ds_uwnd["uwnd"].sel(time=target_time, method="nearest")
-vwnd_t = ds_vwnd["vwnd"].sel(time=target_time, method="nearest")
+#------ Getting day of instead of nearest
+uwnd_t = ds_uwnd["uwnd"].sel(time=target_time.floor("D")) 
+vwnd_t = ds_vwnd["vwnd"].sel(time=target_time.floor("D"))
+print(f"Using NARR time of {vwnd_t.time.values}...")
 
 wind_speed_t = np.sqrt(uwnd_t**2 + vwnd_t**2)
 

@@ -27,7 +27,6 @@ else:
         {"wind_speed": np.sqrt(ds["uwnd"]**2 + ds["vwnd"]**2)},
         coords=ds.coords,
         attrs=ds.attrs)
-    ds_ws = ds_ws.chunk({"time": 24})
     ds_ws.to_netcdf(cache_path)
 
 #--- Cropping to American Southwest
@@ -105,10 +104,15 @@ dust_winds = []
 for _, row in dust_df.iterrows():
     iy, ix = nearest_grid_point(lat2d, lon2d, row["latitude"], row["longitude"])
     
-    # nearest-time match
+    #--- Nearest-time match
+    # ws = ds_ws["wind_speed"].sel(
+    #     time=row["datetime"],
+    #     method="nearest"
+    # ).isel(y=iy, x=ix)
+    
+    #--- Day-of time match 
     ws = ds_ws["wind_speed"].sel(
-        time=row["datetime"],
-        method="nearest"
+        time=row["datetime"].floor("D")
     ).isel(y=iy, x=ix)
     
     dust_winds.append(ws.item())
