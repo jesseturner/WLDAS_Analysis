@@ -124,6 +124,7 @@ texture2d = texture_da.isel(time=0)
 texture_df = texture2d.to_dataframe(name="texture").reset_index()
 texture_df["texture"] = texture_df["texture"].fillna(0).astype(int)
 
+print("---PROBLEM: wind speed needs lat and lon, not x and y!")
 ws_at_texture = ds_ws.sel(
     x=xr.DataArray(texture_df["lon"].values, dims="points"),
     y=xr.DataArray(texture_df["lat"].values, dims="points"),

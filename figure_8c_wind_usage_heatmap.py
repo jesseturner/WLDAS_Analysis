@@ -169,11 +169,18 @@ combo_counts["wind_bin"] = combo_counts["wind_bin"].astype(str)
 
 print("Create total grouping for heat map...")
 usage_df = cec.to_dataframe(name="usage").reset_index()
-ws_at_usage = ds_ws.sel(
+
+ds_ws_mean = ds_ws.mean(dim="time")
+
+#--- A change is necessary due to curvilinear wind speed grid
+print("---PROBLEM: wind speed needs lat and lon, not x and y!")
+ws_at_usage = ds_ws_mean.sel(
     x=xr.DataArray(usage_df["x"].values, dims="points"),
     y=xr.DataArray(usage_df["y"].values, dims="points"),
     method="nearest"
 ).values
+
+print("Wind speed at Usage", ws_at_usage)
 
 usage_df["wind_speed"] = ws_at_usage
 usage_df["wind_bin"] = pd.cut(
@@ -182,6 +189,7 @@ usage_df["wind_bin"] = pd.cut(
     labels=wind_labels,
     right=False
 )
+print(usage_df['usage'])
 
 combo_counts_total = (
     usage_df
