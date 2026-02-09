@@ -120,15 +120,11 @@ for _, row in dust_df.iterrows():
     # ).isel(y=iy, x=ix)
     
     #--- Day-of time match 
-    # ws = ds_ws["wind_speed"].sel(
-    #     time=row["datetime"].floor("D")
-    # ).isel(y=iy, x=ix)
     ws = ds_ws["wind_speed"].sel(
         time=row["datetime"].floor("D"),
         method="nearest"
     ).isel(y=iy, x=ix)
     
-    # dust_winds.append(ws.item())
     dust_winds.append(ws.compute().item())
 
 dust_winds = np.array(dust_winds)
