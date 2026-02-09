@@ -146,7 +146,7 @@ texture_df["wind_bin"] = pd.cut(
 
 combo_counts_total = (
     texture_df
-    .groupby(["wind_bin", "texture"])
+    .groupby(["wind_bin", "texture"], observed=False)
     .size()
     .reset_index(name="count")
     .sort_values("count", ascending=False)
@@ -172,6 +172,7 @@ def plot_wind_texture_matrix(df, ax, textures, winds, title):
 
     total = matrix.values.sum()
     matrix = matrix / total
+    matrix = matrix.T
 
     vmax = np.max(matrix.values)
 
@@ -179,13 +180,15 @@ def plot_wind_texture_matrix(df, ax, textures, winds, title):
         matrix.values,
         vmin=0,
         vmax=vmax,
-        cmap="binary"
+        cmap="binary",
+        aspect="auto"
     )
 
+    ax.set_xlabel("Wind speed (m/s)", size=15)
     ax.set_xticks(np.arange(matrix.shape[1]))
     ax.set_yticks(np.arange(matrix.shape[0]))
-    ax.set_xticklabels(matrix.columns, rotation=45, ha="right", size=12)
-    ax.set_yticklabels(matrix.index, size=15)
+    ax.set_xticklabels(matrix.columns, size=12)
+    ax.set_yticklabels(matrix.index, size=12)
 
     ax.set_title(title, size=18)
 
@@ -198,7 +201,8 @@ def plot_wind_texture_matrix(df, ax, textures, winds, title):
                 text_color = "white" if norm(val) > 0.5 else "black"
 
                 ax.text(
-                    j, i, f"{(val*100):.2f}",   # percent formatting
+                    j, i,
+                    f"{(val*100):.2f}",
                     ha="center",
                     va="center",
                     fontsize=9,
@@ -210,9 +214,9 @@ def plot_wind_texture_matrix(df, ax, textures, winds, title):
 fig, axes = plt.subplots(
     nrows=1,
     ncols=2,
-    figsize=(15, 6),
+    figsize=(14, 6),
     sharey=True,
-    constrained_layout=True)
+    constrained_layout=False)
 
 textures_ref = sorted(combo_counts["texture_name"].dropna().unique())
 textures_ref = [t for t in textures_ref if t != 'Other'] + ['Other'] # move 'Other' to end
@@ -220,5 +224,6 @@ winds_ref = [w for w in wind_labels
              if w in combo_counts["wind_bin"].values]
 im1 = plot_wind_texture_matrix(combo_counts, axes[0], textures_ref, winds_ref, "Dust events")
 im2 = plot_wind_texture_matrix(combo_counts_total, axes[1], textures_ref, winds_ref, "Full domain")
+
 
 plt.savefig(os.path.join("figures", "winds_texture_heatmap"), bbox_inches='tight', dpi=300)
