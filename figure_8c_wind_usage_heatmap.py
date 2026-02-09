@@ -1,12 +1,15 @@
-from modules_line_dust import line_dust_utils as dust
-from modules_texture import gldas_texture_utils as gldas
-
 import xarray as xr
+import rioxarray as rxr
 import numpy as np
 from pathlib import Path
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
+from pyproj import CRS, Transformer
+import rasterio
+
+from modules_line_dust import line_dust_utils as dust
+from modules_soil_orders import soil_orders_utils as orders
 
 print("Opening dust dataset...")
 location_name = "American Southwest"
@@ -15,21 +18,46 @@ dust_df = dust.read_dust_data_into_df(dust_path)
 dust_df = dust.filter_to_region(dust_df, location_name=location_name)
 
 
-print("Opening soil texture dataset...")
-gldas_path = "data/raw/gldas_soil_texture/GLDASp5_soiltexture_025d.nc4"
-texture_ds = gldas.open_gldas_file(gldas_path)
-texture_ds = gldas.filter_to_region(texture_ds, location_name)
-texture_da = texture_ds.GLDAS_soiltex
+print("Opening surface usage dataset...")
+cec_filepath = (
+    "data/raw/cec_land_cover/NA_NALCMS_landcover_2020v2_30m/data/NA_NALCMS_landcover_2020v2_30m.tif"
+)
+cec_full = rxr.open_rasterio(cec_filepath).squeeze("band", drop=True)
+src_crs = CRS.from_epsg(4326) 
+
+print("Cropping surface usage raster...")
+min_lat, max_lat, min_lon, max_lon = orders._get_coords_for_region(location_name)
+dst_crs = CRS.from_wkt(cec_full.rio.crs.to_wkt()) 
+transformer = Transformer.from_crs(src_crs, dst_crs, always_xy=True) 
+minx, miny = transformer.transform(min_lon, min_lat) 
+maxx, maxy = transformer.transform(max_lon, max_lat) 
+minx, maxx = sorted([minx, maxx]) 
+miny, maxy = sorted([miny, maxy]) 
+cec_cropped = cec_full.rio.clip_box(minx=minx, miny=miny, maxx=maxx, maxy=maxy)
+
+output_path = "data/processed/cec_land_cover/cec_land_cover_SW_epsg4326.tif"
+if not os.path.exists(output_path):
+    print("Reprojecting to lat/lon...") 
+    cec = cec_cropped.rio.reproject( 
+        "EPSG:4326", 
+        resolution=0.05, 
+        resampling=rasterio.enums.Resampling.nearest)
+    cec.rio.to_raster(output_path)
+else:
+    print("Processed raster already exists — skipping reprojection.")
+    cec = rxr.open_rasterio(output_path).squeeze("band", drop=True)
 
 print("Add texture values to dust dataframe...")
 dust_lats = xr.DataArray(dust_df["latitude"].values, dims="points")
 dust_lons = xr.DataArray(dust_df["longitude"].values, dims="points")
-texture_vals = texture_da.sel(
-    lon=dust_lons,
-    lat=dust_lats,
+
+usage_vals = cec.sel(
+    x=dust_lons,
+    y=dust_lats,
     method="nearest"
 ).values.squeeze().astype(int) 
-dust_df["texture"] = texture_vals
+
+dust_df["usage"] = usage_vals
 
 print("Opening data from NARR...")
 cache_path = Path("/mnt/data2/jturner/narr/processed/narr_wind_speed.nc")
@@ -110,34 +138,45 @@ dust_df["wind_bin"] = pd.cut(
 print("Create dust grouping for heat map...")
 combo_counts = (
     dust_df
-    .groupby(["wind_bin", "texture"], observed=False)
+    .groupby(["wind_bin", "usage"], observed=False)
     .size()
     .reset_index(name="count")
     .sort_values("count", ascending=False)
 )
-texture_dict = gldas.get_texture_dict()
-combo_counts["texture_name"] = combo_counts["texture"].map(texture_dict)
+land_cover_dict = {
+    1: "Temp/Sub-polar Needleleaf Forest",
+    2: "Sub-polar Taiga Needleleaf Forest",
+    3: "Tropical Broadleaf Evergreen Forest",
+    4: "Tropical Broadleaf Deciduous Forest",
+    5: "Temp/Sub-polar Broadleaf Deciduous Forest",
+    6: "Mixed Forest",
+    7: "Tropical/Sub-tropical Shrubland",
+    8: "Temp/Sub-polar Shrubland",
+    9: "Tropical/Sub-tropical Grassland",
+    10: "Temp/Sub-polar Grassland",
+    11: "Sub-polar Shrub-Lichen-Moss",
+    12: "Sub-polar Grass-Lichen-Moss",
+    13: "Sub-polar Barren-Lichen-Moss",
+    14: "Wetland",
+    15: "Cropland",
+    16: "Barren Lands",
+    17: "Urban and Built-up",
+    18: "Water",
+    19: "Snow and Ice",
+} 
+combo_counts["usage_name"] = combo_counts["usage"].map(land_cover_dict)
 combo_counts["wind_bin"] = combo_counts["wind_bin"].astype(str)
 
 print("Create total grouping for heat map...")
-texture2d = texture_da.isel(time=0)
-texture_df = texture2d.to_dataframe(name="texture").reset_index()
-texture_df["texture"] = texture_df["texture"].fillna(0).astype(int)
+usage_df = cec.to_dataframe(name="usage").reset_index()
+ws_at_usage = ds_ws.sel(
+    x=xr.DataArray(usage_df["x"].values, dims="points"),
+    y=xr.DataArray(usage_df["y"].values, dims="points"),
+    method="nearest"
+).values
 
-texture_winds = []
-for _, row in texture_df.iterrows():
-    iy, ix = nearest_grid_point(lat2d, lon2d, row["lat"], row["lon"])
-    
-    #--- Day-of time match 
-    ws = ds_ws["wind_speed"].sel(
-        time=row["time"].floor("D"),
-        method="nearest"
-    ).isel(y=iy, x=ix)
-    
-    texture_winds.append(ws.compute().item())
-
-texture_df["wind_speed"] = texture_winds
-texture_df["wind_bin"] = pd.cut(
+usage_df["wind_speed"] = ws_at_usage
+usage_df["wind_bin"] = pd.cut(
     dust_df["wind_speed"],
     bins=wind_bins,
     labels=wind_labels,
@@ -145,20 +184,20 @@ texture_df["wind_bin"] = pd.cut(
 )
 
 combo_counts_total = (
-    texture_df
-    .groupby(["wind_bin", "texture"], observed=False)
+    usage_df
+    .groupby(["wind_bin", "usage"], observed=False)
     .size()
     .reset_index(name="count")
     .sort_values("count", ascending=False)
 )
-combo_counts_total["texture_name"] = combo_counts_total["texture"].map(texture_dict)
+combo_counts_total["usage_name"] = combo_counts_total["usage"].map(land_cover_dict)
 combo_counts_total["wind_bin"] = combo_counts_total["wind_bin"].astype(str)
 
 print("Plotting heat map...")
-def plot_wind_texture_matrix(df, ax, textures, winds, title):
+def plot_wind_usage_matrix(df, ax, usage, winds, title):
     matrix = df.pivot_table(
         index="wind_bin",
-        columns="texture_name",
+        columns="usage_name",
         values="count",
         aggfunc="sum",
         fill_value=0
@@ -166,7 +205,7 @@ def plot_wind_texture_matrix(df, ax, textures, winds, title):
 
     matrix = matrix.reindex(
         index=winds,
-        columns=textures,
+        columns=usage,
         fill_value=0
     )
 
@@ -218,12 +257,12 @@ fig, axes = plt.subplots(
     sharey=True,
     constrained_layout=False)
 
-textures_ref = sorted(combo_counts["texture_name"].dropna().unique())
-textures_ref = [t for t in textures_ref if t != 'Other'] + ['Other'] # move 'Other' to end
+usage_ref = sorted(combo_counts["usage_name"].dropna().unique())
+usage_ref = [t for t in usage_ref if t != 'Other'] + ['Other'] # move 'Other' to end
 winds_ref = [w for w in wind_labels
              if w in combo_counts["wind_bin"].values]
-im1 = plot_wind_texture_matrix(combo_counts, axes[0], textures_ref, winds_ref, "Dust events")
-im2 = plot_wind_texture_matrix(combo_counts_total, axes[1], textures_ref, winds_ref, "Full domain")
+im1 = plot_wind_usage_matrix(combo_counts, axes[0], usage_ref, winds_ref, "Dust events")
+im2 = plot_wind_usage_matrix(combo_counts_total, axes[1], usage_ref, winds_ref, "Full domain")
 
 
-plt.savefig(os.path.join("figures", "winds_texture_heatmap"), bbox_inches='tight', dpi=300)
+plt.savefig(os.path.join("figures", "winds_usage_heatmap"), bbox_inches='tight', dpi=300)
