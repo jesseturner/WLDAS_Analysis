@@ -167,29 +167,37 @@ land_cover_dict = {
 combo_counts["usage_name"] = combo_counts["usage"].map(land_cover_dict)
 combo_counts["wind_bin"] = combo_counts["wind_bin"].astype(str)
 
-print("Create total grouping for heat map...")
+print("(total) Create grouping for heat map...")
 usage_df = cec.to_dataframe(name="usage").reset_index()
 
 ds_ws_mean = ds_ws.mean(dim="time")
 
-#--- A change is necessary due to curvilinear wind speed grid
-print("---PROBLEM: wind speed needs lat and lon, not x and y!")
-ws_at_usage = ds_ws_mean.sel(
-    x=xr.DataArray(usage_df["x"].values, dims="points"),
-    y=xr.DataArray(usage_df["y"].values, dims="points"),
-    method="nearest"
-).values
+print("(total) Finding nearest mean wind speed to each texture...")
+print("--- This step is currently slow...")
+#--- Requires this method because x and y represent a curvilinear grid
+#--- Uses a loop to find the nearest lat lon coords to each texture point
+ds_ws_mean = ds_ws.mean(dim="time")
+lat = ds_ws_mean.lat.values
+lon = ds_ws_mean.lon.values
 
-print("Wind speed at Usage", ws_at_usage)
+def nearest_xy(lat0, lon0):
+    dist = (lat - lat0)**2 + (lon - lon0)**2
+    return np.unravel_index(dist.argmin(), dist.shape)
+
+indices = [nearest_xy(la, lo) for la, lo in zip(usage_df.y, usage_df.x)]
+
+ws_at_usage = np.array([
+    ds_ws_mean['wind_speed'].isel(y=j, x=i).values
+    for j, i in indices
+])
 
 usage_df["wind_speed"] = ws_at_usage
 usage_df["wind_bin"] = pd.cut(
-    dust_df["wind_speed"],
+    usage_df["wind_speed"],
     bins=wind_bins,
     labels=wind_labels,
     right=False
 )
-print(usage_df['usage'])
 
 combo_counts_total = (
     usage_df
