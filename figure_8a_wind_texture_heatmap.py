@@ -143,7 +143,6 @@ ws_at_texture = np.array([
 ])
 
 texture_df["wind_speed"] = ws_at_texture
-print(texture_df)
 texture_df["wind_bin"] = pd.cut(
     texture_df["wind_speed"],
     bins=wind_bins,
