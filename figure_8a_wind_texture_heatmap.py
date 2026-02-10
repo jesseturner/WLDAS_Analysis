@@ -119,21 +119,33 @@ texture_dict = gldas.get_texture_dict()
 combo_counts["texture_name"] = combo_counts["texture"].map(texture_dict)
 combo_counts["wind_bin"] = combo_counts["wind_bin"].astype(str)
 
-print("Create total grouping for heat map...")
+print("(total) Create grouping for heat map...")
 texture2d = texture_da.isel(time=0)
 texture_df = texture2d.to_dataframe(name="texture").reset_index()
 texture_df["texture"] = texture_df["texture"].fillna(0).astype(int)
 
-print("---PROBLEM: wind speed needs lat and lon, not x and y!")
-ws_at_texture = ds_ws.sel(
-    x=xr.DataArray(texture_df["lon"].values, dims="points"),
-    y=xr.DataArray(texture_df["lat"].values, dims="points"),
-    method="nearest"
-).values
+print("(total) Finding nearest mean wind speed to each texture...")
+#--- Requires this method because x and y represent a curvilinear grid
+#--- Uses a loop to find the nearest lat lon coords to each texture point
+ds_ws_mean = ds_ws.mean(dim="time")
+lat = ds_ws_mean.lat.values
+lon = ds_ws_mean.lon.values
+
+def nearest_xy(lat0, lon0):
+    dist = (lat - lat0)**2 + (lon - lon0)**2
+    return np.unravel_index(dist.argmin(), dist.shape)
+
+indices = [nearest_xy(la, lo) for la, lo in zip(texture_df.lat, texture_df.lon)]
+
+ws_at_texture = np.array([
+    ds_ws_mean['wind_speed'].isel(y=j, x=i).values
+    for j, i in indices
+])
 
 texture_df["wind_speed"] = ws_at_texture
+print(texture_df)
 texture_df["wind_bin"] = pd.cut(
-    dust_df["wind_speed"],
+    texture_df["wind_speed"],
     bins=wind_bins,
     labels=wind_labels,
     right=False
@@ -218,7 +230,7 @@ textures_ref = [t for t in textures_ref if t != 'Other'] + ['Other'] # move 'Oth
 winds_ref = [w for w in wind_labels
              if w in combo_counts["wind_bin"].values]
 im1 = plot_wind_texture_matrix(combo_counts, axes[0], textures_ref, winds_ref, "Dust events")
-im2 = plot_wind_texture_matrix(combo_counts_total, axes[1], textures_ref, winds_ref, "Full domain")
+im2 = plot_wind_texture_matrix(combo_counts_total, axes[1], textures_ref, winds_ref, "Full domain (average)")
 
 
 plt.savefig(os.path.join("figures", "winds_texture_heatmap"), bbox_inches='tight', dpi=300)
