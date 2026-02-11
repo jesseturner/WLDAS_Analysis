@@ -111,14 +111,22 @@ dust_df_sorted['cum_pct'] = dust_df_sorted['cum_pct'] / dust_df_sorted.groupby('
 
 fig, ax = plt.subplots(figsize=(9, 9))
 
-for usage in selected_usages:
-    subset = dust_df_sorted[dust_df_sorted['usage'] == usage]
-    ax.step(subset['wind_speed'], subset['cum_pct'], where='post', label=land_cover_dict[usage])
+cmap = plt.get_cmap('Accent') 
+colors = cmap(np.linspace(0, 1, len(selected_usages)))
 
-ax.set_xlabel('Wind Speed')
-ax.set_ylabel('Cumulative Percentage (%)')
-ax.set_title('CDF of Wind Speed by Usage Category')
-ax.legend(title='Usage')
+for i, usage in enumerate(selected_usages):
+    subset = dust_df_sorted[dust_df_sorted['usage'] == usage]
+    ax.step(subset['wind_speed'], subset['cum_pct'], where='post', 
+            label=land_cover_dict[usage],
+            color=colors[i], 
+            linewidth=3)
+
+ax.set_xlim(0, 20)
+ax.set_xlabel('Wind Speed (m/s)', size=15)
+ax.set_ylabel('Cumulative Percentage (%)', size=15)
+ax.set_title('Dust events by wind speed and usage category', size=18)
+ax.tick_params(axis='both', which='major', labelsize=15) 
+ax.legend(fontsize=15)
 
 plt.tight_layout()
 
