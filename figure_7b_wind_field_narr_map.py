@@ -9,7 +9,6 @@ import sys
 from modules_line_dust import line_dust_utils as dust
 from modules_soil_orders import soil_orders_utils as soil_orders
 
-#--- Creating or loading wind speed data
 ws_data_path = Path("/mnt/data2/jturner/narr/processed/narr_daytime_wnd_max.nc")
 if ws_data_path.exists():
     print("Loading wind speed data...")
