@@ -47,7 +47,7 @@ else:
     print("Processed raster already exists — skipping reprojection.")
     cec = rxr.open_rasterio(output_path).squeeze("band", drop=True)
 
-print("Add texture values to dust dataframe...")
+print("Add usage values to dust dataframe...")
 dust_lats = xr.DataArray(dust_df["latitude"].values, dims="points")
 dust_lons = xr.DataArray(dust_df["longitude"].values, dims="points")
 
