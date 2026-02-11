@@ -8,11 +8,8 @@ print("WARNING: 20 years of data takes about 30 minutes to run.")
 
 print("Opening data from NARR...")
 
-# ds_uwnd = xr.open_mfdataset("/mnt/data2/jturner/narr/uwnd.10m.20*.nc")
-# ds_vwnd = xr.open_mfdataset("/mnt/data2/jturner/narr/vwnd.10m.20*.nc")
-
-ds_uwnd = xr.open_mfdataset("/mnt/data2/jturner/narr/uwnd.10m.2001.nc")
-ds_vwnd = xr.open_mfdataset("/mnt/data2/jturner/narr/vwnd.10m.2001.nc")
+ds_uwnd = xr.open_mfdataset("/mnt/data2/jturner/narr/uwnd.10m.20*.nc")
+ds_vwnd = xr.open_mfdataset("/mnt/data2/jturner/narr/vwnd.10m.20*.nc")
 
 print("Calculating wind speed...")
 wind_speed = np.sqrt(ds_uwnd.uwnd**2 + ds_vwnd.vwnd**2)
