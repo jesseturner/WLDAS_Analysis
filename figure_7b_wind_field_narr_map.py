@@ -48,11 +48,10 @@ dust_df["datetime"] = (
     .dt.tz_convert(None)
 )
 
-
-print("Temporarily filtering to 2001 only...")
-dust_df = dust_df[
-    dust_df["datetime"].dt.year.isin([2001])
-].copy()
+# print("Temporarily filtering to 2001 only...")
+# dust_df = dust_df[
+#     dust_df["datetime"].dt.year.isin([2001])
+# ].copy()
 
 #--- Find datetime with most dust reports
 print("Finding dustiest datetime...")
