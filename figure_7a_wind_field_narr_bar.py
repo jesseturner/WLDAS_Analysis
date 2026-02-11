@@ -47,11 +47,6 @@ dust_df["datetime"] = (
     .dt.tz_convert(None)
 )
 
-print("Temporarily filtering dust to 2001-2002...")
-dust_df = dust_df[
-    dust_df["datetime"].dt.year.isin([2001, 2002])
-].copy()
-
 #--- Spatial matching of wind grid (Lambert Conformal)
 print("Spatial matching of wind grid...")
 

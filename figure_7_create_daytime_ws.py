@@ -4,6 +4,8 @@ import numpy as np
 
 from modules_soil_orders import soil_orders_utils as soil_orders
 
+print("WARNING: 20 years of data takes about 30 minutes to run.")
+
 print("Opening data from NARR...")
 
 ds_uwnd = xr.open_mfdataset("/mnt/data2/jturner/narr/uwnd.10m.20*.nc")

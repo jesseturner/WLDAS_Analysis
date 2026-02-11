@@ -49,12 +49,6 @@ dust_df["datetime"] = (
     .dt.tz_convert(None)
 )
 
-#--- Temporary time filter to 2001-2003
-print("Temporarily filtering to 2001 only...")
-dust_df = dust_df[
-    dust_df["datetime"].dt.year.isin([2001])
-].copy()
-
 #--- Find datetime with most dust reports
 print("Finding dustiest datetime...")
 
@@ -66,7 +60,7 @@ dust_counts = (
 )
 
 #--- Set the target date from the list of most dust events
-rank_dust_event = 0
+rank_dust_event = 2
 target_time = dust_counts.index[rank_dust_event]
 print(f"Plotting dust event ranked: {rank_dust_event}")
 print(f"Selected datetime: {target_time} ({dust_counts.iloc[rank_dust_event]} dust points)")
