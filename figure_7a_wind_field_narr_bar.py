@@ -3,64 +3,22 @@ import numpy as np
 from pathlib import Path
 import pandas as pd
 import matplotlib.pyplot as plt
+import sys
 
 from modules_soil_orders import soil_orders_utils as soil_orders
 from modules_line_dust import line_dust_utils as dust
 
-#--- Data from NARR
-#------ Just 2001-2003 so far!
-print("Opening data from NARR...")
-
-ds_uwnd = xr.open_mfdataset("/mnt/data2/jturner/narr/uwnd.10m.20*.nc")
-ds_vwnd = xr.open_mfdataset("/mnt/data2/jturner/narr/vwnd.10m.20*.nc")
-
 #--- Creating or loading wind speed data
-
-cache_path = Path("/mnt/data2/jturner/narr/processed/narr_wind_speed.nc")
-if cache_path.exists():
-    print("Loading cached wind speed...")
-    ds_ws = xr.open_dataset(cache_path)
+ws_data_path = Path("/mnt/data2/jturner/narr/processed/narr_daytime_wnd_max.nc")
+if ws_data_path.exists():
+    print("Loading wind speed data...")
+    ds_ws = xr.open_dataset(ws_data_path)
 else:
-    print("Computing wind speed and saving to cache...")
-    ds = xr.merge([ds_uwnd, ds_vwnd])
-    ds_ws = xr.Dataset(
-        {"wind_speed": np.sqrt(ds["uwnd"]**2 + ds["vwnd"]**2)},
-        coords=ds.coords,
-        attrs=ds.attrs)
-    ds_ws.to_netcdf(cache_path)
+    print("Wind speed data not found, exiting...")
+    sys.exit()
 
-#--- Cropping to American Southwest
-print("Cropping to American Southwest...")
-min_lat, max_lat, min_lon, max_lon = soil_orders._get_coords_for_region(
-    "American Southwest")
 
-lat = ds_ws["lat"]
-lon = ds_ws["lon"]
-
-mask = (
-    (lat >= min_lat) & (lat <= max_lat) &
-    (lon >= min_lon) & (lon <= max_lon)
-).compute()
-
-ds_ws = ds_ws.where(mask, drop=True)
-
-print("Cropping to land mask...")
-land_mask = xr.open_dataset("/mnt/data2/jturner/narr/land.nc")
-land_mask = land_mask.squeeze("time", drop=True)
-land_mask_bool = land_mask['land'].astype(bool)
-ds_ws = ds_ws.where(land_mask_bool)
-
-#--- Total wind field climatology
-print("Computing full-domain wind speeds...")
-all_winds = ds_ws["wind_speed"].compute().values.ravel()
-all_winds = all_winds[~np.isnan(all_winds)]
-
-# all_winds = ds_ws["wind_speed"].values.flatten()
-# all_winds = all_winds[~np.isnan(all_winds)]
-
-#--- Open dust data, create datetime column
 print("Opening dust data, creating dust dataframe... ")
-
 dust_path = "data/raw/line_dust/dust_dataset_final_20241226.txt"
 dust_df = dust.read_dust_data_into_df(dust_path)
 
@@ -89,9 +47,9 @@ dust_df["datetime"] = (
     .dt.tz_convert(None)
 )
 
-print("Temporarily filtering to 2001-2003...")
+print("Temporarily filtering dust to 2001-2002...")
 dust_df = dust_df[
-    dust_df["datetime"].dt.year.isin([2001, 2002, 2003])
+    dust_df["datetime"].dt.year.isin([2001, 2002])
 ].copy()
 
 #--- Spatial matching of wind grid (Lambert Conformal)
@@ -113,12 +71,6 @@ dust_winds = []
 for _, row in dust_df.iterrows():
     iy, ix = nearest_grid_point(lat2d, lon2d, row["latitude"], row["longitude"])
     
-    #--- Nearest-time match
-    # ws = ds_ws["wind_speed"].sel(
-    #     time=row["datetime"],
-    #     method="nearest"
-    # ).isel(y=iy, x=ix)
-    
     #--- Day-of time match 
     ws = ds_ws["wind_speed"].sel(
         time=row["datetime"].floor("D"),
@@ -130,9 +82,11 @@ for _, row in dust_df.iterrows():
 dust_winds = np.array(dust_winds)
 dust_winds = dust_winds[~np.isnan(dust_winds)]
 
-#--- Create bins for distributions
-print("Creating bins for distributions...")
+print("Computing full-domain wind speeds...")
+all_winds = ds_ws["wind_speed"].compute().values.ravel()
+all_winds = all_winds[~np.isnan(all_winds)]
 
+print("Creating bins for distributions...")
 bins = np.linspace(
     min(all_winds.min(), dust_winds.min()),
     max(all_winds.max(), dust_winds.max()),
@@ -145,10 +99,9 @@ hist_dust, _ = np.histogram(dust_winds, bins=bins)
 hist_all = hist_all / hist_all.sum()
 hist_dust = hist_dust / hist_dust.sum()
 
-#--- Create counts dataframe
 print("Creating counts dataframe...")
 bin_centers = 0.5 * (bins[:-1] + bins[1:])
-bin_labels = [f"{bins[i]:.1f}–{bins[i+1]:.1f}" for i in range(len(bins) - 1)]
+bin_labels = [f"{bins[i]:.1f}-{bins[i+1]:.1f}" for i in range(len(bins) - 1)]
 
 counts_df = pd.DataFrame(
     {
@@ -158,7 +111,6 @@ counts_df = pd.DataFrame(
     index=bin_labels
 )
 
-#--- Plot bar chart
 print("Plotting bar chart...")
 
 fig_bar, ax_bar = plt.subplots(figsize=(12, 6))
