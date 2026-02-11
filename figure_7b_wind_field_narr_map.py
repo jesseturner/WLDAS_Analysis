@@ -1,19 +1,22 @@
 import pandas as pd
 import xarray as xr
-import numpy as np
+from pathlib import Path
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
+import sys
 
 from modules_line_dust import line_dust_utils as dust
 from modules_soil_orders import soil_orders_utils as soil_orders
 
-#--- Data from NARR
-#------ Just 2001-2003 so far!
-print("Opening data from NARR...")
-
-ds_uwnd = xr.open_mfdataset("/mnt/data2/jturner/narr/uwnd.10m.20*.nc")
-ds_vwnd = xr.open_mfdataset("/mnt/data2/jturner/narr/vwnd.10m.20*.nc")
+#--- Creating or loading wind speed data
+ws_data_path = Path("/mnt/data2/jturner/narr/processed/narr_daytime_wnd_max.nc")
+if ws_data_path.exists():
+    print("Loading wind speed data...")
+    ds_ws = xr.open_dataset(ws_data_path)
+else:
+    print("Wind speed data not found, exiting...")
+    sys.exit()
 
 #--- Open dust data, create datetime column
 print("Opening dust data, creating dust dataframe... ")
@@ -49,7 +52,7 @@ dust_df["datetime"] = (
 #--- Temporary time filter to 2001-2003
 print("Temporarily filtering to 2001 only...")
 dust_df = dust_df[
-    dust_df["datetime"].dt.year.isin([2001, 2002, 2003])
+    dust_df["datetime"].dt.year.isin([2001])
 ].copy()
 
 #--- Find datetime with most dust reports
@@ -63,39 +66,20 @@ dust_counts = (
 )
 
 #--- Set the target date from the list of most dust events
-target_time = dust_counts.index[5]
-print(f"Selected datetime: {target_time} ({dust_counts.iloc[0]} dust points)")
+rank_dust_event = 0
+target_time = dust_counts.index[rank_dust_event]
+print(f"Plotting dust event ranked: {rank_dust_event}")
+print(f"Selected datetime: {target_time} ({dust_counts.iloc[rank_dust_event]} dust points)")
 
 dust_t = dust_df[dust_df["datetime"] == target_time]
 
 #--- Select wind at target time
-#------ Getting day of instead of nearest
-uwnd_t = ds_uwnd["uwnd"].sel(time=target_time.floor("D")) 
-vwnd_t = ds_vwnd["vwnd"].sel(time=target_time.floor("D"))
-print(f"Using NARR time of {vwnd_t.time.values}...")
+#------ Getting day of with "floor", then going to 12 UTC because "daytime winds" uses that time for whole day
+ws_t = ds_ws["wind_speed"].sel(time=target_time.floor("D") + pd.Timedelta(hours=12)) 
+print(f"Using NARR time of {ws_t.time.values}...")
 
-wind_speed_t = np.sqrt(uwnd_t**2 + vwnd_t**2)
-
-#--- Crop to American Southwest
-
-lat = ds_uwnd["lat"]
-lon = ds_uwnd["lon"]
-
-min_lat, max_lat, min_lon, max_lon = soil_orders._get_coords_for_region(
-    "American Southwest")
-
-mask = (
-    (lat >= min_lat) & (lat <= max_lat) &
-    (lon >= min_lon) & (lon <= max_lon)
-).compute()
-
-uwnd_t = uwnd_t.where(mask, drop=True)
-vwnd_t = vwnd_t.where(mask, drop=True)
-wind_speed_t = wind_speed_t.where(mask, drop=True)
-
-lat2d = uwnd_t["lat"].values
-lon2d = uwnd_t["lon"].values
-
+lat2d = ws_t["lat"].values
+lon2d = ws_t["lon"].values
 
 #--- Plotting map
 print("Plotting wind field and dust points...")
@@ -108,22 +92,14 @@ proj = ccrs.LambertConformal(
 fig = plt.figure(figsize=(12, 10))
 ax = plt.axes(projection=proj)
 
-# --- Map extent (lon/lat)
-ax.set_extent(
-    [min_lon, max_lon, min_lat, max_lat],
-    crs=ccrs.PlateCarree()
-)
-
-# --- Background features
 ax.add_feature(cfeature.STATES, linewidth=0.8)
 ax.add_feature(cfeature.BORDERS, linewidth=0.8)
 ax.coastlines(resolution="50m", linewidth=0.8)
 
-# --- Wind speed shading
 pcm = ax.pcolormesh(
     lon2d,
     lat2d,
-    wind_speed_t,
+    ws_t,
     transform=ccrs.PlateCarree(),
     cmap="viridis",
     shading="auto"
@@ -132,19 +108,7 @@ pcm = ax.pcolormesh(
 cbar = plt.colorbar(pcm, ax=ax, pad=0.02)
 cbar.set_label("Wind speed (m/s)")
 
-# --- Wind vectors (thinned so it’s readable)
-skip = 5
-ax.quiver(
-    lon2d[::skip, ::skip],
-    lat2d[::skip, ::skip],
-    uwnd_t.values[::skip, ::skip],
-    vwnd_t.values[::skip, ::skip],
-    transform=ccrs.PlateCarree(),
-    scale=400,
-    width=0.002
-)
-
-# --- Dust points
+#--- Dust points
 ax.scatter(
     dust_t["longitude"],
     dust_t["latitude"],
