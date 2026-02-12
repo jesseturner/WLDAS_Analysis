@@ -11,7 +11,7 @@ from modules_soil_orders import soil_orders_utils as orders
 from modules_line_dust import line_dust_utils as dust
 
 
-usda_filepath = "data/raw/soil_types_usda/suborder2006.tif"
+usda_filepath = "data/raw/soil_types_usda/global-soil-suborders-2022.tif"
 location_name="American Southwest"
 
 dust_path = "data/raw/line_dust/dust_dataset_final_20241226.txt"
@@ -113,7 +113,7 @@ def _plot_usda_soil_types_bar(soil_da, dust_df, order_to_index, cmap):
     lats = soil_da["y"].values
     soil_values = soil_da.values
 
-    soil_order_dict = orders._get_soil_order_dict()
+    soil_order_dict = orders.get_soil_order_dict()
 
     dust_lons = dust_df["longitude"].values
     dust_lats = dust_df["latitude"].values
