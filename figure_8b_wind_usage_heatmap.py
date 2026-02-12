@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 import os
 from pyproj import CRS, Transformer
 import rasterio
+import sys
+
 
 from modules_line_dust import line_dust_utils as dust
 from modules_soil_orders import soil_orders_utils as orders
@@ -16,7 +18,10 @@ location_name = "American Southwest"
 dust_path = "data/raw/line_dust/dust_dataset_final_20241226.txt"
 dust_df = dust.read_dust_data_into_df(dust_path)
 dust_df = dust.filter_to_region(dust_df, location_name=location_name)
-
+dust_df["datetime"] = pd.to_datetime(
+    dust_df["Date (YYYYMMDD)"],
+    format="%Y%m%d"
+)
 
 print("Opening surface usage dataset...")
 cec_filepath = (
@@ -60,30 +65,13 @@ usage_vals = cec.sel(
 dust_df["usage"] = usage_vals
 
 print("Opening data from NARR...")
-cache_path = Path("/mnt/data2/jturner/narr/processed/narr_wind_speed.nc")
-if cache_path.exists():
-    print("Loading cached wind speed...")
-    ds_ws = xr.open_dataset(cache_path)
+ws_data_path = Path("/mnt/data2/jturner/narr/processed/narr_daytime_wnd_max.nc")
+if ws_data_path.exists():
+    print("Opening wind speed dataset...")
+    ds_ws = xr.open_dataset(ws_data_path)
 else:
-    print("Computing wind speed and saving to cache...")
-    ds_uwnd = xr.open_mfdataset("/mnt/data2/jturner/narr/uwnd.10m.20*.nc")
-    ds_vwnd = xr.open_mfdataset("/mnt/data2/jturner/narr/vwnd.10m.20*.nc")
-
-    ds = xr.merge([ds_uwnd, ds_vwnd])
-    ds_ws = xr.Dataset(
-        {"wind_speed": np.sqrt(ds["uwnd"]**2 + ds["vwnd"]**2)},
-        coords=ds.coords,
-        attrs=ds.attrs)
-    ds_ws.to_netcdf(cache_path)
-
-print("Temporarily filtering dust events to 2001-2003...")
-dust_df["datetime"] = pd.to_datetime(
-    dust_df["Date (YYYYMMDD)"],
-    format="%Y%m%d"
-)
-dust_df = dust_df[
-    dust_df["datetime"].dt.year.isin([2001, 2002, 2003])
-].copy()
+    print("Wind speed data not found, exiting...")
+    sys.exit()
 
 print("Spatial matching of wind grid...")
 def nearest_grid_point(lat2d, lon2d, lat, lon):
@@ -99,12 +87,6 @@ dust_winds = []
 
 for _, row in dust_df.iterrows():
     iy, ix = nearest_grid_point(lat2d, lon2d, row["latitude"], row["longitude"])
-    
-    #--- Nearest-time match
-    # ws = ds_ws["wind_speed"].sel(
-    #     time=row["datetime"],
-    #     method="nearest"
-    # ).isel(y=iy, x=ix)
     
     #--- Day-of time match 
     ws = ds_ws["wind_speed"].sel(
@@ -170,15 +152,16 @@ combo_counts["wind_bin"] = combo_counts["wind_bin"].astype(str)
 print("(total) Create grouping for heat map...")
 usage_df = cec.to_dataframe(name="usage").reset_index()
 
-ds_ws_mean = ds_ws.mean(dim="time")
-
-print("(total) Finding nearest mean wind speed to each texture...")
+print("(total) Finding nearest mean wind speed to each usage point...")
 print("--- This step is currently slow...")
 #--- Requires this method because x and y represent a curvilinear grid
 #--- Uses a loop to find the nearest lat lon coords to each texture point
 ds_ws_mean = ds_ws.mean(dim="time")
 lat = ds_ws_mean.lat.values
 lon = ds_ws_mean.lon.values
+
+print("(total) Currently sampling from usage to run faster...")
+usage_df = usage_df.sample(n=3000, random_state=33)
 
 def nearest_xy(lat0, lon0):
     dist = (lat - lat0)**2 + (lon - lon0)**2
@@ -209,8 +192,14 @@ combo_counts_total = (
 combo_counts_total["usage_name"] = combo_counts_total["usage"].map(land_cover_dict)
 combo_counts_total["wind_bin"] = combo_counts_total["wind_bin"].astype(str)
 
-print("Plotting heat map...")
-def plot_wind_usage_matrix(df, ax, usage, winds, title):
+usage_ref = sorted(combo_counts["usage_name"].dropna().unique())
+usage_ref = [t for t in usage_ref if t != 'Other'] + ['Other'] # move 'Other' to end
+winds_ref = [w for w in wind_labels
+             if w in combo_counts["wind_bin"].values]
+
+print("Plotting difference heat map...")
+
+def compute_wind_usage_matrix(df, usage, winds):
     matrix = df.pivot_table(
         index="wind_bin",
         columns="usage_name",
@@ -229,35 +218,44 @@ def plot_wind_usage_matrix(df, ax, usage, winds, title):
     matrix = matrix / total
     matrix = matrix.T
 
-    vmax = np.max(matrix.values)
+    return matrix
+
+
+def plot_difference_matrix(df1, df2, ax, usage, winds, title):
+
+    m1 = compute_wind_usage_matrix(df1, usage, winds)
+    m2 = compute_wind_usage_matrix(df2, usage, winds)
+
+    diff = m1 - m2
+
+    vmax = np.max(np.abs(diff.values))
 
     im = ax.imshow(
-        matrix.values,
-        vmin=0,
+        diff.values,
+        vmin=-vmax,
         vmax=vmax,
-        cmap="binary",
+        cmap="seismic",  # diverging colormap
         aspect="auto"
     )
 
     ax.set_xlabel("Wind speed (m/s)", size=15)
-    ax.set_xticks(np.arange(matrix.shape[1]))
-    ax.set_yticks(np.arange(matrix.shape[0]))
-    ax.set_xticklabels(matrix.columns, size=12)
-    ax.set_yticklabels(matrix.index, size=12)
+    ax.set_xticks(np.arange(diff.shape[1]))
+    ax.set_yticks(np.arange(diff.shape[0]))
+    ax.set_xticklabels(diff.columns, size=12)
+    ax.set_yticklabels(diff.index, size=12)
 
     ax.set_title(title, size=18)
 
-    # Cell labels (formatted as fraction or %)
     norm = im.norm
-    for i in range(matrix.shape[0]):
-        for j in range(matrix.shape[1]):
-            val = matrix.values[i, j]
-            if val > 0:
-                text_color = "white" if norm(val) > 0.5 else "black"
+    for i in range(diff.shape[0]):
+        for j in range(diff.shape[1]):
+            val = diff.values[i, j]
+            if val != 0:
+                text_color = "white" if (val*100) < -8 else "black"
 
                 ax.text(
                     j, i,
-                    f"{(val*100):.2f}",
+                    f"{val*100:.2f}",
                     ha="center",
                     va="center",
                     fontsize=9,
@@ -266,19 +264,23 @@ def plot_wind_usage_matrix(df, ax, usage, winds, title):
 
     return im
 
-fig, axes = plt.subplots(
-    nrows=1,
-    ncols=2,
-    figsize=(14, 6),
-    sharey=True,
-    constrained_layout=False)
+# ---- Plot ----
 
-usage_ref = sorted(combo_counts["usage_name"].dropna().unique())
-usage_ref = [t for t in usage_ref if t != 'Other'] + ['Other'] # move 'Other' to end
-winds_ref = [w for w in wind_labels
-             if w in combo_counts["wind_bin"].values]
-im1 = plot_wind_usage_matrix(combo_counts, axes[0], usage_ref, winds_ref, "Dust events")
-im2 = plot_wind_usage_matrix(combo_counts_total, axes[1], usage_ref, winds_ref, "Full domain")
+fig, ax = plt.subplots(figsize=(7, 6))
 
+im_diff = plot_difference_matrix(
+    combo_counts,
+    combo_counts_total,
+    ax,
+    usage_ref,
+    winds_ref,
+    "Likelihood of wind speed causing dust \n in surface usage domains"
+)
 
-plt.savefig(os.path.join("figures", "winds_usage_heatmap"), bbox_inches='tight', dpi=300)
+fig.colorbar(im_diff, ax=ax, label="Above-mean difference (%)")
+
+plt.savefig(
+    os.path.join("figures", "winds_usage_heatmap"),
+    bbox_inches='tight',
+    dpi=300
+)
