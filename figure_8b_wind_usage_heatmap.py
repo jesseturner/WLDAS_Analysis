@@ -161,7 +161,7 @@ lat = ds_ws_mean.lat.values
 lon = ds_ws_mean.lon.values
 
 print("(total) Currently sampling from usage to run faster...")
-usage_df = usage_df.sample(n=3000, random_state=33)
+usage_df = usage_df.sample(n=9000, random_state=33)
 
 def nearest_xy(lat0, lon0):
     dist = (lat - lat0)**2 + (lon - lon0)**2
@@ -192,12 +192,12 @@ combo_counts_total = (
 combo_counts_total["usage_name"] = combo_counts_total["usage"].map(land_cover_dict)
 combo_counts_total["wind_bin"] = combo_counts_total["wind_bin"].astype(str)
 
+print("Plotting difference heat map...")
+
 usage_ref = sorted(combo_counts["usage_name"].dropna().unique())
 usage_ref = [t for t in usage_ref if t != 'Other'] + ['Other'] # move 'Other' to end
 winds_ref = [w for w in wind_labels
              if w in combo_counts["wind_bin"].values]
-
-print("Plotting difference heat map...")
 
 def compute_wind_usage_matrix(df, usage, winds):
     matrix = df.pivot_table(
@@ -234,7 +234,7 @@ def plot_difference_matrix(df1, df2, ax, usage, winds, title):
         diff.values,
         vmin=-vmax,
         vmax=vmax,
-        cmap="seismic",  # diverging colormap
+        cmap="seismic", 
         aspect="auto"
     )
 

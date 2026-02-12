@@ -7,13 +7,17 @@ from pathlib import Path
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
+import sys
 
 print("Opening dust dataset...")
 location_name = "American Southwest"
 dust_path = "data/raw/line_dust/dust_dataset_final_20241226.txt"
 dust_df = dust.read_dust_data_into_df(dust_path)
 dust_df = dust.filter_to_region(dust_df, location_name=location_name)
-
+dust_df["datetime"] = pd.to_datetime(
+    dust_df["Date (YYYYMMDD)"],
+    format="%Y%m%d"
+)
 
 print("Opening soil texture dataset...")
 gldas_path = "data/raw/gldas_soil_texture/GLDASp5_soiltexture_025d.nc4"
@@ -32,30 +36,13 @@ texture_vals = texture_da.sel(
 dust_df["texture"] = texture_vals
 
 print("Opening data from NARR...")
-cache_path = Path("/mnt/data2/jturner/narr/processed/narr_wind_speed.nc")
-if cache_path.exists():
-    print("Loading cached wind speed...")
-    ds_ws = xr.open_dataset(cache_path)
+ws_data_path = Path("/mnt/data2/jturner/narr/processed/narr_daytime_wnd_max.nc")
+if ws_data_path.exists():
+    print("Opening wind speed dataset...")
+    ds_ws = xr.open_dataset(ws_data_path)
 else:
-    print("Computing wind speed and saving to cache...")
-    ds_uwnd = xr.open_mfdataset("/mnt/data2/jturner/narr/uwnd.10m.20*.nc")
-    ds_vwnd = xr.open_mfdataset("/mnt/data2/jturner/narr/vwnd.10m.20*.nc")
-
-    ds = xr.merge([ds_uwnd, ds_vwnd])
-    ds_ws = xr.Dataset(
-        {"wind_speed": np.sqrt(ds["uwnd"]**2 + ds["vwnd"]**2)},
-        coords=ds.coords,
-        attrs=ds.attrs)
-    ds_ws.to_netcdf(cache_path)
-
-print("Temporarily filtering dust events to 2001-2003...")
-dust_df["datetime"] = pd.to_datetime(
-    dust_df["Date (YYYYMMDD)"],
-    format="%Y%m%d"
-)
-dust_df = dust_df[
-    dust_df["datetime"].dt.year.isin([2001, 2002, 2003])
-].copy()
+    print("Wind speed data not found, exiting...")
+    sys.exit()
 
 print("Spatial matching of wind grid...")
 def nearest_grid_point(lat2d, lon2d, lat, lon):
@@ -71,12 +58,6 @@ dust_winds = []
 
 for _, row in dust_df.iterrows():
     iy, ix = nearest_grid_point(lat2d, lon2d, row["latitude"], row["longitude"])
-    
-    #--- Nearest-time match
-    # ws = ds_ws["wind_speed"].sel(
-    #     time=row["datetime"],
-    #     method="nearest"
-    # ).isel(y=iy, x=ix)
     
     #--- Day-of time match 
     ws = ds_ws["wind_speed"].sel(
@@ -160,8 +141,88 @@ combo_counts_total = (
 combo_counts_total["texture_name"] = combo_counts_total["texture"].map(texture_dict)
 combo_counts_total["wind_bin"] = combo_counts_total["wind_bin"].astype(str)
 
-print("Plotting heat map...")
-def plot_wind_texture_matrix(df, ax, textures, winds, title):
+# print("Plotting heat map...")
+# def plot_wind_texture_matrix(df, ax, textures, winds, title):
+#     matrix = df.pivot_table(
+#         index="wind_bin",
+#         columns="texture_name",
+#         values="count",
+#         aggfunc="sum",
+#         fill_value=0
+#     )
+
+#     matrix = matrix.reindex(
+#         index=winds,
+#         columns=textures,
+#         fill_value=0
+#     )
+
+#     total = matrix.values.sum()
+#     matrix = matrix / total
+#     matrix = matrix.T
+
+#     vmax = np.max(matrix.values)
+
+#     im = ax.imshow(
+#         matrix.values,
+#         vmin=0,
+#         vmax=vmax,
+#         cmap="binary",
+#         aspect="auto"
+#     )
+
+#     ax.set_xlabel("Wind speed (m/s)", size=15)
+#     ax.set_xticks(np.arange(matrix.shape[1]))
+#     ax.set_yticks(np.arange(matrix.shape[0]))
+#     ax.set_xticklabels(matrix.columns, size=12)
+#     ax.set_yticklabels(matrix.index, size=12)
+
+#     ax.set_title(title, size=18)
+
+#     # Cell labels (formatted as fraction or %)
+#     norm = im.norm
+#     for i in range(matrix.shape[0]):
+#         for j in range(matrix.shape[1]):
+#             val = matrix.values[i, j]
+#             if val > 0:
+#                 text_color = "white" if norm(val) > 0.5 else "black"
+
+#                 ax.text(
+#                     j, i,
+#                     f"{(val*100):.2f}",
+#                     ha="center",
+#                     va="center",
+#                     fontsize=9,
+#                     color=text_color
+#                 )
+
+#     return im
+
+# fig, axes = plt.subplots(
+#     nrows=1,
+#     ncols=2,
+#     figsize=(14, 6),
+#     sharey=True,
+#     constrained_layout=False)
+
+# textures_ref = sorted(combo_counts["texture_name"].dropna().unique())
+# textures_ref = [t for t in textures_ref if t != 'Other'] + ['Other'] # move 'Other' to end
+# winds_ref = [w for w in wind_labels
+#              if w in combo_counts["wind_bin"].values]
+# im1 = plot_wind_texture_matrix(combo_counts, axes[0], textures_ref, winds_ref, "Dust events")
+# im2 = plot_wind_texture_matrix(combo_counts_total, axes[1], textures_ref, winds_ref, "Full domain (average)")
+
+
+# plt.savefig(os.path.join("figures", "winds_texture_heatmap"), bbox_inches='tight', dpi=300)
+
+print("Plotting difference heat map...")
+
+texture_ref = sorted(combo_counts["texture_name"].dropna().unique())
+texture_ref = [t for t in texture_ref if t != 'Other'] + ['Other'] # move 'Other' to end
+winds_ref = [w for w in wind_labels
+             if w in combo_counts["wind_bin"].values]
+
+def compute_wind_usage_matrix(df, texture, winds):
     matrix = df.pivot_table(
         index="wind_bin",
         columns="texture_name",
@@ -172,7 +233,7 @@ def plot_wind_texture_matrix(df, ax, textures, winds, title):
 
     matrix = matrix.reindex(
         index=winds,
-        columns=textures,
+        columns=texture,
         fill_value=0
     )
 
@@ -180,35 +241,44 @@ def plot_wind_texture_matrix(df, ax, textures, winds, title):
     matrix = matrix / total
     matrix = matrix.T
 
-    vmax = np.max(matrix.values)
+    return matrix
+
+
+def plot_difference_matrix(df1, df2, ax, texture, winds, title):
+
+    m1 = compute_wind_usage_matrix(df1, texture, winds)
+    m2 = compute_wind_usage_matrix(df2, texture, winds)
+
+    diff = m1 - m2
+
+    vmax = np.max(np.abs(diff.values))
 
     im = ax.imshow(
-        matrix.values,
-        vmin=0,
+        diff.values,
+        vmin=-vmax,
         vmax=vmax,
-        cmap="binary",
+        cmap="seismic", 
         aspect="auto"
     )
 
     ax.set_xlabel("Wind speed (m/s)", size=15)
-    ax.set_xticks(np.arange(matrix.shape[1]))
-    ax.set_yticks(np.arange(matrix.shape[0]))
-    ax.set_xticklabels(matrix.columns, size=12)
-    ax.set_yticklabels(matrix.index, size=12)
+    ax.set_xticks(np.arange(diff.shape[1]))
+    ax.set_yticks(np.arange(diff.shape[0]))
+    ax.set_xticklabels(diff.columns, size=12)
+    ax.set_yticklabels(diff.index, size=12)
 
     ax.set_title(title, size=18)
 
-    # Cell labels (formatted as fraction or %)
     norm = im.norm
-    for i in range(matrix.shape[0]):
-        for j in range(matrix.shape[1]):
-            val = matrix.values[i, j]
-            if val > 0:
-                text_color = "white" if norm(val) > 0.5 else "black"
+    for i in range(diff.shape[0]):
+        for j in range(diff.shape[1]):
+            val = diff.values[i, j]
+            if val != 0:
+                text_color = "white" if (val*100) < -8 else "black"
 
                 ax.text(
                     j, i,
-                    f"{(val*100):.2f}",
+                    f"{val*100:.2f}",
                     ha="center",
                     va="center",
                     fontsize=9,
@@ -217,19 +287,23 @@ def plot_wind_texture_matrix(df, ax, textures, winds, title):
 
     return im
 
-fig, axes = plt.subplots(
-    nrows=1,
-    ncols=2,
-    figsize=(14, 6),
-    sharey=True,
-    constrained_layout=False)
+# ---- Plot ----
 
-textures_ref = sorted(combo_counts["texture_name"].dropna().unique())
-textures_ref = [t for t in textures_ref if t != 'Other'] + ['Other'] # move 'Other' to end
-winds_ref = [w for w in wind_labels
-             if w in combo_counts["wind_bin"].values]
-im1 = plot_wind_texture_matrix(combo_counts, axes[0], textures_ref, winds_ref, "Dust events")
-im2 = plot_wind_texture_matrix(combo_counts_total, axes[1], textures_ref, winds_ref, "Full domain (average)")
+fig, ax = plt.subplots(figsize=(7, 6))
 
+im_diff = plot_difference_matrix(
+    combo_counts,
+    combo_counts_total,
+    ax,
+    texture_ref,
+    winds_ref,
+    "Likelihood of wind speed causing dust \n in texture domains"
+)
 
-plt.savefig(os.path.join("figures", "winds_texture_heatmap"), bbox_inches='tight', dpi=300)
+fig.colorbar(im_diff, ax=ax, label="Above-mean difference (%)")
+
+plt.savefig(
+    os.path.join("figures", "winds_texture_heatmap"),
+    bbox_inches='tight',
+    dpi=300
+)
