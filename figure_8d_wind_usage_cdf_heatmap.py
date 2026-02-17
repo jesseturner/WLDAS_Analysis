@@ -133,7 +133,7 @@ fig, ax = plt.subplots(figsize=(9, 4))
 im = ax.imshow(
     heatmap_data.values, 
     aspect='auto', 
-    cmap='afmhot',
+    cmap='binary',
     origin='lower',
     vmax=100
 )
