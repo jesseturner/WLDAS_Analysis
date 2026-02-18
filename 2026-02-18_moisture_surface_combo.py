@@ -18,7 +18,7 @@ def main():
     wldas_path = "/mnt/data2/jturner/wldas_data"
 
     #--- Option to re-run the cached moisture datasets
-    rerun_moisture_data = False
+    rerun_moisture_data = True
 
     print("Opening dust dataset...")
     location_name = "American Southwest"
@@ -33,12 +33,13 @@ def main():
     if rerun_moisture_data:
         print("--- Rerunning WLDAS processing into xarray datasets ---")
         wldas_total = create_wldas_total(wldas_path, dust_df)
-        saving_processed_files(processed_wldas_path, wldas_total, wldas_dust)
+        saving_processed_files(processed_wldas_path, wldas_total)
         
     else:
         print(f"Loading cached wldas data from {processed_wldas_path}")
         wldas_total = xr.open_dataset(processed_wldas_path / "wldas_total.nc")
 
+    #--- This is out-of-date now that wldas_dust is not created
     # import figure_5a_moisture_bar as fig_5a
     # fig_5a.plot_bar_chart_moisture(wldas_total, wldas_dust)
 
@@ -46,6 +47,8 @@ def main():
     dust_df = add_wldas_moisture_to_dust_df(wldas_total, dust_df)
     print(dust_df)
     
+    plot_moisture_usage_cdf_heatmap(dust_df)
+
     return
 
 #------------------------
@@ -53,17 +56,33 @@ def main():
 def create_wldas_total(wldas_path, dust_df):
     print("Opening WLDAS files for each dust date...")
     
-    wldas_files = [
+    wldas_files_every_dust = [
         f"{wldas_path}/WLDAS_NOAHMP001_DA1_{d}.D10.nc.SUB.nc4"
         for d in dust_df['Date (YYYYMMDD)'].astype(str)
     ]
 
-    num_wldas_files = 20
-    print(f"Only opening first {num_wldas_files} WLDAS files...")
-    wldas_total = wldas_proc.open_wldas_files_as_xarray_ds(wldas_files[:num_wldas_files])
+    existing_files = []
+    missing_files = []
+
+    for f in wldas_files_every_dust:
+        if Path(f).exists():
+            existing_files.append(f)
+        else:
+            missing_files.append(f)
+    if missing_files:
+        print(f"WARNING: {len(missing_files)} files from dust dataframe not found in WLDAS:")
+        for f in missing_files:
+            print(f"  - {f}")
+
+    print(f"Opening {len(existing_files)}/{len(wldas_files_every_dust)} WLDAS files...")    
+    wldas_total = xr.open_mfdataset(
+        existing_files,
+        combine="by_coords",
+        drop_variables="time_bnds"
+    )
     return wldas_total
 
-def saving_processed_files(processed_wldas_path, wldas_total, wldas_dust):
+def saving_processed_files(processed_wldas_path, wldas_total):
     print("Saving processed files as NetCDFs...")
     processed_wldas_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -78,9 +97,6 @@ def saving_processed_files(processed_wldas_path, wldas_total, wldas_dust):
 
     wldas_total.to_netcdf(processed_wldas_path / "wldas_total_18.nc")
     print(f"Saved wldas_total → {processed_wldas_path}")
-
-    wldas_dust.to_netcdf(processed_wldas_path / "wldas_dust_18.nc")
-    print(f"Saved wldas_dust → {processed_wldas_path}")
 
     return
 
@@ -149,7 +165,7 @@ def add_wldas_moisture_to_dust_df(wldas_total, dust_df):
                 lat=row['latitude'],
                 lon=row['longitude'],
                 method="nearest"
-            )['SoilMoi00_10cm_tavg'].values
+            )['SoilMoi00_10cm_tavg'].values.item()
 
             dust_df.at[idx, 'moisture'] = wldas_point
 
@@ -162,7 +178,81 @@ def add_wldas_moisture_to_dust_df(wldas_total, dust_df):
 
     return dust_df
 
+def plot_moisture_usage_cdf_heatmap(dust_df):
+    print("Building and plotting the cumulative distribution function...")
+    #freq of dust = blowing per domain / domain count 
+    dust_df = dust_df.sort_values(['usage', 'moisture'])
+    dust_df['cum_pct'] = dust_df.groupby('usage').cumcount() + 1
+    dust_df['cum_pct'] = dust_df['cum_pct'] / dust_df.groupby('usage')['cum_pct'].transform('max') * 100
 
+    moist_bins = np.linspace(0, 0.5, 11)
+
+    dust_df.loc[dust_df['moisture'].notna(), 'moisture_bin'] = pd.cut(
+        dust_df.loc[dust_df['moisture'].notna(), 'moisture'], 
+        bins=moist_bins, 
+        right=False
+    )
+    # dust_df['moist_bin'] = pd.cut(
+    #     dust_df['moisture'],
+    #     bins=moist_bins,
+    #     right=False
+    # )
+    print(dust_df)
+
+    heatmap_data = dust_df.pivot_table(
+        index='usage',
+        columns='moisture_bin',
+        values='cum_pct',
+        aggfunc='mean',
+        fill_value=0, 
+        observed=False  
+    )
+
+    land_cover_dict = {
+        1: "Temp/Sub-polar Needleleaf Forest",
+        2: "Sub-polar Taiga Needleleaf Forest",
+        3: "Tropical Broadleaf Evergreen Forest",
+        4: "Tropical Broadleaf Deciduous Forest",
+        5: "Temp/Sub-polar Broadleaf Deciduous Forest",
+        6: "Mixed Forest",
+        7: "Tropical/Sub-tropical Shrubland",
+        8: "Temp/Sub-polar Shrubland",
+        9: "Tropical/Sub-tropical Grassland",
+        10: "Temp/Sub-polar Grassland",
+        11: "Sub-polar Shrub-Lichen-Moss",
+        12: "Sub-polar Grass-Lichen-Moss",
+        13: "Sub-polar Barren-Lichen-Moss",
+        14: "Wetland",
+        15: "Cropland",
+        16: "Barren Lands",
+        17: "Urban and Built-up",
+        18: "Water",
+        19: "Snow and Ice",
+    }
+
+    fig, ax = plt.subplots(figsize=(9, 4))
+
+    im = ax.imshow(
+        heatmap_data.values, 
+        aspect='auto', 
+        cmap='binary',
+        origin='lower',
+        vmax=100
+    )
+
+    ax.set_yticks(np.arange(heatmap_data.shape[0]))
+    ax.set_yticklabels([land_cover_dict[u] for u in heatmap_data.index])
+
+    ax.set_xlabel('Moisture (m3/m3)', size=15)
+    ax.set_title('Dust events by surface moisture and \n land usage category', size=18)
+
+    cbar = fig.colorbar(im, ax=ax)
+    cbar.set_label('Cumulative Percentage', size=15)
+    cbar.ax.tick_params(labelsize=12)
+
+    plt.tight_layout()
+    plt.savefig(os.path.join("figures", "moisture_usage_cdf_heatmap.png"), bbox_inches='tight', dpi=300)
+    plt.close(fig)
 
 #------------------
 
