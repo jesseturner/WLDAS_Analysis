@@ -1,4 +1,3 @@
-from modules_soil_moisture import utils_processing as wldas_proc
 from modules_line_dust import line_dust_utils as dust
 from modules_soil_orders import soil_orders_utils as orders
 
@@ -18,7 +17,7 @@ def main():
     wldas_path = "/mnt/data2/jturner/wldas_data"
 
     #--- Option to re-run the cached moisture datasets
-    rerun_moisture_data = True
+    rerun_moisture_data = False
 
     print("Opening dust dataset...")
     location_name = "American Southwest"
