@@ -122,20 +122,25 @@ def main():
 
     print("---DATAFRAME COMPLETE---")
 
-    #dust_df_sorted, selected_list, colors, save_name = usage_info_for_cdf(dust_df)
-    dust_df_sorted, selected_list, colors, save_name = soil_order_info_for_cdf(dust_df)
-    plot_cdf(dust_df_sorted, selected_list, colors, save_name)
+    dust_df_sorted, column_name, selected_list, colors, save_name = usage_info_for_cdf(dust_df)
+    plot_cdf(dust_df_sorted, column_name, selected_list, colors, save_name)
+
+    dust_df_sorted, column_name, selected_list, colors, save_name = soil_order_info_for_cdf(dust_df)
+    plot_cdf(dust_df_sorted, column_name, selected_list, colors, save_name)
+
+    dust_df_sorted, column_name, selected_list, colors, save_name = texture_info_for_cdf(dust_df)
+    plot_cdf(dust_df_sorted, column_name, selected_list, colors, save_name)
 
     return
 
 #------------------------
 
-def plot_cdf(dust_df_sorted, selected_list, colors, save_name):
+def plot_cdf(dust_df_sorted, column_name, selected_list, colors, save_name):
 
     fig, ax = plt.subplots(figsize=(15, 6))
 
-    for i, usage in enumerate(selected_list):
-        subset = dust_df_sorted[dust_df_sorted['usage'] == usage]
+    for i, category in enumerate(selected_list):
+        subset = dust_df_sorted[dust_df_sorted[column_name] == category]
         ax.step(subset['wind_speed'], subset['cum_pct'], where='post', 
                 label=selected_list[i],
                 color=colors[i], 
@@ -146,7 +151,7 @@ def plot_cdf(dust_df_sorted, selected_list, colors, save_name):
     ax.set_ylabel('Cumulative Percentage (%)', size=15)
     ax.set_title('Dust events by wind speed and category', size=18)
     ax.tick_params(axis='both', which='major', labelsize=15) 
-    #ax.legend(fontsize=15)
+    ax.legend(fontsize=15)
 
     plt.tight_layout()
     plt.savefig(os.path.join("figures", save_name), bbox_inches='tight', dpi=300)
@@ -155,7 +160,8 @@ def plot_cdf(dust_df_sorted, selected_list, colors, save_name):
 
 def usage_info_for_cdf(dust_df):
     print("Getting usage names and choosing which to plot...")
-    selected_usages = [7, 15, 8, 16, 10]
+    # selected_usages = [7, 15, 8, 16, 10]
+    selected_usages = ["Tropical/Sub-tropical Shrubland", "Cropland", "Temp/Sub-polar Shrubland", "Barren Lands", "Temp/Sub-polar Grassland"]
     land_cover_dict = {
         1: "Temp/Sub-polar Needleleaf Forest",
         2: "Sub-polar Taiga Needleleaf Forest",
@@ -178,23 +184,24 @@ def usage_info_for_cdf(dust_df):
         19: "Snow and Ice",
     } 
     dust_df["usage_name"] = dust_df["usage"].map(land_cover_dict)
-    dust_df_filtered = dust_df[dust_df["usage"].isin(selected_usages)]
+    dust_df_filtered = dust_df[dust_df["usage_name"].isin(selected_usages)]
     colors = [
         "#7a554f", #Tropical/Sub-tropical Shrubland
         "#e7cd24", #Cropland
         "#a28073", #Temp/Sub-polar Shrubland
         "#F60707", #Barren Lands
-        "#9db72b" #Temp/Sub-polar Grassland
+        "#9db72b", #Temp/Sub-polar Grassland
     ]
     save_name = "wind_usage_cdf.png"
+    column_name = "usage_name"
 
     print("Building and plotting the usage cumulative distribution function...")
     #freq of dust = blowing per domain / domain count 
-    dust_df_sorted = dust_df_filtered.sort_values(['usage', 'wind_speed'])
-    dust_df_sorted['cum_pct'] = dust_df_sorted.groupby('usage').cumcount() + 1
-    dust_df_sorted['cum_pct'] = dust_df_sorted['cum_pct'] / dust_df_sorted.groupby('usage')['cum_pct'].transform('max') * 100
+    dust_df_sorted = dust_df_filtered.sort_values(['usage_name', 'wind_speed'])
+    dust_df_sorted['cum_pct'] = dust_df_sorted.groupby('usage_name').cumcount() + 1
+    dust_df_sorted['cum_pct'] = dust_df_sorted['cum_pct'] / dust_df_sorted.groupby('usage_name')['cum_pct'].transform('max') * 100
 
-    return dust_df_sorted, selected_usages, colors, save_name
+    return dust_df_sorted, column_name, selected_usages, colors, save_name
 
 def soil_order_info_for_cdf(dust_df):
     print("Getting soil order names and choosing which to plot...")
@@ -211,6 +218,7 @@ def soil_order_info_for_cdf(dust_df):
         "#a8a6a4" #Shifting Sands
     ]
     save_name = "wind_order_cdf.png"
+    column_name = "soil_order_name"
     
     print("Building and plotting the order cumulative distribution function...")
     #freq of dust = blowing per domain / domain count
@@ -218,48 +226,35 @@ def soil_order_info_for_cdf(dust_df):
     dust_df_sorted['cum_pct'] = dust_df_sorted.groupby('soil_order_name').cumcount() + 1
     dust_df_sorted['cum_pct'] = dust_df_sorted['cum_pct'] / dust_df_sorted.groupby('soil_order_name')['cum_pct'].transform('max') * 100
 
-    return dust_df_sorted, selected_soil_orders, colors, save_name
+    return dust_df_sorted, column_name, selected_soil_orders, colors, save_name
 
-# print("Building and plotting the order cumulative distribution function...")
-# #freq of dust = blowing per domain / domain count 
-# dust_df_sorted = dust_df_filtered.sort_values(['soil_order_name', 'wind_speed'])
-# dust_df_sorted['cum_pct'] = dust_df_sorted.groupby('soil_order_name').cumcount() + 1
-# dust_df_sorted['cum_pct'] = dust_df_sorted['cum_pct'] / dust_df_sorted.groupby('soil_order_name')['cum_pct'].transform('max') * 100
+def texture_info_for_cdf(dust_df):
+    print("Getting texture names and choosing which to plot...")
+    texture_dict = gldas.get_texture_dict()
+    dust_df["texture_name"] = dust_df["texture"].map(texture_dict)
+    selected_texture_orders = ['Sand', 'Sandy Loam', 'Loam', 'Sandy Clay Loam', 'Silty Clay', 'Clay']
+    dust_df_filtered = dust_df[dust_df["texture_name"].isin(selected_texture_orders)]
 
-# fig, ax = plt.subplots(figsize=(15, 6))
+    colors = [
+        "#f4e7b0",  # Sand
+        "#d9c070",  # Sandy Loam
+        "#a67c52",  # Loam
+        "#b77c4d",  # Sandy Clay Loam
+        "#6e2f23",  # Silty Clay
+        "#4f1f18",  # Clay
+    ]
+    save_name = "wind_texture_cdf.png"
+    column_name = "texture_name"
+    
+    print("Building and plotting the order cumulative distribution function...")
+    #freq of dust = blowing per domain / domain count
+    dust_df_sorted = dust_df_filtered.sort_values(['texture_name', 'wind_speed'])
+    dust_df_sorted['cum_pct'] = dust_df_sorted.groupby('texture_name').cumcount() + 1
+    dust_df_sorted['cum_pct'] = dust_df_sorted['cum_pct'] / dust_df_sorted.groupby('texture_name')['cum_pct'].transform('max') * 100
 
-# colors = [
-#     "#f1af4c", #Aridisols
-#     "#dc5908", #Entisols
-#     "#046a2b", #Mollisols
-#     "#06dd0a", #Alfisols
-#     "#a8a6a4" #Shifting Sands
-# ]
-
-# for i, order in enumerate(selected_soil_orders):
-#     subset = dust_df_sorted[dust_df_sorted['soil_order_name'] == order]
-#     ax.step(subset['wind_speed'], subset['cum_pct'], where='post', 
-#             label=order,
-#             color=colors[i], 
-#             linewidth=3)
-
-# ax.set_xlim(0, 20)
-# ax.set_xlabel('Wind Speed (m/s)', size=15)
-# ax.set_ylabel('Cumulative Percentage (%)', size=15)
-# ax.set_title('Dust events by wind speed and soil order category', size=18)
-# ax.tick_params(axis='both', which='major', labelsize=15) 
-# ax.legend(fontsize=15)
-
-# plt.tight_layout()
-# plt.savefig(os.path.join("figures", "wind_order_cdf.png"), bbox_inches='tight', dpi=300)
-# plt.close(fig)
+    return dust_df_sorted, column_name, selected_texture_orders, colors, save_name
 
 
-
-# print("Getting texture names and choosing which to plot...")
-# texture_dict = gldas.get_texture_dict()
-# dust_df["texture_name"] = dust_df["texture"].map(order_dict)
-# dust_df_filtered = dust_df #--- Using all for now
 
 
 
