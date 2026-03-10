@@ -236,11 +236,11 @@ def texture_info_for_cdf(dust_df):
     dust_df_filtered = dust_df[dust_df["texture_name"].isin(selected_texture_orders)]
 
     colors = [
-        "#f4e7b0",  # Sand
+        "#EE6352",  # Sand
         "#d9c070",  # Sandy Loam
         "#a67c52",  # Loam
-        "#b77c4d",  # Sandy Clay Loam
-        "#6e2f23",  # Silty Clay
+        "#16DB93",  # Sandy Clay Loam
+        "#048BA8",  # Silty Clay
         "#4f1f18",  # Clay
     ]
     save_name = "wind_texture_cdf.png"
