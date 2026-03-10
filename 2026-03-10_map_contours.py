@@ -234,11 +234,12 @@ def plot_usda_soil_types_map(soil_da, dust_df, location_name):
         for i, name in enumerate(unique_orders)
         if i in unique_indices
     ]
+
     ax.legend(
         handles=legend_elements,
-        title="Soil Order",
-        bbox_to_anchor=(1.05, 1),
-        loc="upper left"
+        title="Soil Type",
+        loc="lower left",
+        frameon=True
     )
 
     orders._plot_save(fig, plot_dir="figures", plot_name="usda_soil_types")
@@ -320,19 +321,6 @@ def plot_land_cover_map(cec_ds, dust_df, location_name):
         add_colorbar=False,
     )
 
-    # #--- Plot dust points
-    # ax.scatter(
-    #     dust_df["longitude"],
-    #     dust_df["latitude"],
-    #     transform=ccrs.PlateCarree(),
-    #     s=12,
-    #     marker="o",
-    #     facecolors='white',
-    #     edgecolors='black',
-    #     linewidth=1, 
-    #     alpha=1,
-    #     zorder=2
-    # )
     #--- Contours around clusters    
     x = dust_df["longitude"]
     y = dust_df["latitude"]
@@ -363,11 +351,10 @@ def plot_land_cover_map(cec_ds, dust_df, location_name):
     ax.legend(
         handles=legend_handles,
         title="Land Cover Class",
-        loc="center left",
-        bbox_to_anchor=(1.02, 0.5),
-        frameon=True,
+        loc="lower left",
+        frameon=True
     )
-
+    
     plt.tight_layout()
     orders._plot_save(fig, plot_dir="figures", plot_name="cec_land_cover")
 
