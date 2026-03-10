@@ -314,6 +314,7 @@ def plot_cdf(dust_df_sorted, column_name, selected_list, colors, save_name):
     ax.tick_params(axis='both', which='major', labelsize=15) 
     ax.legend(fontsize=15)
 
+    plt.gca().invert_xaxis()
     plt.tight_layout()
     plt.savefig(os.path.join("figures", save_name), bbox_inches='tight', dpi=300)
     plt.close(fig)
