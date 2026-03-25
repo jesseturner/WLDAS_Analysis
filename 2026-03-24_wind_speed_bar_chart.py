@@ -1,12 +1,13 @@
 #--- This version uses the dust origin points across the full time domain (blowing or not) as the control
 #--- Instead of using the full spatial domain, which was used previously
-#--- Currently hitting a slowdown when loading the dataset into memory
 
 from pathlib import Path
 import xarray as xr
 import sys
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+import os
 
 from modules_line_dust import line_dust_utils as dust
 
@@ -23,19 +24,9 @@ def main():
 
     print("\n WS anytime \n", np.shape(ws_anytime))
 
-    print("Am I using dask?", type(ws_anytime.data))
-    print("Is data chunked?", ws_anytime.chunks)
+    counts_df = hist_bins_and_counts(ws_currently_blowing, ws_anytime)
 
-    # ws_anytime_coarse = ws_anytime.coarsen(
-    #     time=10,
-    #     points=10,
-    #     boundary="trim"
-    # ).mean()
-    # print("\n WS anytime (coarse) \n", np.shape(ws_anytime_coarse))
-
-    #counts_df = hist_bins_and_counts(ws_currently_blowing, ws_anytime)
-
-    #print("\n Counts dataframe \n", counts_df)
+    plot_bar_chart(counts_df)
 
     return
 
@@ -44,7 +35,8 @@ def main():
 def get_wind_speed_ds(ws_data_path):
     if ws_data_path.exists():
         print("Loading wind speed data...")
-        ds_ws = xr.open_dataset(ws_data_path)
+        #--- Chunking makes a huge difference with speed
+        ds_ws = xr.open_dataset(ws_data_path, chunks={"time": 100})
     else:
         print("Wind speed data not found, exiting...")
         sys.exit()
@@ -135,8 +127,8 @@ def match_dust_and_wind_speed_grids(wind_speed_ds, dust_df):
     return y_indices, x_indices, time_indices
 
 def hist_bins_and_counts(ws_currently_blowing, ws_anytime):
-    print("Creating bins for distributions...")
-    bins = np.linspace(ws_anytime.min(), ws_anytime.max(), 30)
+
+    bins = np.linspace(ws_anytime.min().compute().item(), ws_anytime.max().compute().item(), 30)
 
     hist_all, _ = np.histogram(ws_anytime, bins=bins)
     hist_dust, _ = np.histogram(ws_currently_blowing, bins=bins)
@@ -158,6 +150,45 @@ def hist_bins_and_counts(ws_currently_blowing, ws_anytime):
     )
 
     return counts_df
+
+def plot_bar_chart(counts_df):
+    print("Plotting bar chart...")
+
+    fig, ax_bar = plt.subplots(figsize=(12, 6))
+
+    x = np.arange(len(counts_df))
+    width = 0.35
+
+    for i, bin_label in enumerate(counts_df.index):
+        ax_bar.bar(
+            x[i] - width / 2,
+            counts_df.loc[bin_label, "Wind speed (currently blowing)"],
+            width,
+            color="tab:orange",
+            edgecolor="black",
+            linewidth=1,
+            label="Wind speed (current dust event)" if i == 0 else ""
+        )
+
+        ax_bar.bar(
+            x[i] + width / 2,
+            counts_df.loc[bin_label, "Wind speed (anytime)"],
+            width,
+            color="tab:blue",
+            alpha=0.5,
+            label="Wind speed (anytime)" if i == 0 else ""
+        )
+
+    ax_bar.set_xticks(x)
+    ax_bar.set_xticklabels(counts_df.index, rotation=45, ha="right")
+    ax_bar.set_ylabel("Fraction of total")
+    ax_bar.set_xlabel("Wind speed (m/s)")
+    ax_bar.set_title("NARR Wind Speed Distribution at Dust Origin Sites")
+
+    ax_bar.legend()
+    plt.tight_layout()
+    plt.savefig(os.path.join("figures", "wind_speed_bar_chart"), bbox_inches='tight', dpi=300)
+    plt.close(fig)
 
 #------------------------
 
