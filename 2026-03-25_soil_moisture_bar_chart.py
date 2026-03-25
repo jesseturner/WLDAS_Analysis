@@ -170,7 +170,7 @@ def hist_bins_and_counts(moist_currently_blowing, moist_anytime):
 
     print("Creating counts dataframe...")
     bin_centers = 0.5 * (bins[:-1] + bins[1:])
-    bin_labels = [f"{bins[i]:.1f}-{bins[i+1]:.1f}" for i in range(len(bins) - 1)]
+    bin_labels = [f"{bins[i]:.2f}-{bins[i+1]:.2f}" for i in range(len(bins) - 1)]
 
     counts_df = pd.DataFrame(
         {
