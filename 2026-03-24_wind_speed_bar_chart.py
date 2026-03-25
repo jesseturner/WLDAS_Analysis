@@ -190,6 +190,8 @@ def plot_bar_chart(counts_df):
     plt.savefig(os.path.join("figures", "wind_speed_bar_chart"), bbox_inches='tight', dpi=300)
     plt.close(fig)
 
+    return
+
 #------------------------
 
 if __name__ == "__main__":
