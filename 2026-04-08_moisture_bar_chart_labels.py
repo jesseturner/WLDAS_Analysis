@@ -223,9 +223,9 @@ def plot_bar_chart(counts_df, medians, counts):
 
     ax_bar.set_xticks(x)
     ax_bar.set_xticklabels(counts_df.index, rotation=45, ha="right")
-    ax_bar.set_ylabel("Fraction of total")
-    ax_bar.set_xlabel("Soil Moisture (0-10 cm) [m³/m³]")
-    ax_bar.set_title("Soil Moisture Distribution at Dust Origin Sites")
+    ax_bar.set_ylabel("Fraction of total", fontsize=18)
+    ax_bar.set_xlabel("Soil Moisture (0-10 cm) [m³/m³]", fontsize=18)
+    ax_bar.set_title("Soil Moisture Distribution at Dust Origin Sites", fontsize=24)
 
     ax_bar.legend()
     plt.tight_layout()
