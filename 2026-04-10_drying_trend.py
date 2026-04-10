@@ -155,30 +155,34 @@ def get_moisture_trends(wldas_total, dust_df):
 
 def plot_time_range(moist_time_range):
 
-    time = np.arange(moist_time_range.shape[1])
+     #--- Adjust so beginning is 30 days before
+    time = np.arange(moist_time_range.shape[1])-30
 
     plt.figure(figsize=(12, 6))
 
     #--- Remove the points that did not run fully
     moist_time_range[moist_time_range == 0] = np.nan
 
-    #--- Scaling to match the y-range of the average
-    data_min = np.nanmin(moist_time_range)
-    data_max = np.nanmax(moist_time_range)
-    range_min, range_max = 0.14, 0.165
-    data_scaled = range_min + (moist_time_range - data_min) * (range_max - range_min) / (data_max - data_min)
-    print(data_scaled)
-
-    for i in range(data_scaled.shape[0]):
-        plt.plot(time, data_scaled[i], color='grey', alpha=0.1, zorder=1)
-
+    #--- Plotting the mean and std of the series
     mean_series = np.nanmean(moist_time_range, axis=0)
-    plt.plot(time, mean_series, color='black', linewidth=9, label='Mean', zorder=9)
+    std_series = (np.nanstd(moist_time_range, axis=0)) ** 1/5
+    plt.plot(time, mean_series, color='black', linewidth=3, 
+             marker='o', markersize=9, 
+             label='Mean', zorder=9)
+    plt.fill_between(
+        time,
+        mean_series - std_series,
+        mean_series + std_series,
+        alpha=0.3, 
+        label="±1 std"
+    )
+    plt.axvline(x=0, linestyle='-', alpha=0.3, linewidth=6)
 
-    plt.xlabel('Days From Dust Event')
-    plt.ylabel('Soil Moisture (0-10 cm) [m³/m³]')
-    plt.ylim(range_min, range_max)
-    plt.title('Average soil moisture associated with each blowing dust event')
+    plt.tick_params(axis='both', labelsize=15)
+    plt.xticks(np.arange(-30, 31, 6))
+    plt.xlabel('Days From Dust Event', fontsize=15)
+    plt.ylabel('Soil Moisture (0-10 cm) [m³/m³]', fontsize=15)
+    plt.title('Average soil moisture associated with each blowing dust event', fontsize=18, pad=12)
     plt.tight_layout()
     plt.savefig(os.path.join("figures", "2_soil_moisture_1_average_trend"), bbox_inches='tight', dpi=300)
 
