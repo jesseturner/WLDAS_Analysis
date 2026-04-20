@@ -62,21 +62,6 @@ def plot_bar_chart(df_dust, df_non_dust):
             label=f"non-dust grid \n n={len(df_non_dust["moisture"]) :.2e}",
             alpha=0.5)
 
-    # plt.hist(df_dust["moisture"], bins=20, 
-    #         alpha=0.5, 
-    #         color="tab:orange",
-    #         edgecolor="black",
-    #         linewidth=1,
-    #         label="dust events", 
-    #         density=True)
-    
-    # plt.hist(df_non_dust["moisture"], bins=20, 
-    #     alpha=0.5, 
-    #     color="tab:blue",
-    #     label="non-dust grid",
-    #     density=True)
-
-    # ax_bar.set_xticklabels(counts_df.index, rotation=45, ha="right")
     medians = get_medians(df_dust, df_non_dust)
     add_medians_to_plot(ax_bar, medians)
     ax_bar.set_ylabel("Fraction of total", fontsize=18)
