@@ -8,7 +8,7 @@ import numpy as np
 
 def main():
     dust_path = "data/processed/dust_and_non_dust/dust.csv"
-    non_dust_path = "data/processed/dust_and_non_dust/non_dust.csv"
+    non_dust_path = "data/processed/dust_and_non_dust/non_dust_at_sites.csv"
 
     df_dust = pd.read_csv(dust_path)
     df_non_dust = pd.read_csv(non_dust_path)
