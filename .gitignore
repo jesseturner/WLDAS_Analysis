@@ -1,5 +1,7 @@
 data/raw/*
 data/processed/*
+DATA/raw/*
+DATA/processed/*
 
 *.nc
 __pycache__
