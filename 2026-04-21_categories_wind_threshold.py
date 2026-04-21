@@ -26,14 +26,15 @@ def main():
 
     #--- create non-dust dataframe
     non_dust_df = create_non_dust_grid(dust_df)
-    non_dust_df_sample = non_dust_df.sample(n=1_000, random_state=9)
+    non_dust_df_sample = non_dust_df.sample(n=30_000, random_state=9)
     non_dust_df_sample = add_winds_to_dust_df(processed_wind_path, non_dust_df_sample)
     non_dust_df_sample = add_static_data(non_dust_df_sample, location_name)
 
-    print(dust_df)
-    print(non_dust_df_sample)
+    #--- filtering to winds >= 10 m/s
+    dust_df_filtered = dust_df[dust_df["wind_speed"] >= 10]
+    non_dust_df_filtered = non_dust_df_sample[non_dust_df_sample["wind_speed"] >= 10]
 
-    plot_bar_soil_texture(dust_df, non_dust_df_sample)
+    plot_bar_soil_texture(dust_df_filtered, non_dust_df_filtered)
 
 
 #------------------------
@@ -308,9 +309,9 @@ def plot_bar_soil_texture(dust_df, non_dust_df):
     # Labels and ticks
     ax.set_xticks(x)
     ax.set_xticklabels(labels, rotation=45, ha="right")
-    ax.set_ylabel("Fraction of observations")
-    ax.set_xlabel("Soil Texture")
-    ax.set_title(f"Soil Texture Frequency in American Southwest: Dust ")
+    ax.set_ylabel("Fraction of observations", fontsize=18)
+    ax.set_xlabel("Soil Texture", fontsize=18)
+    ax.set_title(f"Soil Texture Frequency in American Southwest: Dust Points vs Full Domain \n (Wind Speeds >= 10 m/s)", fontsize=24)
 
     # Legend
     legend_elements = [
