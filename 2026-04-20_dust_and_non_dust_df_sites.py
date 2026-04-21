@@ -1,5 +1,6 @@
 #--- This figure compares moisture values associated for dust and for non-dust, 
 #--- using only where wind speeds are >= 10 m/s
+#--- BIG ISSUE: WLDAS data is simply very big and slows processing
 
 from pathlib import Path
 import xarray as xr
