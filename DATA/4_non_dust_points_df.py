@@ -1,4 +1,5 @@
-#--- Dust points dataframe with winds, moisture, static data (soil texture, soil order, and surface cover)
+#--- Non-blowing dust origin points dataframe 
+#--- with winds, moisture, static data
 
 from pathlib import Path
 import pandas as pd
@@ -9,24 +10,29 @@ import rioxarray as rxr
 from datetime import datetime
 
 def main():
+    #--- get dust data
     location_name = "American Southwest"
     dust_path = "data/raw/line_dust/dust_dataset_final_20241226.txt"
     dust_df = get_dust_df(dust_path)
 
+    #--- create non-blowing dataframe
+    non_dust_df = create_non_dust_df(dust_df)
+
     #--- wind data
     processed_wind_path = Path("/mnt/data2/jturner/narr/processed/narr_daytime_wnd_max.nc")
-    dust_df = add_winds_to_dust_df(processed_wind_path, dust_df)
+    non_dust_df = add_winds_to_dust_df(processed_wind_path, non_dust_df)
 
     #--- moisture data
-    processed_moisture_path = Path("DATA/processed/1_moisture_grid_dust_days_2026-02-18.nc")
-    dust_df = add_moisture_to_dust_df(processed_moisture_path, dust_df)
+    #------ only have dust days moisture right now
+    # processed_moisture_path = Path("DATA/processed/1_moisture_grid_dust_days_2026-02-18.nc")
+    # non_dust_df = add_moisture_to_dust_df(processed_moisture_path, non_dust_df)
 
     #--- category data
-    dust_df = add_static_data(dust_df, location_name)
+    non_dust_df = add_static_data(non_dust_df, location_name)
 
     #--- save dataset
     timestamp = datetime.today().strftime("%Y-%m-%d")
-    dust_df.to_csv(f"DATA/processed/1_dust_points_{timestamp}.csv", index=False)
+    non_dust_df.to_csv(f"DATA/processed/4_non_dust_points_{timestamp}.csv", index=False)
 
     return
 
@@ -73,6 +79,25 @@ def get_dust_df(dust_path):
         .dt.tz_convert(None)
     )
     return dust_df
+
+def create_non_dust_df(dust_df):
+    '''
+    Create dataframe of dust source locations when they are not actively blowing dust in 2001-2020. 
+    '''
+    print("Creating the non-dust dataframe...")
+
+    lat_lon = dust_df[["latitude", "longitude"]].drop_duplicates()
+    dates = pd.date_range(start="2001-01-01", end="2020-12-31", freq="D")
+    dust_dates = pd.to_datetime(dust_df["datetime"]).dt.normalize().unique()
+    filtered_dates = dates[~dates.isin(dust_dates)]
+    dates_df = pd.DataFrame({"date": filtered_dates})
+    non_dust_df = lat_lon.merge(dates_df, how="cross")
+    non_dust_df["datetime"] = pd.to_datetime(non_dust_df["date"])
+    non_dust_df = non_dust_df.drop(columns="date")
+
+    print(f"Non-dust dataframe: {np.shape(non_dust_df)}, from {len(filtered_dates)} non-dust days...")
+
+    return non_dust_df
 
 def nearest_grid_point(lat2d, lon2d, lat, lon):
     dist2 = (lat2d - lat)**2 + (lon2d - lon)**2
