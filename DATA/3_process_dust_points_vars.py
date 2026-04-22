@@ -14,11 +14,12 @@ def main():
     dust_df = get_dust_df(dust_path)
 
     #--- wind data
-    processed_wind_path = Path("/mnt/data2/jturner/narr/processed/narr_daytime_wnd_max.nc")
+    processed_wind_path = Path("DATA/processed/2_wind_grid_2026-04-22.nc")
     dust_df = add_winds_to_dust_df(processed_wind_path, dust_df)
 
     #--- moisture data
-    processed_moisture_path = Path("DATA/processed/1_moisture_grid_dust_days_2026-02-18.nc")
+    #------ ADD filter to dust days
+    processed_moisture_path = Path("DATA/processed/1_moisture_grid_2026-04-22.nc")
     dust_df = add_moisture_to_dust_df(processed_moisture_path, dust_df)
 
     #--- category data
@@ -26,7 +27,7 @@ def main():
 
     #--- save dataset
     timestamp = datetime.today().strftime("%Y-%m-%d")
-    dust_df.to_csv(f"DATA/processed/1_dust_points_{timestamp}.csv", index=False)
+    dust_df.to_csv(f"DATA/processed/3_dust_points_vars_{timestamp}.csv", index=False)
 
     return
 

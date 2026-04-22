@@ -4,6 +4,7 @@
 import xarray as xr
 import pandas as pd
 import numpy as np
+from datetime import datetime
 
 def main(): 
     print("WARNING: 20 years of data takes about 30 minutes to run.")
@@ -15,8 +16,8 @@ def main():
     ds_daytime_max = crop_to_region_and_land(ds_daytime_max)
 
     print("Saving to netcdf...")
-    processed_path = "/mnt/data2/jturner/narr/processed"
-    ds_daytime_max.to_netcdf(f"{processed_path}/narr_daytime_wnd_max.nc")
+    timestamp = datetime.today().strftime("%Y-%m-%d")
+    ds_daytime_max.to_netcdf(f"DATA/processed/2_wind_grid_{timestamp}")
 
     return
 

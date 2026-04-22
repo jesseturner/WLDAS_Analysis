@@ -14,7 +14,7 @@ def main():
     grid = create_control_grid()
 
     #--- wind data
-    processed_wind_path = Path("/mnt/data2/jturner/narr/processed/narr_daytime_wnd_max.nc")
+    processed_wind_path = Path("DATA/processed/2_wind_grid_2026-04-22.nc")
     grid = add_winds_to_dust_df(processed_wind_path, grid)
 
     #--- category data

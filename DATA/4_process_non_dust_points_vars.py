@@ -19,20 +19,20 @@ def main():
     non_dust_df = create_non_dust_df(dust_df)
 
     #--- wind data
-    processed_wind_path = Path("/mnt/data2/jturner/narr/processed/narr_daytime_wnd_max.nc")
+    processed_wind_path = Path("DATA/processed/2_wind_grid_2026-04-22.nc")
     non_dust_df = add_winds_to_dust_df(processed_wind_path, non_dust_df)
 
     #--- moisture data
-    #------ only have dust days moisture right now
-    # processed_moisture_path = Path("DATA/processed/1_moisture_grid_dust_days_2026-02-18.nc")
-    # non_dust_df = add_moisture_to_dust_df(processed_moisture_path, non_dust_df)
+    #------ ADD filter to non-dust days
+    processed_moisture_path = Path("DATA/processed/1_moisture_grid_2026-04-22.nc")
+    non_dust_df = add_moisture_to_dust_df(processed_moisture_path, non_dust_df)
 
     #--- category data
     non_dust_df = add_static_data(non_dust_df, location_name)
 
     #--- save dataset
     timestamp = datetime.today().strftime("%Y-%m-%d")
-    non_dust_df.to_csv(f"DATA/processed/4_non_dust_points_{timestamp}.csv", index=False)
+    non_dust_df.to_csv(f"DATA/processed/4_non_dust_points_vars_{timestamp}.csv", index=False)
 
     return
 
