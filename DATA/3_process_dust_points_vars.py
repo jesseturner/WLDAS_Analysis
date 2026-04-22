@@ -18,7 +18,6 @@ def main():
     dust_df = add_winds_to_dust_df(processed_wind_path, dust_df)
 
     #--- moisture data
-    #------ ADD filter to dust days
     processed_moisture_path = Path("DATA/processed/1_moisture_grid_2026-04-22.nc")
     dust_df = add_moisture_to_dust_df(processed_moisture_path, dust_df)
 
