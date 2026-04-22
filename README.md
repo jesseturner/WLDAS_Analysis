@@ -7,6 +7,3 @@ Data sources:
 * Soil moisture from WLDAS
 * Soil texture from GLDAS
 * Soil orders from WRB 2014
-
-Methods: 
-* Processing daily soil moisture files into histograms and time series
