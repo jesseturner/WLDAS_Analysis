@@ -14,16 +14,19 @@ def main():
     #--- Get moisture for date range
     wldas_path = "/mnt/data2/jturner/wldas_data"
     start_date = "20010101"
-    end_date = "20210101"
+    end_date = "20020101"
 
     #--- Combine and coarsen dataset
     moisture_dataset = create_moisture_dataset(wldas_path, start_date, end_date)
 
     #--- Save dataset
+    #------ Something is going on with chunking blowup here
+    #------ Run with nohup and dask dashboard
     timestamp = datetime.today().strftime("%Y-%m-%d")
     print("Saving processed files as NetCDF...")
     processed_wldas_path = f"DATA/processed/1_moisture_grid_{timestamp}.nc"
-    # moisture_dataset = moisture_dataset.chunk({"time": 30, "lat": 90, "lon": 90})
+    moisture_dataset = moisture_dataset.chunk({"time": 30, "lat": 90, "lon": 90})
+    print(moisture_dataset.chunks)
     moisture_dataset.to_netcdf(processed_wldas_path)
     print(f"Saved wldas set to {processed_wldas_path}")
     
