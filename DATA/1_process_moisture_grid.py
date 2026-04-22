@@ -14,7 +14,7 @@ def main():
     #--- Get moisture for date range
     wldas_path = "/mnt/data2/jturner/wldas_data"
     start_date = "20010101"
-    end_date = "20020106"
+    end_date = "20210101"
 
     #--- Combine and coarsen dataset
     moisture_dataset = create_moisture_dataset(wldas_path, start_date, end_date)
