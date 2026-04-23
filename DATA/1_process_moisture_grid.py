@@ -1,4 +1,5 @@
 #--- Creating NetCDF file with WLDAS soil moisture (coarsened) for full 2001-2020 domain
+#------ Using dask dashboard to monitor progress
 
 import xarray as xr
 from datetime import datetime
@@ -8,27 +9,24 @@ from dask.distributed import Client
 
 def main():
     start = time.time()
-    client = Client()
-    print(client.dashboard_link)
 
     #--- Get moisture for date range
     wldas_path = "/mnt/data2/jturner/wldas_data"
     start_date = "20010101"
-    end_date = "20020101"
+    end_date = "20210101"
 
-    #--- Combine and coarsen dataset
-    moisture_dataset = create_moisture_dataset(wldas_path, start_date, end_date)
+    with Client(dashboard_address="127.0.0.1:8787") as client:
+        print(client)
+        #--- Combine and coarsen dataset
+        moisture_dataset = create_moisture_dataset(wldas_path, start_date, end_date)
 
-    #--- Save dataset
-    #------ Something is going on with chunking blowup here
-    #------ Run with nohup and dask dashboard
-    timestamp = datetime.today().strftime("%Y-%m-%d")
-    print("Saving processed files as NetCDF...")
-    processed_wldas_path = f"DATA/processed/1_moisture_grid_{timestamp}.nc"
-    moisture_dataset = moisture_dataset.chunk({"time": 30, "lat": 90, "lon": 90})
-    print(moisture_dataset.chunks)
-    moisture_dataset.to_netcdf(processed_wldas_path)
-    print(f"Saved wldas set to {processed_wldas_path}")
+        #--- Save dataset
+        print("Saving processed files as NetCDF...")
+        timestamp = datetime.today().strftime("%Y-%m-%d")
+        processed_wldas_path = f"DATA/processed/1_moisture_grid_{timestamp}.nc"
+        print(moisture_dataset.chunks)
+        moisture_dataset.to_netcdf(processed_wldas_path)
+        print(f"Saved wldas set to {processed_wldas_path}")
     
     end = time.time()
     print(f"Time to process: {end - start:.2f} seconds")
@@ -53,14 +51,18 @@ def create_moisture_dataset(wldas_path, start_date, end_date):
         if start <= file_date <= end:
             selected.append(f)
 
-    sorted(selected)
+    selected = sorted(selected)
 
     print(f"Combining {len(selected)} WLDAS files...")    
     wldas_dataset = xr.open_mfdataset(
         selected,
         combine="by_coords",
-        drop_variables="time_bnds"
+        drop_variables="time_bnds",
+        chunks="auto",
     )
+
+    wldas_dataset = wldas_dataset['SoilMoi00_10cm_tavg']
+    wldas_dataset = wldas_dataset.chunk({"lon": 200, "lat": 200, "time": 100})
 
     #--- Coarsen resolution for wldas_set
     COARSEN_LAT = 24
