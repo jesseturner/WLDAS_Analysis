@@ -5,19 +5,29 @@ import xarray as xr
 import pandas as pd
 import numpy as np
 from datetime import datetime
+from dask.distributed import Client
+import time
 
 def main(): 
-    print("WARNING: 20 years of data takes about 30 minutes to run.")
+    start = time.time()
 
-    ds_ws = get_wind_speeds()
+    with Client(dashboard_address="127.0.0.1:8787") as client:
+        print(client)
 
-    ds_daytime_max = get_daytime_max_ws(ds_ws)
-    
-    ds_daytime_max = crop_to_region_and_land(ds_daytime_max)
+        ds_ws = get_wind_speeds()
 
-    print("Saving to netcdf...")
-    timestamp = datetime.today().strftime("%Y-%m-%d")
-    ds_daytime_max.to_netcdf(f"DATA/processed/2_wind_grid_{timestamp}")
+        ds_daytime_max = get_daytime_max_ws(ds_ws)
+        
+        ds_daytime_max = crop_to_region_and_land(ds_daytime_max)
+
+        print("Saving to netcdf...")
+        timestamp = datetime.today().strftime("%Y-%m-%d")
+        ds_daytime_max = ds_daytime_max.chunk({"x": 90, "y": 65, "time": 100})
+        print(ds_daytime_max.chunks)
+        ds_daytime_max.to_netcdf(f"DATA/processed/2_wind_grid_{timestamp}.nc")
+        
+    end = time.time()
+    print(f"Time to process: {end - start:.2f} seconds")
 
     return
 
@@ -25,8 +35,10 @@ def main():
 
 def get_wind_speeds():   
     print("Opening data from NARR...")
-    ds_uwnd = xr.open_mfdataset("/mnt/data2/jturner/narr/uwnd.10m.20*.nc")
-    ds_vwnd = xr.open_mfdataset("/mnt/data2/jturner/narr/vwnd.10m.20*.nc")
+    ds_uwnd = xr.open_mfdataset("/mnt/data2/jturner/narr/uwnd.10m.20*.nc",
+                                chunks="auto")
+    ds_vwnd = xr.open_mfdataset("/mnt/data2/jturner/narr/vwnd.10m.20*.nc",
+                                chunks="auto")
 
     print("Calculating wind speed...")
     wind_speed = np.sqrt(ds_uwnd.uwnd**2 + ds_vwnd.vwnd**2)
