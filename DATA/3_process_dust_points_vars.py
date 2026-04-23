@@ -10,15 +10,15 @@ from datetime import datetime
 
 def main():
     location_name = "American Southwest"
-    dust_path = "data/raw/line_dust/dust_dataset_final_20241226.txt"
+    dust_path = "DATA/raw/line_dust/dust_dataset_final_20241226.txt"
     dust_df = get_dust_df(dust_path)
 
     #--- wind data
-    processed_wind_path = Path("DATA/processed/2_wind_grid_2026-04-22.nc")
+    processed_wind_path = Path("DATA/processed/2_wind_grid_2026-04-23.nc")
     dust_df = add_winds_to_dust_df(processed_wind_path, dust_df)
 
     #--- moisture data
-    processed_moisture_path = Path("DATA/processed/1_moisture_grid_2026-04-22.nc")
+    processed_moisture_path = Path("DATA/processed/1_moisture_grid_2026-04-23.nc")
     dust_df = add_moisture_to_dust_df(processed_moisture_path, dust_df)
 
     #--- category data
@@ -211,7 +211,7 @@ def add_moisture_to_dust_df(path_moisture_grid_dust_days, dust_df):
 
 def add_static_data(dust_df, location_name):
     #--- USAGE DATA
-    cover_data_path = "data/processed/cec_land_cover/cec_land_cover_SW_epsg4326.tif"
+    cover_data_path = "DATA/processed/cec_land_cover/cec_land_cover_SW_epsg4326.tif"
     if os.path.exists(cover_data_path):
         print("Opening surface usage dataset...")
         usage = rxr.open_rasterio(cover_data_path).squeeze("band", drop=True)
@@ -232,7 +232,7 @@ def add_static_data(dust_df, location_name):
 
     #--- TEXTURE DATA
     print("Opening soil texture dataset...")
-    gldas_path = "data/raw/gldas_soil_texture/GLDASp5_soiltexture_025d.nc4"
+    gldas_path = "DATA/raw/gldas_soil_texture/GLDASp5_soiltexture_025d.nc4"
     texture_ds = open_gldas_file(gldas_path)
     texture_ds = filter_to_region(texture_ds, location_name)
     texture_da = texture_ds.GLDAS_soiltex
@@ -249,7 +249,7 @@ def add_static_data(dust_df, location_name):
 
     #--- SOIL ORDERS DATA
     print("Opening soil orders dataset...")
-    usda_filepath = "data/raw/soil_types_usda/global-soil-suborders-2022.tif"
+    usda_filepath = "DATA/raw/soil_types_usda/global-soil-suborders-2022.tif"
     location_name="American Southwest"
     min_lat, max_lat, min_lon, max_lon = _get_coords_for_region(location_name)
     soil_da = (
