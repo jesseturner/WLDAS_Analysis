@@ -5,41 +5,34 @@ import xarray as xr
 import pandas as pd
 import numpy as np
 from datetime import datetime
-from dask.distributed import Client
 import time
 from pathlib import Path
 
 def main(): 
     start = time.time()
 
-    with Client(dashboard_address="127.0.0.1:8787") as client:
-        print(client)
+    dust_path = "DATA/raw/line_dust/dust_dataset_final_20241226.txt"
+    dust_df = get_dust_df(dust_path)
 
-        location_name = "American Southwest"
-        dust_path = "DATA/raw/line_dust/dust_dataset_final_20241226.txt"
-        dust_df = get_dust_df(dust_path)
+    #--- extend to 30 days before and after
+    dfs = []
+    dust_df = dust_df.reset_index(drop=True) #--- unique IDs for each dust event
+    dust_df["dust_event_id"] = dust_df.index
+    for d in range(-30, 31):
+        temp = dust_df.copy()
+        temp["datetime"] = temp["datetime"] + pd.Timedelta(days=d)
+        dfs.append(temp)
+    df_expanded = pd.concat(dfs, ignore_index=True)
+    df_expanded = df_expanded.sort_values(by=["dust_event_id","datetime"])
+    df_expanded = df_expanded.reset_index()
 
-        #--- extend to 30 days before and after
-        dfs = []
-        for d in range(-30, 31):
-            temp = dust_df.copy()
-            temp["datetime"] = temp["datetime"] + pd.Timedelta(days=d)
-            if d == -30:
-                temp["is_start"] = "Y"
-            if d == 0:
-                temp["is_dust_event"] = "Y"
-            dfs.append(temp)
-        df_expanded = pd.concat(dfs, ignore_index=True)
-        df_expanded = df_expanded.sort_values(by="datetime")
-        df_expanded = df_expanded.reset_index()
+    #--- moisture data
+    processed_moisture_path = Path("DATA/processed/1_moisture_grid_2026-04-23.nc")
+    df_expanded = add_moisture_to_dust_df(processed_moisture_path, df_expanded)
 
-        #--- moisture data
-        processed_moisture_path = Path("DATA/processed/1_moisture_grid_2026-04-23.nc")
-        df_expanded = add_moisture_to_dust_df(processed_moisture_path, df_expanded)
-
-        #--- save dataset
-        timestamp = datetime.today().strftime("%Y-%m-%d")
-        df_expanded.to_csv(f"DATA/processed/6_time_trend_{timestamp}.csv", index=False)
+    #--- save dataset
+    timestamp = datetime.today().strftime("%Y-%m-%d")
+    df_expanded.to_csv(f"DATA/processed/6_time_trend_{timestamp}.csv", index=False)
         
     end = time.time()
     print(f"Time to process: {end - start:.2f} seconds")
@@ -93,8 +86,7 @@ def get_dust_df(dust_path):
 def add_moisture_to_dust_df(path_moisture_grid_dust_days, dust_df):
 
     print(f"Loading cached wldas data from {path_moisture_grid_dust_days}")
-        #--- Seems to have some good default chunking scheme, 
-        #--- gives me a warning when I try to implement my own
+
     moisture_dust_days = xr.open_dataset(path_moisture_grid_dust_days)
 
     print("Adding WLDAS moisture to dust dataframe...")
