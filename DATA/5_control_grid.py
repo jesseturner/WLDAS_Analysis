@@ -1,131 +1,110 @@
-#--- Dataframe of full domain grid in 2001-2020
-#--- May be better as a NetCDF file (with xarray)
+#--- Dataset of full domain grid in 2001-2020
+#--- Based on moisture dataset, due to it being the largest/slowest
 
-from pathlib import Path
-import numpy as np
-import pandas as pd
 from datetime import datetime
 import xarray as xr
-import sys, os
+import os
 import rioxarray as rxr
+import xesmf as xe  
 
 def main():
 
-    grid = create_control_grid()
+    #--- moisture data
+    moisture_grid = xr.open_dataset("DATA/processed/1_moisture_grid_2026-04-23.nc")
 
-    #--- wind data
-    processed_wind_path = Path("DATA/processed/2_wind_grid_2026-04-22.nc")
-    grid = add_winds_to_dust_df(processed_wind_path, grid)
-
-    #--- category data
-    grid = add_static_data(grid, location_name="American Southwest")
+    wind_grid = xr.open_dataset("DATA/processed/2_wind_grid_2026-04-23.nc")
+    moisture_grid = merge_wind_onto_moisture(moisture_grid, wind_grid)
+    moisture_grid = merge_usage_onto_moisture(moisture_grid)
+    moisture_grid = merge_texture_onto_moisture(moisture_grid)
+    moisture_grid = merge_orders_onto_moisture(moisture_grid)
 
     #--- save dataset
     timestamp = datetime.today().strftime("%Y-%m-%d")
-    grid.to_csv(f"DATA/processed/5_control_grid_{timestamp}.csv", index=False)
+    processed_wldas_path = f"DATA/processed/5_control_grid_{timestamp}.nc"
+    moisture_grid.to_netcdf(processed_wldas_path)
+    print(f"Saved wldas set to {processed_wldas_path}")
 
     return
 
 #------------------------
 
-def create_control_grid():
+def merge_wind_onto_moisture(moisture_grid, wind_grid):
+    print("Merging winds onto moisture grid...")
+    target_grid = xr.Dataset(
+        {
+            "lat": (["lat"], moisture_grid.lat.values),
+            "lon": (["lon"], moisture_grid.lon.values),
+        }
+    )
+    source_grid = xr.Dataset(
+        {
+            "lat": (["y", "x"], wind_grid.lat.values),
+            "lon": (["y", "x"], wind_grid.lon.values),
+        }
+        )
+    regridder = xe.Regridder(
+        source_grid,
+        target_grid,
+        method="bilinear",
+        periodic=False
+    )
 
-    #--- Creating standard cube
-    lats = np.arange(28, 46, 3)
-    lons = np.arange(-128, -98, 3)
-    dates = pd.date_range("2001-01-01 18:00:00", 
-                      "2020-12-31 18:00:00", 
-                      freq="D")
-    grid = pd.MultiIndex.from_product(
-        [dates, lats, lons],
-        names=["datetime", "latitude", "longitude"]
-    ).to_frame(index=False)
+    wind_regridded = regridder(wind_grid["wind_speed"])
+    wind_regridded["time"] = wind_regridded.indexes["time"].normalize()
 
-    print(f"Standard grid created of shape ({len(lons)},{len(lats)},{len(dates)})...")
+    merged_grid = xr.merge([
+        moisture_grid,
+        wind_regridded.to_dataset(name="wind_speed")
+    ])
 
-    #--- Add datetime, set to 1800 UTC
-    # grid["datetime"] = pd.to_datetime(grid["date"]) + pd.Timedelta(hours=18)
+    return merged_grid
 
-    return grid
-
-def nearest_grid_point(lat2d, lon2d, lat, lon):
-    dist2 = (lat2d - lat)**2 + (lon2d - lon)**2
-    iy, ix = np.unravel_index(np.argmin(dist2), dist2.shape)
-    return iy, ix
-
-def add_winds_to_dust_df(processed_wind_path, dust_df):
-
-    if processed_wind_path.exists():
-        print("Opening wind speed dataset...")
-        ds_ws = xr.open_dataset(processed_wind_path)
-    else:
-        print("Wind speed data not found, exiting...")
-        sys.exit()
-    
-    print("For each dust event, getting the wind speed...")
-
-    lat2d = ds_ws["lat"].values
-    lon2d = ds_ws["lon"].values
-
-    dust_winds = []
-    for _, row in dust_df.iterrows():
-        iy, ix = nearest_grid_point(lat2d, lon2d, row["latitude"], row["longitude"])
-        
-        #--- Day-of time match 
-        ws = ds_ws["wind_speed"].sel(
-            time=row["datetime"].floor("D"),
-            method="nearest"
-        ).isel(y=iy, x=ix)
-        
-        dust_winds.append(ws.compute().item())
-
-    dust_winds = np.array(dust_winds)
-    dust_df["wind_speed"] = dust_winds
-    dust_df = dust_df.dropna(subset=["wind_speed"])
-
-    return dust_df
-
-def add_static_data(dust_df, location_name):
-    #--- USAGE DATA
-    cover_data_path = "data/processed/cec_land_cover/cec_land_cover_SW_epsg4326.tif"
+def merge_usage_onto_moisture(moisture_grid):
+    print("Merging usage onto moisture grid...")
+    cover_data_path = "DATA/processed/cec_land_cover/cec_land_cover_SW_epsg4326.tif"
     if os.path.exists(cover_data_path):
         print("Opening surface usage dataset...")
         usage = rxr.open_rasterio(cover_data_path).squeeze("band", drop=True)
     else:
         print("Land cover data not found, exiting...")
-        
-    print("For each dust event, getting the usage...")
-    dust_lats = xr.DataArray(dust_df["latitude"].values, dims="points")
-    dust_lons = xr.DataArray(dust_df["longitude"].values, dims="points")
 
-    usage_vals = usage.sel(
-        x=dust_lons,
-        y=dust_lats,
+    usage = usage.rename({
+        "y": "lat",
+        "x": "lon"
+    })
+
+    usage_interp = usage.interp(
+        lat=moisture_grid.lat,
+        lon=moisture_grid.lon,
         method="nearest"
-    ).values.squeeze().astype(int) 
+    )
 
-    dust_df["usage"] = usage_vals
+    moisture_grid["usage"] = usage_interp
 
-    #--- TEXTURE DATA
-    print("Opening soil texture dataset...")
-    gldas_path = "data/raw/gldas_soil_texture/GLDASp5_soiltexture_025d.nc4"
+    return moisture_grid
+
+def merge_texture_onto_moisture(moisture_grid):
+    print("Merging texture onto moisture grid...")
+    gldas_path = "DATA/raw/gldas_soil_texture/GLDASp5_soiltexture_025d.nc4"
     texture_ds = open_gldas_file(gldas_path)
-    texture_ds = filter_to_region(texture_ds, location_name)
+    texture_ds = filter_to_region(texture_ds, location_name="American Southwest")
+
     texture_da = texture_ds.GLDAS_soiltex
+    texture_da = texture_da.squeeze("time", drop=True)
 
-    print("Add texture values to dust dataframe...")
-    dust_lats = xr.DataArray(dust_df["latitude"].values, dims="points")
-    dust_lons = xr.DataArray(dust_df["longitude"].values, dims="points")
-    texture_vals = texture_da.sel(
-        lon=dust_lons,
-        lat=dust_lats,
+    texture_da_interp = texture_da.interp(
+        lat=moisture_grid.lat,
+        lon=moisture_grid.lon,
         method="nearest"
-    ).values.squeeze().astype(int) 
-    dust_df["texture"] = texture_vals
+    )
 
-    #--- SOIL ORDERS DATA
-    print("Opening soil orders dataset...")
-    usda_filepath = "data/raw/soil_types_usda/global-soil-suborders-2022.tif"
+    moisture_grid["soil_texture"] = texture_da_interp
+
+    return moisture_grid
+
+def merge_orders_onto_moisture(moisture_grid):
+    print("Merging soil order onto moisture grid...")
+    usda_filepath = "DATA/raw/soil_types_usda/global-soil-suborders-2022.tif"
     location_name="American Southwest"
     min_lat, max_lat, min_lon, max_lon = _get_coords_for_region(location_name)
     soil_da = (
@@ -139,17 +118,25 @@ def add_static_data(dust_df, location_name):
         )
     )
 
-    print("Add soil order values to dust dataframe...")
-    dust_lats = xr.DataArray(dust_df["latitude"].values, dims="points")
-    dust_lons = xr.DataArray(dust_df["longitude"].values, dims="points")
-    soil_vals = soil_da.sel(
-        x=dust_lons,
-        y=dust_lats,
+    soil_da = soil_da.rename({
+        "y": "lat",
+        "x": "lon"
+    })
+    soil_da = soil_da.sortby("lat")
+    soil_da_interp = soil_da.interp(
+        lat=moisture_grid.lat,
+        lon=moisture_grid.lon,
         method="nearest"
-    ).values.squeeze().astype(int) 
-    dust_df["soil_order"] = soil_vals
+    )
 
-    return dust_df
+    soil_da_interp = soil_da_interp.where(soil_da_interp != 255)
+    moisture_grid["soil_order"] = soil_da_interp
+
+    return moisture_grid
+
+def open_gldas_file(gldas_path):
+    ds = xr.open_dataset(gldas_path)
+    return ds
 
 def _get_coords_for_region(location_name):
     """
@@ -192,10 +179,6 @@ def _get_coords_for_region(location_name):
     lon_min, lon_max = min(lons), max(lons)
 
     return lat_min, lat_max, lon_min, lon_max
-
-def open_gldas_file(gldas_path):
-    ds = xr.open_dataset(gldas_path)
-    return ds
 
 def filter_to_region(ds, location_name):
 
