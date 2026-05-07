@@ -20,7 +20,7 @@ def main():
 
     #--- save dataset
     timestamp = datetime.today().strftime("%Y-%m-%d")
-    processed_wldas_path = f"DATA/processed/5_control_grid_{timestamp}.nc"
+    processed_wldas_path = f"DATA/processed/4_control_grid_{timestamp}.nc"
     moisture_grid.to_netcdf(processed_wldas_path)
     print(f"Saved wldas set to {processed_wldas_path}")
 
