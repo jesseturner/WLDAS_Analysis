@@ -10,8 +10,9 @@ from datetime import datetime
 
 def main():
     location_name = "American Southwest"
-    dust_path = "DATA/raw/line_dust/dust_dataset_final_20241226.txt"
+    dust_path = "DATA/raw/line_dust/Line_GOES-Dust_Date-LatLon-UTC_2001-2020_Sep2025.csv"
     dust_df = get_dust_df(dust_path)
+    print(dust_df)
 
     #--- wind data
     processed_wind_path = Path("DATA/processed/2_wind_grid_2026-04-23.nc")
@@ -32,31 +33,19 @@ def main():
 
 #------------------------
 
-def read_dust_data_into_df(dust_path):
-    
-    dust_df = pd.read_csv(dust_path, sep=r'\s+', skiprows=2, header=None)
-    dust_df.columns = ['Date (YYYYMMDD)', 'start time (UTC)', 'latitude', 'longitude', 'Jesse check']
-
-    #--- Clean lat/lon data
-    dust_df['latitude'] = pd.to_numeric(dust_df['latitude'], errors='coerce')
-    dust_df['longitude'] = pd.to_numeric(dust_df['longitude'], errors='coerce')
-    dust_df = dust_df.dropna(subset=['latitude', 'longitude'])
-
-    return dust_df
-
 def get_dust_df(dust_path):
     print("Opening dust data, creating dust dataframe... ")
-    dust_df = read_dust_data_into_df(dust_path)
+    dust_df = pd.read_csv(dust_path)
 
     dust_df["time_str"] = (
-        dust_df["start time (UTC)"]
+        dust_df["start_time_utc"]
         .astype("Int64")        # allows NaNs safely
         .astype(str)
         .str.zfill(4)
     )
 
     dust_df["datetime"] = pd.to_datetime(
-        dust_df["Date (YYYYMMDD)"].astype(str) + dust_df["time_str"],
+        dust_df["date"].astype(str) + dust_df["time_str"],
         format="%Y%m%d%H%M",
         utc=True,
         errors="coerce"
