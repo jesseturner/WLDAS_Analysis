@@ -11,7 +11,7 @@ import numpy as np
 
 def main():
 
-    moisture_grid = xr.open_dataset("DATA/processed/1_moisture_grid_2026-04-23.nc")
+    moisture_grid = xr.open_dataset("DATA/processed/1_moisture_grid_2026-05-15.nc")
     wind_grid = xr.open_dataset("DATA/processed/2_wind_grid_2026-04-23.nc")
 
     moisture_grid = merge_wind_onto_moisture(moisture_grid, wind_grid)
