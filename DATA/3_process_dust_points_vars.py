@@ -12,11 +12,11 @@ def main():
     location_name = "American Southwest"
     dust_path = "DATA/raw/line_dust/Line_GOES-Dust_Date-LatLon-UTC_2001-2020_Sep2025.csv"
     dust_df = get_dust_df(dust_path)
-    print(dust_df)
 
     #--- wind data
     processed_wind_path = Path("DATA/processed/2_wind_grid_2026-04-23.nc")
     dust_df = add_winds_to_dust_df(processed_wind_path, dust_df)
+    print(f"THIS SHOULD BE 3492: {len(dust_df)}")
 
     #--- moisture data
     processed_moisture_path = Path("DATA/processed/1_moisture_grid_2026-04-23.nc")
@@ -96,7 +96,6 @@ def add_winds_to_dust_df(processed_wind_path, dust_df):
 
     dust_winds = np.array(dust_winds)
     dust_df["wind_speed"] = dust_winds
-    dust_df = dust_df.dropna(subset=["wind_speed"])
 
     return dust_df
 
