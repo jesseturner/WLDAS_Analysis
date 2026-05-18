@@ -45,24 +45,7 @@ def _get_coords_for_region(location_name):
     return lat_min, lat_max, lon_min, lon_max
 
 def get_texture_map_features():
-    texture_dict = {
-            1: "Sand",
-            2: "Loamy Sand",
-            3: "Sandy Loam",
-            4: "Silt Loam",
-            5: "Silt",
-            6: "Loam",
-            7: "Sandy Clay Loam",
-            8: "Silty Clay Loam",
-            9: "Clay Loam", 
-            10: "Sandy Clay",
-            11: "Silty Clay",
-            12: "Clay", 
-            13: "Organic Matter",
-            14: "Water", 
-            15: "Bedrock",
-            16: "Other",
-        }
+    texture_dict = get_texture_dict()
 
     texture_colors = [
         "#EE6352",  # Sand
@@ -90,29 +73,30 @@ def get_texture_map_features():
     soil_cmap = ListedColormap(texture_colors, name="soil_textures")
     return soil_cmap, texture_colors, texture_dict
 
+def get_texture_dict():
+    texture_dict = {
+            1: "Sand",
+            2: "Loamy Sand",
+            3: "Sandy Loam",
+            4: "Silt Loam",
+            5: "Silt",
+            6: "Loam",
+            7: "Sandy Clay Loam",
+            8: "Silty Clay Loam",
+            9: "Clay Loam", 
+            10: "Sandy Clay",
+            11: "Silty Clay",
+            12: "Clay", 
+            13: "Organic Matter",
+            14: "Water", 
+            15: "Bedrock",
+            16: "Other",
+        }
+    return texture_dict
+
 def get_land_cover_features():
 
-    land_cover_dict = {
-        1: "Temp/Sub-polar Needleleaf Forest",
-        2: "Sub-polar Taiga Needleleaf Forest",
-        3: "Tropical Broadleaf Evergreen Forest",
-        4: "Tropical Broadleaf Deciduous Forest",
-        5: "Temp/Sub-polar Broadleaf Deciduous Forest",
-        6: "Mixed Forest",
-        7: "Tropical/Sub-tropical Shrubland",
-        8: "Temp/Sub-polar Shrubland",
-        9: "Tropical/Sub-tropical Grassland",
-        10: "Temp/Sub-polar Grassland",
-        11: "Sub-polar Shrub–Lichen–Moss",
-        12: "Sub-polar Grass–Lichen–Moss",
-        13: "Sub-polar Barren–Lichen–Moss",
-        14: "Wetland",
-        15: "Cropland",
-        16: "Barren Lands",
-        17: "Urban and Built-up",
-        18: "Water",
-        19: "Snow and Ice",
-    }
+    land_cover_dict = get_land_cover_dict()
 
     land_cover_colors = {
         1: "#1b5e20",
@@ -159,7 +143,61 @@ def get_land_cover_features():
     
     return land_cover_dict, land_cover_colors, classes
 
+def get_land_cover_dict():
+    land_cover_dict = {
+        1: "Temp/Sub-polar Needleleaf Forest",
+        2: "Sub-polar Taiga Needleleaf Forest",
+        3: "Tropical Broadleaf Evergreen Forest",
+        4: "Tropical Broadleaf Deciduous Forest",
+        5: "Temp/Sub-polar Broadleaf Deciduous Forest",
+        6: "Mixed Forest",
+        7: "Tropical/Sub-tropical Shrubland",
+        8: "Temp/Sub-polar Shrubland",
+        9: "Tropical/Sub-tropical Grassland",
+        10: "Temp/Sub-polar Grassland",
+        11: "Sub-polar Shrub–Lichen–Moss",
+        12: "Sub-polar Grass–Lichen–Moss",
+        13: "Sub-polar Barren–Lichen–Moss",
+        14: "Wetland",
+        15: "Cropland",
+        16: "Barren Lands",
+        17: "Urban and Built-up",
+        18: "Water",
+        19: "Snow and Ice",
+    }
+    return land_cover_dict
+
 def get_soil_order_features():
+    soil_order_dict = get_soil_order_dict()
+
+    category_colors = {
+        "Alfisols": "#06dd0a",
+        "Andisols": "#f603d6", 
+        "Aridisols": "#f1af4c",
+        "Entisols": "#dc5908", 
+        "Gelisols": "#730ef8",
+        "Histosols": "#61310d", 
+        "Inceptisols": "#cada9c",
+        "Mollisols": "#046a2b",
+        "Oxisols": "#ff0e0e", 
+        "Spodosols": "#f084e0", 
+        "Ultisols": "#f9ec3a",
+        "Vertisols": "#1411f5",
+        "Rocky Land": "#6b6969", 
+        "Salt flats": "#e0e0e0", 
+        "Shifting Sands": "#a8a6a4",
+        "Water": "#a3d2f3", 
+        "Ice/Glacier": "#aec7e8", 
+        "No data": "#ffffff", 
+        "Urban, mining": "#7f7f7f", 
+        "Human disturbed": "#000000",
+        "Fishpond": "#1f77b4", 
+        "Island": "#aec7e8",    
+    }
+
+    return soil_order_dict, category_colors
+
+def get_soil_order_dict():
     soil_order_dict = {
         0: "Water",
         1: "Shifting Sands",
@@ -237,30 +275,4 @@ def get_soil_order_features():
         204: "Fishpond",
         205: "Island"
     }
-
-    category_colors = {
-        "Alfisols": "#06dd0a",
-        "Andisols": "#f603d6", 
-        "Aridisols": "#f1af4c",
-        "Entisols": "#dc5908", 
-        "Gelisols": "#730ef8",
-        "Histosols": "#61310d", 
-        "Inceptisols": "#cada9c",
-        "Mollisols": "#046a2b",
-        "Oxisols": "#ff0e0e", 
-        "Spodosols": "#f084e0", 
-        "Ultisols": "#f9ec3a",
-        "Vertisols": "#1411f5",
-        "Rocky Land": "#6b6969", 
-        "Salt flats": "#e0e0e0", 
-        "Shifting Sands": "#a8a6a4",
-        "Water": "#a3d2f3", 
-        "Ice/Glacier": "#aec7e8", 
-        "No data": "#ffffff", 
-        "Urban, mining": "#7f7f7f", 
-        "Human disturbed": "#000000",
-        "Fishpond": "#1f77b4", 
-        "Island": "#aec7e8",    
-    }
-
-    return soil_order_dict, category_colors
+    return soil_order_dict
