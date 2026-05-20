@@ -187,6 +187,43 @@ def create_combo_id_on_common_grid(texture_da, soil_da, cec_ds):
     combo_three_ds['soil_order'] = combo_three_ds['soil_order'].round().astype(float)
     combo_three_ds['texture'] = combo_three_ds['texture'].round().astype(float)
 
+    #--- Standardize the soil_orders
+    #------ There are multiple IDs for each soil order, which would throw off the combo ID
+    #------ This puts them on one ID for each type
+
+    soil_orders_da = combo_three_ds['soil_order']
+    print(np.unique(soil_orders_da.values))
+
+    mask_gelisols = (soil_orders_da < 5) | (soil_orders_da >= 8)
+    soil_orders_da = soil_orders_da.where(mask_gelisols, 5)
+
+    mask_andisols = (soil_orders_da < 21) | (soil_orders_da >= 28)
+    soil_orders_da = soil_orders_da.where(mask_andisols, 21)
+
+    mask_vertisols = (soil_orders_da < 41) | (soil_orders_da >= 46)
+    soil_orders_da = soil_orders_da.where(mask_vertisols, 41)
+
+    mask_aridisols = (soil_orders_da < 50) | (soil_orders_da >= 58)
+    soil_orders_da = soil_orders_da.where(mask_aridisols, 50)
+
+    mask_ultisols = (soil_orders_da < 60) | (soil_orders_da >= 65)
+    soil_orders_da = soil_orders_da.where(mask_ultisols, 60)
+
+    mask_mollisols = (soil_orders_da < 70) | (soil_orders_da >= 78)
+    soil_orders_da = soil_orders_da.where(mask_mollisols, 70)
+
+    mask_alfisols = (soil_orders_da < 80) | (soil_orders_da >= 85)
+    soil_orders_da = soil_orders_da.where(mask_alfisols, 80)
+
+    mask_inceptisols = (soil_orders_da < 90) | (soil_orders_da >= 96)
+    soil_orders_da = soil_orders_da.where(mask_inceptisols, 90)
+
+    mask_entisols = (soil_orders_da < 100) | (soil_orders_da >= 105)
+    soil_orders_da = soil_orders_da.where(mask_entisols, 101)
+
+    print(np.unique(soil_orders_da.values))
+    combo_three_ds['soil_order'] = soil_orders_da
+
     #--- Creating combo ID
 
     combo_three_ds["combo_id"] = (
