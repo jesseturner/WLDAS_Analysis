@@ -12,7 +12,7 @@ def main():
     #--- moisture data
     moisture_grid = xr.open_dataset("DATA/processed/1_moisture_grid_2026-05-15.nc")
 
-    wind_grid = xr.open_dataset("DATA/processed/2_wind_grid_2026-04-23.nc")
+    wind_grid = xr.open_dataset("DATA/processed/2_wind_grid_narr_2026-04-23.nc")
     moisture_grid = merge_wind_onto_moisture(moisture_grid, wind_grid)
     moisture_grid = merge_usage_onto_moisture(moisture_grid)
     moisture_grid = merge_texture_onto_moisture(moisture_grid)
@@ -143,7 +143,7 @@ def _get_coords_for_region(location_name):
     Get the lat and lon range from the dictionary of regions used in Line 2025. 
     """
     locations = {
-        "American Southwest": [(44, -128), (27.5, -100)],
+        "American Southwest": [(43, -124), (25, -97)],
         
         "Chihuahua": [(33.3, -110.0), (28.0, -105.3)],
         "West Texas": [(35.0, -104.0), (31.8, -100.5)],

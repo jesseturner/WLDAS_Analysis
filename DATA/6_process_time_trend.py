@@ -26,7 +26,7 @@ def main():
     df_expanded = df_expanded.reset_index()
 
     #--- moisture data
-    processed_moisture_path = Path("DATA/processed/1_moisture_grid_2026-04-23.nc")
+    processed_moisture_path = Path("DATA/processed/1_moisture_grid_2026-05-15.nc")
     df_expanded = add_moisture_to_dust_df(processed_moisture_path, df_expanded)
 
     #--- save dataset

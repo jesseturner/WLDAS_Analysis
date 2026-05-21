@@ -38,7 +38,7 @@ def _get_coords_for_region(location_name):
     Get the lat and lon range from the dictionary of regions used in Line 2025. 
     '''
     locations = {
-        "American Southwest": [(44, -128), (27.5, -100)],
+        "American Southwest": [(43, -124), (25, -97)],
 
         "Chihuahua": [(33.3, -110.0), (28.0, -105.3)],
         "West Texas": [(35.0, -104.0), (31.8, -100.5)],

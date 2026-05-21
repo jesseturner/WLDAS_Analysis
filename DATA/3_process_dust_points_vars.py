@@ -14,12 +14,12 @@ def main():
     dust_df = get_dust_df(dust_path)
 
     #--- wind data
-    processed_wind_path = Path("DATA/processed/2_wind_grid_2026-04-23.nc")
+    processed_wind_path = Path("DATA/processed/2_wind_grid_narr_2026-04-23.nc")
     dust_df = add_winds_to_dust_df(processed_wind_path, dust_df)
     print(f"THIS SHOULD BE 3492: {len(dust_df)}")
 
     #--- moisture data
-    processed_moisture_path = Path("DATA/processed/1_moisture_grid_2026-04-23.nc")
+    processed_moisture_path = Path("DATA/processed/1_moisture_grid_2026-05-15.nc")
     dust_df = add_moisture_to_dust_df(processed_moisture_path, dust_df)
 
     #--- category data
@@ -118,7 +118,7 @@ def _get_coords_for_region(location_name):
     Get the lat and lon range from the dictionary of regions used in Line 2025. 
     """
     locations = {
-        "American Southwest": [(44, -128), (27.5, -100)],
+        "American Southwest": [(43, -124), (25, -97)],
         
         "Chihuahua": [(33.3, -110.0), (28.0, -105.3)],
         "West Texas": [(35.0, -104.0), (31.8, -100.5)],
