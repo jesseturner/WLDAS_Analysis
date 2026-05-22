@@ -1,5 +1,5 @@
-#--- NetCDF file with NARR wind speeds from 2001-2020 for the American Southwest
-#--- Saved at /mnt/data2/jturner/narr/processed
+#--- NetCDF file with ERA5 wind speeds from 2001-2020 for the American Southwest
+#--- Runs in about 6 minutes
 
 import xarray as xr
 import pandas as pd
@@ -14,17 +14,18 @@ def main():
     # with Client(dashboard_address="127.0.0.1:8787") as client:
         #print(client)
 
-    get_wind_speeds()
+    ds_era5 = get_wind_speeds()
 
-        # ds_daytime_max = get_daytime_max_ws(ds_ws)
+    ds_daytime_max = get_daytime_max_ws(ds_era5)
+    print(ds_daytime_max)
         
         # ds_daytime_max = crop_to_region_and_land(ds_daytime_max)
 
-        # print("Saving to netcdf...")
-        # timestamp = datetime.today().strftime("%Y-%m-%d")
-        # ds_daytime_max = ds_daytime_max.chunk({"x": 90, "y": 65, "time": 100})
-        # print(ds_daytime_max.chunks)
-        # ds_daytime_max.to_netcdf(f"DATA/processed/2_wind_grid_era5_{timestamp}.nc")
+    print("Saving to netcdf...")
+    timestamp = datetime.today().strftime("%Y-%m-%d")
+    ds_daytime_max = ds_daytime_max.chunk({"longitude": 90, "latitude": 65, "time": 100})
+    print(ds_daytime_max.chunks)
+    ds_daytime_max.to_netcdf(f"DATA/processed/2_wind_grid_era5_{timestamp}.nc")
         
     end = time.time()
     print(f"Time to process: {end - start:.2f} seconds")
@@ -35,31 +36,23 @@ def main():
 
 def get_wind_speeds():   
     print("Opening data from ERA-5...")
-    ds_era5 = xr.open_mfdataset("/mnt/data2/jturner/wind_era5/*.nc",
+    ds_era5 = xr.open_mfdataset("/mnt/data2/jturner/wind_era5/era5_land_wind*.nc",
                                 chunks="auto")
-    
-    print(ds_era5)
 
-    unique_years = ds_era5["valid_time"].dt.year.values
-    unique_years = sorted(set(unique_years))
-    print(unique_years)
+    print("Calculating wind speed...")
+    ds_era5["wind_speed"] = np.sqrt(ds_era5["u10"]**2 + ds_era5["v10"]**2)
 
-
-    # print("Calculating wind speed...")
-    # wind_speed = np.sqrt(ds_uwnd.uwnd**2 + ds_vwnd.vwnd**2)
-    # ds_ws = wind_speed.to_dataset(name="wind_speed")
-
-    return 
+    return ds_era5
 
 def get_daytime_max_ws(ds_ws):
 
     print("Getting max winds from daytime (12, 15, 18, 21, 00 UTC)...")
-    ds_daytime = ds_ws.sel(time=ds_ws.time.dt.hour.isin([0, 12, 15, 18, 21]))
+    ds_daytime = ds_ws.sel(valid_time=ds_ws.valid_time.dt.hour.isin([0, 12, 15, 18, 21]))
 
     #--- Shift 00 UTC back one day (to match with correct daily group)
-    time_shifted = ds_daytime.time.where(
-        ds_daytime.time.dt.hour != 0,
-        ds_daytime.time - pd.Timedelta(days=1)
+    time_shifted = ds_daytime.valid_time.where(
+        ds_daytime.valid_time.dt.hour != 0,
+        ds_daytime.valid_time - pd.Timedelta(days=1)
     )
 
     ds_daytime = ds_daytime.assign_coords(time=time_shifted)
