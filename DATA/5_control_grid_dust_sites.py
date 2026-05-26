@@ -12,7 +12,7 @@ import numpy as np
 def main():
 
     moisture_grid = xr.open_dataset("DATA/processed/1_moisture_grid_2026-05-15.nc")
-    wind_grid = xr.open_dataset("DATA/processed/2_wind_grid_narr_2026-04-23.nc")
+    wind_grid = xr.open_dataset("DATA/processed/2_wind_grid_era5_2026-05-22.nc")
 
     moisture_grid = merge_wind_onto_moisture(moisture_grid, wind_grid)
     moisture_grid = merge_usage_onto_moisture(moisture_grid)
@@ -43,10 +43,10 @@ def merge_wind_onto_moisture(moisture_grid, wind_grid):
     )
     source_grid = xr.Dataset(
         {
-            "lat": (["y", "x"], wind_grid.lat.values),
-            "lon": (["y", "x"], wind_grid.lon.values),
+            "latitude": ("latitude", wind_grid.latitude.values),
+            "longitude": ("longitude", wind_grid.longitude.values),
         }
-        )
+    )
     regridder = xe.Regridder(
         source_grid,
         target_grid,

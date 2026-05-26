@@ -14,7 +14,7 @@ def main():
     dust_df = get_dust_df(dust_path)
 
     #--- wind data
-    processed_wind_path = Path("DATA/processed/2_wind_grid_narr_2026-04-23.nc")
+    processed_wind_path = Path("DATA/processed/2_wind_grid_era5_2026-05-22.nc")
     dust_df = add_winds_to_dust_df(processed_wind_path, dust_df)
     print(f"THIS SHOULD BE 3492: {len(dust_df)}")
 
@@ -78,19 +78,17 @@ def add_winds_to_dust_df(processed_wind_path, dust_df):
         sys.exit()
     
     print("For each dust event, getting the wind speed...")
-
-    lat2d = ds_ws["lat"].values
-    lon2d = ds_ws["lon"].values
-
     dust_winds = []
     for _, row in dust_df.iterrows():
-        iy, ix = nearest_grid_point(lat2d, lon2d, row["latitude"], row["longitude"])
         
         #--- Day-of time match 
         ws = ds_ws["wind_speed"].sel(
-            time=row["datetime"].floor("D"),
+            time=row["datetime"].normalize() + np.timedelta64(12, "h") #--- Making sure this matches to datetime in wind speed
+        ).sel(
+            latitude=row["latitude"],
+            longitude=row["longitude"],
             method="nearest"
-        ).isel(y=iy, x=ix)
+        )
         
         dust_winds.append(ws.compute().item())
 
