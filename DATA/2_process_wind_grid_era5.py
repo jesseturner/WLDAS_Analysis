@@ -19,7 +19,7 @@ def main():
     ds_daytime_max = get_daytime_max_ws(ds_era5)
     print(ds_daytime_max)
         
-        # ds_daytime_max = crop_to_region_and_land(ds_daytime_max)
+    # ds_daytime_max = crop_to_region_and_land(ds_daytime_max)
 
     print("Saving to netcdf...")
     timestamp = datetime.today().strftime("%Y-%m-%d")
