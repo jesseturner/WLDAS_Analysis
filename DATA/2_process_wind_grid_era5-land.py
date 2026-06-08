@@ -36,7 +36,7 @@ def main():
 
 def get_wind_speeds():   
     print("Opening data from ERA-5...")
-    ds_era5 = xr.open_mfdataset("/mnt/data2/jturner/wind_era5/era5_land_wind*.nc",
+    ds_era5 = xr.open_mfdataset("/mnt/data2/jturner/era5_land/era5_land_wind*.nc",
                                 chunks="auto")
 
     print("Calculating wind speed...")
