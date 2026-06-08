@@ -1,5 +1,5 @@
-#--- NetCDF file with ERA5-Land wind speeds from 2001-2020 for the American Southwest
-#--- Runs in about 6 minutes
+#--- NetCDF file with ERA5 wind speeds from 2001-2020 for the American Southwest
+#--- Runs in about ? minutes
 
 import xarray as xr
 import pandas as pd
@@ -36,7 +36,7 @@ def main():
 
 def get_wind_speeds():   
     print("Opening data from ERA-5...")
-    ds_era5 = xr.open_mfdataset("/mnt/data2/jturner/wind_era5/era5_land_wind*.nc",
+    ds_era5 = xr.open_mfdataset("/mnt/data2/jturner/era5/era5_wind*.nc",
                                 chunks="auto")
 
     print("Calculating wind speed...")
@@ -46,7 +46,7 @@ def get_wind_speeds():
 
 def get_daytime_max_ws(ds_ws):
 
-    print("Getting max winds from daytime (12, 15, 18, 21, 00 UTC)...")
+    print("Getting max winds from daytime (12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 00 UTC)...")
     ds_daytime = ds_ws.sel(valid_time=ds_ws.valid_time.dt.hour.isin([0, 12, 15, 18, 21]))
 
     #--- Shift 00 UTC back one day (to match with correct daily group)

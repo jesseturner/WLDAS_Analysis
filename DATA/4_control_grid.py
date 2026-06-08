@@ -12,7 +12,7 @@ def main():
     #--- moisture data
     moisture_grid = xr.open_dataset("DATA/processed/1_moisture_grid_2026-05-15.nc")
 
-    wind_grid = xr.open_dataset("DATA/processed/2_wind_grid_era5_2026-05-22.nc")
+    wind_grid = xr.open_dataset("DATA/processed/2_wind_grid_era5_2026-06-08.nc")
     moisture_grid = merge_wind_onto_moisture(moisture_grid, wind_grid)
     moisture_grid = merge_usage_onto_moisture(moisture_grid)
     moisture_grid = merge_texture_onto_moisture(moisture_grid)
