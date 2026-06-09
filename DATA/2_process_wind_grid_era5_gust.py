@@ -1,5 +1,5 @@
-#--- NetCDF file with ERA5 wind speeds from 2001-2020 for the American Southwest
-#--- Runs in about ? minutes
+#--- NetCDF file with ERA5 gust speeds from 2001-2020 for the American Southwest
+#--- Runs in about 3 minutes
 
 import xarray as xr
 import pandas as pd
@@ -25,7 +25,7 @@ def main():
         timestamp = datetime.today().strftime("%Y-%m-%d")
         ds_daytime_max = ds_daytime_max.chunk({"longitude": 90, "latitude": 65, "time": 100})
         print(ds_daytime_max.chunks)
-        ds_daytime_max.to_netcdf(f"DATA/processed/2_wind_grid_era5_{timestamp}.nc")
+        ds_daytime_max.to_netcdf(f"DATA/processed/2_wind_grid_era5_gust_{timestamp}.nc")
             
         end = time.time()
         print(f"Time to process: {end - start:.2f} seconds")
@@ -36,11 +36,12 @@ def main():
 
 def get_wind_speeds():   
     print("Opening data from ERA-5...")
-    ds_era5 = xr.open_mfdataset("/mnt/data2/jturner/era5/era5_wind*.nc",
+    ds_era5 = xr.open_mfdataset("/mnt/data2/jturner/era5/era5_gust*.nc",
                                 chunks="auto")
 
     print("Calculating wind speed...")
-    ds_era5["wind_speed"] = np.sqrt(ds_era5["u10"]**2 + ds_era5["v10"]**2)
+    #--- Kept this way so it matches with previous versions
+    ds_era5["wind_speed"] = ds_era5["fg10"]
 
     return ds_era5
 
