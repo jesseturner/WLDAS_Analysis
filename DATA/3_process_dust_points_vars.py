@@ -14,7 +14,7 @@ def main():
     dust_df = get_dust_df(dust_path)
 
     #--- wind data
-    processed_wind_path = Path("DATA/processed/2_wind_grid_era5_gust_2026-06-09.nc")
+    processed_wind_path = Path("DATA/processed/2_wind_grid_era5_gust_2026-06-10.nc")
     dust_df = add_winds_to_dust_df(processed_wind_path, dust_df)
     print(f"THIS SHOULD BE 3492: {len(dust_df)}")
 
