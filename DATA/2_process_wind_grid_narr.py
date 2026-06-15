@@ -21,12 +21,8 @@ def main():
         ds_daytime_max = crop_to_region_and_land(ds_daytime_max)
 
         print("Saving to netcdf...")
-        ds_daytime_max = ds_daytime_max.rename({
-            "x": "longitude",
-            "y": "latitude"
-        })
         timestamp = datetime.today().strftime("%Y-%m-%d")
-        ds_daytime_max = ds_daytime_max.chunk({"longitude": 90, "latitude": 65, "time": 100})
+        ds_daytime_max = ds_daytime_max.chunk({"x": 90, "y": 65, "time": 100})
         print(ds_daytime_max.chunks)
         ds_daytime_max.to_netcdf(f"DATA/processed/2_wind_grid_narr_{timestamp}.nc")
         

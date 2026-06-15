@@ -15,7 +15,8 @@ def main():
 
     #--- wind data
     processed_wind_path = Path("DATA/processed/2_wind_grid_narr_2026-06-15.nc")
-    dust_df = add_winds_to_dust_df(processed_wind_path, dust_df)
+    # dust_df = add_winds_era5_to_dust_df(processed_wind_path, dust_df)
+    dust_df = add_winds_narr_to_dust_df(processed_wind_path, dust_df)
     print(f"THIS SHOULD BE 3492: {len(dust_df)}")
 
     #--- moisture data
@@ -68,7 +69,7 @@ def nearest_grid_point(lat2d, lon2d, lat, lon):
     iy, ix = np.unravel_index(np.argmin(dist2), dist2.shape)
     return iy, ix
 
-def add_winds_to_dust_df(processed_wind_path, dust_df):
+def add_winds_era5_to_dust_df(processed_wind_path, dust_df):
 
     if processed_wind_path.exists():
         print("Opening wind speed dataset...")
@@ -89,6 +90,35 @@ def add_winds_to_dust_df(processed_wind_path, dust_df):
             longitude=row["longitude"],
             method="nearest"
         )
+        
+        dust_winds.append(ws.compute().item())
+
+    dust_winds = np.array(dust_winds)
+    dust_df["wind_speed"] = dust_winds
+
+    return dust_df
+
+def add_winds_narr_to_dust_df(processed_wind_path, dust_df):
+
+    if processed_wind_path.exists():
+        print("Opening wind speed dataset...")
+        ds_ws = xr.open_dataset(processed_wind_path)
+    else:
+        print("Wind speed data not found, exiting...")
+        sys.exit()
+    
+    print("For each dust event, getting the wind speed...")
+    lat2d = ds_ws["lat"].values
+    lon2d = ds_ws["lon"].values
+
+    dust_winds = []
+    for _, row in dust_df.iterrows():
+        iy, ix = nearest_grid_point(lat2d, lon2d, row["latitude"], row["longitude"])
+        
+        #--- Day-of time match 
+        ws = ds_ws["wind_speed"].sel(
+            time=row["datetime"].normalize() + np.timedelta64(12, "h") #--- Making sure this matches to datetime in wind speed
+            ).isel(y=iy, x=ix)
         
         dust_winds.append(ws.compute().item())
 
