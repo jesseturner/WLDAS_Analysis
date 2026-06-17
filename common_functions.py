@@ -171,32 +171,9 @@ def get_land_cover_dict():
 def get_soil_order_features():
     soil_order_dict = get_soil_order_dict()
 
-    category_colors = {
-        "Alfisols": "#06dd0a",
-        "Andisols": "#f603d6", 
-        "Aridisols": "#f1af4c",
-        "Entisols": "#dc5908", 
-        "Gelisols": "#730ef8",
-        "Histosols": "#61310d", 
-        "Inceptisols": "#cada9c",
-        "Mollisols": "#046a2b",
-        "Oxisols": "#ff0e0e", 
-        "Spodosols": "#f084e0", 
-        "Ultisols": "#f9ec3a",
-        "Vertisols": "#1411f5",
-        "Rocky Land": "#6b6969", 
-        "Salt flats": "#e0e0e0", 
-        "Shifting Sands": "#a8a6a4",
-        "Water": "#a3d2f3", 
-        "Ice/Glacier": "#aec7e8", 
-        "No data": "#ffffff", 
-        "Urban, mining": "#7f7f7f", 
-        "Human disturbed": "#000000",
-        "Fishpond": "#1f77b4", 
-        "Island": "#aec7e8",    
-    }
+    soil_order_colors = get_soil_order_colors()
 
-    return soil_order_dict, category_colors
+    return soil_order_dict, soil_order_colors
 
 def get_soil_order_dict():
     soil_order_dict = {
@@ -277,3 +254,96 @@ def get_soil_order_dict():
         205: "Island"
     }
     return soil_order_dict
+
+def reduce_soil_orders(ds):    
+    #------ There are multiple IDs for each soil order
+    #------ This puts them on one ID for each type
+
+    soil_orders_da = ds['soil_order']
+
+    mask_gelisols = (soil_orders_da < 5) | (soil_orders_da >= 8)
+    soil_orders_da = soil_orders_da.where(mask_gelisols, 4)
+
+    mask_andisols = (soil_orders_da < 21) | (soil_orders_da >= 28)
+    soil_orders_da = soil_orders_da.where(mask_andisols, 1)
+
+    mask_vertisols = (soil_orders_da < 41) | (soil_orders_da >= 46)
+    soil_orders_da = soil_orders_da.where(mask_vertisols, 11)
+
+    mask_aridisols = (soil_orders_da < 50) | (soil_orders_da >= 58)
+    soil_orders_da = soil_orders_da.where(mask_aridisols, 2)
+
+    mask_ultisols = (soil_orders_da < 60) | (soil_orders_da >= 65)
+    soil_orders_da = soil_orders_da.where(mask_ultisols, 10)
+
+    mask_mollisols = (soil_orders_da < 70) | (soil_orders_da >= 78)
+    soil_orders_da = soil_orders_da.where(mask_mollisols, 7)
+
+    mask_alfisols = (soil_orders_da < 80) | (soil_orders_da >= 85)
+    soil_orders_da = soil_orders_da.where(mask_alfisols, 0)
+
+    mask_inceptisols = (soil_orders_da < 90) | (soil_orders_da >= 96)
+    soil_orders_da = soil_orders_da.where(mask_inceptisols, 6)
+
+    mask_entisols = (soil_orders_da < 100) | (soil_orders_da >= 105)
+    soil_orders_da = soil_orders_da.where(mask_entisols, 3)
+
+    ds['soil_order'] = soil_orders_da
+    
+    return ds
+
+def get_soil_order_dict_reduced():
+    soil_order_dict_reduced = {
+        0: "Alfisols",
+        1: "Andisols", 
+        2: "Aridisols",
+        3: "Entisols", 
+        4: "Gelisols",
+        5: "Histosols", 
+        6: "Inceptisols",
+        7: "Mollisols",
+        8: "Oxisols", 
+        9: "Spodosols", 
+        10: "Ultisols",
+        11: "Vertisols",
+        12: "Rocky Land", 
+        13: "Salt flats", 
+        14: "Shifting Sands",
+        15: "Water", 
+        16: "Ice/Glacier", 
+        17: "No data", 
+        18: "Urban, mining", 
+        19: "Human disturbed",
+        20: "Fishpond", 
+        21: "Island",  
+    }
+    return soil_order_dict_reduced
+
+def get_soil_order_colors():
+
+    soil_order_colors = {
+        "Alfisols": "#06dd0a",
+        "Andisols": "#f603d6", 
+        "Aridisols": "#f1af4c",
+        "Entisols": "#dc5908", 
+        "Gelisols": "#730ef8",
+        "Histosols": "#61310d", 
+        "Inceptisols": "#cada9c",
+        "Mollisols": "#046a2b",
+        "Oxisols": "#ff0e0e", 
+        "Spodosols": "#f084e0", 
+        "Ultisols": "#f9ec3a",
+        "Vertisols": "#1411f5",
+        "Rocky Land": "#6b6969", 
+        "Salt flats": "#e0e0e0", 
+        "Shifting Sands": "#a8a6a4",
+        "Water": "#a3d2f3", 
+        "Ice/Glacier": "#aec7e8", 
+        "No data": "#ffffff", 
+        "Urban, mining": "#7f7f7f", 
+        "Human disturbed": "#000000",
+        "Fishpond": "#1f77b4", 
+        "Island": "#aec7e8",    
+    }
+
+    return soil_order_colors
