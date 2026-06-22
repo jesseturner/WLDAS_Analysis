@@ -92,20 +92,8 @@ def get_texture_map():
 
 
 def get_soil_order_map():
-    location_name = "American Southwest"
-    usda_filepath = "DATA/raw/soil_types_usda/global-soil-suborders-2022.tif"
-    min_lat, max_lat, min_lon, max_lon = _get_coords_for_region(location_name)
-
-    soil_da = (
-        rxr.open_rasterio(usda_filepath)
-        .squeeze("band", drop=True)
-        .rio.clip_box(
-            minx=min_lon,
-            miny=min_lat,
-            maxx=max_lon,
-            maxy=max_lat,
-        )
-    )
+    orders_filepath = "DATA/raw/soil_orders_usda/soil_major_orders_2026-06-22.nc"
+    soil_da = xr.open_dataarray(orders_filepath)
     return soil_da
 
 def get_cec_land_cover_reprojection(cec_full, location_name):
@@ -147,31 +135,30 @@ def get_land_cover_map():
 def create_combo_id_on_common_grid(texture_da, soil_da, cec_ds):
 
     cec_ds_ll = cec_ds.rename({"x": "lon", "y": "lat"})
-    soil_da_ll = soil_da.rename({"x": "lon", "y": "lat"})
 
     def get_resolution(da):
         return abs(da.lat.diff("lat").mean().item()), abs(da.lon.diff("lon").mean().item())
 
-    resolutions = [get_resolution(cec_ds_ll), get_resolution(soil_da_ll), get_resolution(texture_da)]
+    resolutions = [get_resolution(cec_ds_ll), get_resolution(soil_da), get_resolution(texture_da)]
 
     dlat, dlon = min(resolutions, key=lambda x: x[0] * x[1])
 
     lat_new = np.arange(
-        min(cec_ds_ll.lat.min(), soil_da_ll.lat.min(), texture_da.lat.min()),
-        max(cec_ds_ll.lat.max(), soil_da_ll.lat.max(), texture_da.lat.max()) + dlat,
+        min(cec_ds_ll.lat.min(), soil_da.lat.min(), texture_da.lat.min()),
+        max(cec_ds_ll.lat.max(), soil_da.lat.max(), texture_da.lat.max()) + dlat,
         dlat
     )
 
     lon_new = np.arange(
-        min(cec_ds_ll.lon.min(), soil_da_ll.lon.min(), texture_da.lon.min()),
-        max(cec_ds_ll.lon.max(), soil_da_ll.lon.max(), texture_da.lon.max()) + dlon,
+        min(cec_ds_ll.lon.min(), soil_da.lon.min(), texture_da.lon.min()),
+        max(cec_ds_ll.lon.max(), soil_da.lon.max(), texture_da.lon.max()) + dlon,
         dlon
     )
 
     #--- Interpolate onto new grid
 
     cec_hi = cec_ds_ll.interp(lat=lat_new, lon=lon_new, method="nearest")
-    soil_hi = soil_da_ll.interp(lat=lat_new, lon=lon_new, method="nearest")
+    soil_hi = soil_da.interp(lat=lat_new, lon=lon_new, method="nearest")
     texture_hi = texture_da.interp(lat=lat_new, lon=lon_new, method="nearest")
 
     combo_three_ds = xr.Dataset({
@@ -187,43 +174,6 @@ def create_combo_id_on_common_grid(texture_da, soil_da, cec_ds):
     combo_three_ds['soil_order'] = combo_three_ds['soil_order'].round().astype(float)
     combo_three_ds['texture'] = combo_three_ds['texture'].round().astype(float)
 
-    #--- Standardize the soil_orders
-    #------ There are multiple IDs for each soil order, which would throw off the combo ID
-    #------ This puts them on one ID for each type
-
-    soil_orders_da = combo_three_ds['soil_order']
-    print(np.unique(soil_orders_da.values))
-
-    mask_gelisols = (soil_orders_da < 5) | (soil_orders_da >= 8)
-    soil_orders_da = soil_orders_da.where(mask_gelisols, 5)
-
-    mask_andisols = (soil_orders_da < 21) | (soil_orders_da >= 28)
-    soil_orders_da = soil_orders_da.where(mask_andisols, 21)
-
-    mask_vertisols = (soil_orders_da < 41) | (soil_orders_da >= 46)
-    soil_orders_da = soil_orders_da.where(mask_vertisols, 41)
-
-    mask_aridisols = (soil_orders_da < 50) | (soil_orders_da >= 58)
-    soil_orders_da = soil_orders_da.where(mask_aridisols, 50)
-
-    mask_ultisols = (soil_orders_da < 60) | (soil_orders_da >= 65)
-    soil_orders_da = soil_orders_da.where(mask_ultisols, 60)
-
-    mask_mollisols = (soil_orders_da < 70) | (soil_orders_da >= 78)
-    soil_orders_da = soil_orders_da.where(mask_mollisols, 70)
-
-    mask_alfisols = (soil_orders_da < 80) | (soil_orders_da >= 85)
-    soil_orders_da = soil_orders_da.where(mask_alfisols, 80)
-
-    mask_inceptisols = (soil_orders_da < 90) | (soil_orders_da >= 96)
-    soil_orders_da = soil_orders_da.where(mask_inceptisols, 90)
-
-    mask_entisols = (soil_orders_da < 100) | (soil_orders_da >= 105)
-    soil_orders_da = soil_orders_da.where(mask_entisols, 101)
-
-    print(np.unique(soil_orders_da.values))
-    combo_three_ds['soil_order'] = soil_orders_da
-
     #--- Creating combo ID
 
     combo_three_ds["combo_id"] = (
@@ -236,7 +186,7 @@ def create_combo_id_on_common_grid(texture_da, soil_da, cec_ds):
 
 def bin_dust_events_on_common_grid(combo_three_ds):
 
-    dust_df = pd.read_csv("DATA/processed/3_dust_points_vars_2026-05-15.csv")
+    dust_df = pd.read_csv("DATA/processed/3_dust_points_vars_2026-06-22.csv")
 
     lat = combo_three_ds.lat.values
     lon = combo_three_ds.lon.values

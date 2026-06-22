@@ -109,24 +109,9 @@ def merge_texture_onto_moisture(moisture_grid):
 
 def merge_orders_onto_moisture(moisture_grid):
     print("Merging soil order onto moisture grid...")
-    usda_filepath = "DATA/raw/soil_types_usda/global-soil-suborders-2022.tif"
-    location_name="American Southwest"
-    min_lat, max_lat, min_lon, max_lon = _get_coords_for_region(location_name)
-    soil_da = (
-        rxr.open_rasterio(usda_filepath)
-        .squeeze("band", drop=True)
-        .rio.clip_box(
-            minx=min_lon,
-            miny=min_lat,
-            maxx=max_lon,
-            maxy=max_lat,
-        )
-    )
-
-    soil_da = soil_da.rename({
-        "y": "lat",
-        "x": "lon"
-    })
+    orders_filepath = "DATA/raw/soil_orders_usda/soil_major_orders_2026-06-22.nc"
+    soil_da = xr.open_dataarray(orders_filepath)
+    
     soil_da = soil_da.sortby("lat")
     soil_da_interp = soil_da.interp(
         lat=moisture_grid.lat,
