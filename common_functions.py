@@ -168,132 +168,8 @@ def get_land_cover_dict():
     }
     return land_cover_dict
 
-def get_soil_order_features():
-    soil_order_dict = get_soil_order_dict()
-
-    soil_order_colors = get_soil_order_colors()
-
-    return soil_order_dict, soil_order_colors
-
-def get_soil_order_dict():
-    soil_order_dict = {
-        0: "Water",
-        1: "Shifting Sands",
-        2: "Rocky Land",
-        3: "Ice/Glacier",
-        4: "Salt flats",
-        5: "Gelisols",
-        6: "Gelisols",
-        7: "Gelisols",
-        10: "Histosols",
-        12: "Histosols",
-        13: "Histosols",
-        14: "Histosols",
-        15: "Spodosols",
-        16: "Spodosols",
-        17: "Spodosols",
-        18: "Spodosols",
-        19: "Spodosols",
-        21: "Andisols",
-        22: "Andisols",
-        23: "Andisols",
-        24: "Andisols",
-        25: "Andisols",
-        26: "Andisols",
-        27: "Andisols",
-        30: "Oxisols",
-        31: "Oxisols",
-        32: "Oxisols",
-        33: "Oxisols",
-        34: "Oxisols",
-        41: "Vertisols",
-        42: "Vertisols",
-        43: "Vertisols",
-        44: "Vertisols",
-        45: "Vertisols",
-        50: "Aridisols",
-        51: "Aridisols",
-        54: "Aridisols",
-        55: "Aridisols",
-        56: "Aridisols",
-        57: "Aridisols",
-        60: "Ultisols",
-        61: "Ultisols",
-        62: "Ultisols",
-        63: "Ultisols",
-        64: "Ultisols",
-        70: "Mollisols",
-        71: "Mollisols",
-        72: "Mollisols",
-        73: "Mollisols",
-        74: "Mollisols",
-        75: "Mollisols",
-        76: "Mollisols",
-        77: "Mollisols",
-        80: "Alfisols",
-        81: "Alfisols",
-        82: "Alfisols",
-        83: "Alfisols",
-        84: "Alfisols",
-        90: "Inceptisols",
-        91: "Inceptisols",
-        92: "Inceptisols",
-        93: "Inceptisols",
-        94: "Inceptisols",
-        95: "Inceptisols",
-        98: "Entisols", #--- Check this
-        99: "Entisols", #--- Check this
-        101: "Entisols",
-        102: "Entisols",
-        103: "Entisols",
-        104: "Entisols",
-        200: "No data",
-        201: "Urban, mining",
-        202: "Human disturbed",
-        204: "Fishpond",
-        205: "Island"
-    }
-    return soil_order_dict
-
-def reduce_soil_orders(ds):    
-    #------ There are multiple IDs for each soil order
-    #------ This puts them on one ID for each type
-
-    soil_orders_da = ds['soil_order']
-
-    mask_gelisols = (soil_orders_da < 5) | (soil_orders_da >= 8)
-    soil_orders_da = soil_orders_da.where(mask_gelisols, 4)
-
-    mask_andisols = (soil_orders_da < 21) | (soil_orders_da >= 28)
-    soil_orders_da = soil_orders_da.where(mask_andisols, 1)
-
-    mask_vertisols = (soil_orders_da < 41) | (soil_orders_da >= 46)
-    soil_orders_da = soil_orders_da.where(mask_vertisols, 11)
-
-    mask_aridisols = (soil_orders_da < 50) | (soil_orders_da >= 58)
-    soil_orders_da = soil_orders_da.where(mask_aridisols, 2)
-
-    mask_ultisols = (soil_orders_da < 60) | (soil_orders_da >= 65)
-    soil_orders_da = soil_orders_da.where(mask_ultisols, 10)
-
-    mask_mollisols = (soil_orders_da < 70) | (soil_orders_da >= 78)
-    soil_orders_da = soil_orders_da.where(mask_mollisols, 7)
-
-    mask_alfisols = (soil_orders_da < 80) | (soil_orders_da >= 85)
-    soil_orders_da = soil_orders_da.where(mask_alfisols, 0)
-
-    mask_inceptisols = (soil_orders_da < 90) | (soil_orders_da >= 96)
-    soil_orders_da = soil_orders_da.where(mask_inceptisols, 6)
-
-    mask_entisols = (soil_orders_da < 100) | (soil_orders_da >= 105)
-    soil_orders_da = soil_orders_da.where(mask_entisols, 3)
-
-    ds['soil_order'] = soil_orders_da
-    
-    return ds
-
-def get_soil_order_dict_reduced():
-    soil_order_dict_reduced = {
+def get_soil_order_names_major():
+    soil_order_names_major = {
         0: "Alfisols",
         1: "Andisols", 
         2: "Aridisols",
@@ -317,33 +193,32 @@ def get_soil_order_dict_reduced():
         20: "Fishpond", 
         21: "Island",  
     }
-    return soil_order_dict_reduced
+    return soil_order_names_major
 
-def get_soil_order_colors():
+def get_soil_order_colors_major():
 
     soil_order_colors = {
-        "Alfisols": "#06dd0a",
-        "Andisols": "#f603d6", 
-        "Aridisols": "#f1af4c",
-        "Entisols": "#dc5908", 
-        "Gelisols": "#730ef8",
-        "Histosols": "#61310d", 
-        "Inceptisols": "#cada9c",
-        "Mollisols": "#046a2b",
-        "Oxisols": "#ff0e0e", 
-        "Spodosols": "#f084e0", 
-        "Ultisols": "#f9ec3a",
-        "Vertisols": "#1411f5",
-        "Rocky Land": "#6b6969", 
-        "Salt flats": "#e0e0e0", 
-        "Shifting Sands": "#a8a6a4",
-        "Water": "#a3d2f3", 
-        "Ice/Glacier": "#aec7e8", 
-        "No data": "#ffffff", 
-        "Urban, mining": "#7f7f7f", 
-        "Human disturbed": "#000000",
-        "Fishpond": "#1f77b4", 
-        "Island": "#aec7e8",    
-    }
+        0: "#06dd0a",
+        1: "#f603d6", 
+        2: "#f1af4c",
+        3: "#dc5908", 
+        4: "#730ef8",
+        5: "#61310d", 
+        6: "#cada9c",
+        7: "#046a2b",
+        8: "#ff0e0e", 
+        9: "#f084e0", 
+        10: "#f9ec3a",
+        11: "#1411f5",
+        12: "#6b6969", 
+        13: "#e0e0e0", 
+        14: "#a8a6a4",
+        15: "#a3d2f3", 
+        16: "#aec7e8", 
+        17: "#ffffff", 
+        18: "#7f7f7f", 
+        19: "#000000",
+        20: "#1f77b4", 
+        21: "#aec7e8"}
 
     return soil_order_colors

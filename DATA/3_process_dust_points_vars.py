@@ -265,26 +265,15 @@ def add_static_data(dust_df, location_name):
 
     #--- SOIL ORDERS DATA
     print("Opening soil orders dataset...")
-    usda_filepath = "DATA/raw/soil_types_usda/global-soil-suborders-2022.tif"
-    location_name="American Southwest"
-    min_lat, max_lat, min_lon, max_lon = _get_coords_for_region(location_name)
-    soil_da = (
-        rxr.open_rasterio(usda_filepath)
-        .squeeze("band", drop=True)
-        .rio.clip_box(
-            minx=min_lon,
-            miny=min_lat,
-            maxx=max_lon,
-            maxy=max_lat,
-        )
-    )
+    orders_filepath = "DATA/raw/soil_orders_usda/soil_major_orders_2026-06-22.nc"
+    soil_da = xr.open_dataarray(orders_filepath)
 
     print("Add soil order values to dust dataframe...")
     dust_lats = xr.DataArray(dust_df["latitude"].values, dims="points")
     dust_lons = xr.DataArray(dust_df["longitude"].values, dims="points")
     soil_vals = soil_da.sel(
-        x=dust_lons,
-        y=dust_lats,
+        lon=dust_lons,
+        lat=dust_lats,
         method="nearest"
     ).values.squeeze().astype(int) 
     dust_df["soil_order"] = soil_vals
