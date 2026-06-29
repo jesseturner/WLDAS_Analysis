@@ -99,6 +99,7 @@ def merge_texture_onto_moisture(moisture_grid):
     )
 
     moisture_grid["soil_texture"] = texture_da_interp
+    moisture_grid["soil_texture"] = moisture_grid["soil_texture"].round()
 
     return moisture_grid
 
