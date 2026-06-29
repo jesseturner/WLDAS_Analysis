@@ -65,8 +65,8 @@ def create_moisture_dataset(wldas_path, start_date, end_date):
     wldas_dataset = wldas_dataset.chunk({"lon": 200, "lat": 200, "time": 100})
 
     #--- Coarsen resolution for wldas_set
-    COARSEN_LAT = 12
-    COARSEN_LON = 12
+    COARSEN_LAT = 6
+    COARSEN_LON = 6
     wldas_dataset_coarse = (
         wldas_dataset
         .coarsen(lat=COARSEN_LAT, lon=COARSEN_LON, boundary="trim")
