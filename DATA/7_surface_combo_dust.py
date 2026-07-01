@@ -13,15 +13,21 @@ import rasterio
 import pandas as pd
 from datetime import datetime
 import os
+import xesmf as xe  
 
 def main():
+
+    dust_df = pd.read_csv("DATA/processed/3_dust_points_vars_2026-06-29.csv")
+    wind_grid = xr.open_dataset("DATA/processed/2_wind_grid_narr_2026-06-15.nc")
 
     texture_da = get_texture_map()
     soil_da = get_soil_order_map()
     cec_ds = get_land_cover_map()
 
     combo_three_ds = create_combo_id_on_common_grid(texture_da, soil_da, cec_ds)
-    combo_three_ds = bin_dust_events_on_common_grid(combo_three_ds)
+    combo_three_ds = bin_dust_events_on_common_grid(combo_three_ds, dust_df)
+    combo_three_ds = merge_wind_narr_on_common_grid(combo_three_ds, wind_grid)
+    combo_three_ds = get_relative_wind_exposure_by_category(combo_three_ds)
 
     #--- save dataset
     timestamp = datetime.today().strftime("%Y-%m-%d")
@@ -184,9 +190,7 @@ def create_combo_id_on_common_grid(texture_da, soil_da, cec_ds):
 
     return combo_three_ds
 
-def bin_dust_events_on_common_grid(combo_three_ds):
-
-    dust_df = pd.read_csv("DATA/processed/3_dust_points_vars_2026-06-22.csv")
+def bin_dust_events_on_common_grid(combo_three_ds, dust_df):
 
     lat = combo_three_ds.lat.values
     lon = combo_three_ds.lon.values
@@ -211,6 +215,50 @@ def bin_dust_events_on_common_grid(combo_three_ds):
 
     combo_three_ds["dust_event_count"] = (("lat", "lon"), counts)
     
+    return combo_three_ds
+
+def merge_wind_narr_on_common_grid(combo_three_ds, wind_grid):
+    print("Merging winds onto common grid...")
+    target_grid = xr.Dataset(
+        {
+            "lat": (["lat"], combo_three_ds.lat.values),
+            "lon": (["lon"], combo_three_ds.lon.values),
+        }
+    )
+    source_grid = xr.Dataset(
+        {
+            "lat": (["y", "x"], wind_grid.lat.values),
+            "lon": (["y", "x"], wind_grid.lon.values),
+        }
+    )
+    regridder = xe.Regridder(
+        source_grid,
+        target_grid,
+        method="bilinear",
+        periodic=False
+    )
+
+    wind_regridded = regridder(wind_grid["wind_speed"])
+    wind_regridded["time"] = wind_regridded.indexes["time"].normalize()
+
+    merged_grid = xr.merge([
+        combo_three_ds,
+        wind_regridded.to_dataset(name="wind_speed")
+    ])
+
+    return merged_grid
+
+def get_relative_wind_exposure_by_category(combo_three_ds):
+
+    print("Getting relative wind exposure by category...")
+    print(combo_three_ds['wind_speed'])
+
+    # filtered_ds = ds.where(ds[category_name] == k)
+    # category_size = filtered_ds[category_name].count(dim=['lat', 'lon']).item()
+    # category_freq = (filtered_ds['wind_speed'] >= 10).sum().item()
+    # category_winds_per_pixel = (category_freq / category_size if category_size != 0 else np.nan)
+    # category_winds_per_pixel_normalized = category_winds_per_pixel / domain_winds_per_pixel
+
     return combo_three_ds
 
 #------------------------
