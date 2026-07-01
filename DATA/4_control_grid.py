@@ -12,8 +12,8 @@ def main():
     #--- moisture data
     moisture_grid = xr.open_dataset("DATA/processed/1_moisture_grid_2026-06-29.nc")
 
-    wind_grid = xr.open_dataset("DATA/processed/2_wind_grid_era5_gust_2026-06-10.nc")
-    moisture_grid = merge_wind_era5_onto_moisture(moisture_grid, wind_grid)
+    wind_grid = xr.open_dataset("DATA/processed/2_wind_grid_narr_2026-06-15.nc")
+    moisture_grid = merge_wind_narr_onto_moisture(moisture_grid, wind_grid)
     moisture_grid = merge_usage_onto_moisture(moisture_grid)
     moisture_grid = merge_texture_onto_moisture(moisture_grid)
     moisture_grid = merge_orders_onto_moisture(moisture_grid)
@@ -58,6 +58,38 @@ def merge_wind_era5_onto_moisture(moisture_grid, wind_grid):
     ])
 
     return merged_grid
+
+def merge_wind_narr_onto_moisture(moisture_grid, wind_grid):
+    print("Merging winds onto moisture grid...")
+    print(moisture_grid)
+    target_grid = xr.Dataset(
+        {
+            "lat": (["lat"], moisture_grid.lat.values),
+            "lon": (["lon"], moisture_grid.lon.values),
+        }
+    )
+    source_grid = xr.Dataset(
+        {
+            "lat": (["y", "x"], wind_grid.lat.values),
+            "lon": (["y", "x"], wind_grid.lon.values),
+        }
+    )
+    regridder = xe.Regridder(
+        source_grid,
+        target_grid,
+        method="bilinear",
+        periodic=False
+    )
+
+    wind_regridded = regridder(wind_grid["wind_speed"])
+    wind_regridded["time"] = wind_regridded.indexes["time"].normalize()
+
+    moisture_grid = xr.merge([
+        moisture_grid,
+        wind_regridded.to_dataset(name="wind_speed")
+    ])
+
+    return moisture_grid
 
 def merge_usage_onto_moisture(moisture_grid):
     print("Merging usage onto moisture grid...")
