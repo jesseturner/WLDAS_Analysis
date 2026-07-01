@@ -27,7 +27,6 @@ def main():
     combo_three_ds = create_combo_id_on_common_grid(texture_da, soil_da, cec_ds)
     combo_three_ds = bin_dust_events_on_common_grid(combo_three_ds, dust_df)
     combo_three_ds = merge_wind_narr_on_common_grid(combo_three_ds, wind_grid)
-    combo_three_ds = get_relative_wind_exposure_by_category(combo_three_ds)
 
     #--- save dataset
     timestamp = datetime.today().strftime("%Y-%m-%d")
@@ -247,19 +246,6 @@ def merge_wind_narr_on_common_grid(combo_three_ds, wind_grid):
     ])
 
     return merged_grid
-
-def get_relative_wind_exposure_by_category(combo_three_ds):
-
-    print("Getting relative wind exposure by category...")
-    print(combo_three_ds['wind_speed'])
-
-    # filtered_ds = ds.where(ds[category_name] == k)
-    # category_size = filtered_ds[category_name].count(dim=['lat', 'lon']).item()
-    # category_freq = (filtered_ds['wind_speed'] >= 10).sum().item()
-    # category_winds_per_pixel = (category_freq / category_size if category_size != 0 else np.nan)
-    # category_winds_per_pixel_normalized = category_winds_per_pixel / domain_winds_per_pixel
-
-    return combo_three_ds
 
 #------------------------
 

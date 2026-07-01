@@ -1,0 +1,19 @@
+name: wldas_env
+channels:
+  - defaults
+dependencies:
+  - cartopy
+  - pandas
+  - netcdf4
+  - xarray
+  - numpy
+  - cfgrib
+  - requests
+  - matplotlib
+  - dask
+  - geopandas
+  - rasterio
+  - rioxarray
+  - conda-forge::h5netcdf
+  - conda-forge::xesmf
+prefix: /home/jturner/miniconda3/envs/wldas_env
