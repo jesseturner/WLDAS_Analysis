@@ -1,0 +1,11 @@
+cartopy
+cfgrib
+matplotlib
+netcdf4
+numpy
+pandas
+xarray
+requests
+dask
+geopandas
+plotly
