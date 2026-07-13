@@ -17,7 +17,7 @@ import xesmf as xe
 
 def main():
 
-    dust_df = pd.read_csv("DATA/processed/3_dust_points_vars_2026-06-29.csv")
+    dust_df = pd.read_csv("DATA/processed/3_dust_points_vars_2026-07-13.csv")
     wind_grid = xr.open_dataset("DATA/processed/2_wind_grid_narr_2026-06-15.nc")
 
     texture_da = get_texture_map()
